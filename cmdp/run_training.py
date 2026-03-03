@@ -16,9 +16,9 @@ from cmdp.config import R_MAX_VALUES
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-seeds = range(100, 110)
+seeds = range(106, 110)
 categories = [5]
-FAILURE_COST_COEFS = [1.0, 0.0]
+FAILURE_COST_COEFS = [1.0]
 
 TOTAL_CORES = 20  # cores 0-19
 CORES_PER_PROCESS = TOTAL_CORES // len(R_MAX_VALUES)
@@ -83,7 +83,7 @@ for failure_cost_coef in FAILURE_COST_COEFS:
                 # Kill any still-running processes
                 for proc, _ in processes:
                     proc.kill()
-                print("Aborting due to failure.")
-                sys.exit(1)
+                print(f"\n!!!!!!\n\n\n\n\nSEED {s}, CAT {c}, R_MAX {r} FAILED!\n\n\n\n\n!!!!!!\n")
+                # sys.exit(1)
 
             print(f"  Seed {s} done for failure_cost_coef={failure_cost_coef}.\n")
