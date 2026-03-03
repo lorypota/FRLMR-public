@@ -129,13 +129,13 @@ for median in box["medians"]:
 for flier in box["fliers"]:
     flier.set(marker="o", color="red", alpha=0.75)
 ax.set_xlabel(r"$r_{max}$", fontsize=36)
-ax.set_ylabel("Max cat. failure [%] (morning)", fontsize=22)
+ax.set_ylabel("Max fail. [%] (morning)", fontsize=28)
 ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
 ax.set_xticks(range(1, num_r_max + 1))
 ax.set_xticklabels(r_max_labels, fontsize=34)
 ax.invert_xaxis()
-ax.tick_params(labelsize=34)
-ax.yaxis.set_major_locator(AutoLocator())
+ax.tick_params(labelsize=32)
+ax.yaxis.set_major_locator(MultipleLocator(2.5))
 ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
 plt.tight_layout()
 if args.save:
@@ -170,13 +170,13 @@ for median in box["medians"]:
 for flier in box["fliers"]:
     flier.set(marker="o", color="red", alpha=0.75)
 ax.set_xlabel(r"$r_{max}$", fontsize=36)
-ax.set_ylabel("Max cat. failure [%] (evening)", fontsize=22)
+ax.set_ylabel("Max fail. [%] (evening)", fontsize=28)
 ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
 ax.set_xticks(range(1, num_r_max + 1))
 ax.set_xticklabels(r_max_labels, fontsize=34)
 ax.invert_xaxis()
 ax.tick_params(labelsize=34)
-ax.yaxis.set_major_locator(AutoLocator())
+ax.yaxis.set_major_locator(MultipleLocator(0.5))
 ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
 plt.tight_layout()
 if args.save:

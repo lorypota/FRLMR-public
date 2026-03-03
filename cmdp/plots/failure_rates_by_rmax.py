@@ -36,7 +36,7 @@ parser.add_argument(
     default=[100, 110],
     help="Seed range [start, end)",
 )
-parser.add_argument("--failure-cost-coef", type=float, default=1.0)
+parser.add_argument("--failure-cost-coef", type=float, default=0.0)
 args = parser.parse_args()
 
 M = args.categories
@@ -84,10 +84,9 @@ if data.shape[0] != len(R_MAX_VALUES):
     )
 all_r_values = R_MAX_VALUES
 
-# Plot a representative subset that adapts to the configured sweep.
-preferred = [0.05, 0.0625, 0.075, 0.0875, 0.10, 0.125, 0.15, 0.20, 0.25]
-PLOT_R_MAX = [v for v in preferred if v in all_r_values]
-keep_idx = [all_r_values.index(v) for v in PLOT_R_MAX]
+# Plot the full configured sweep in cmdp.config.R_MAX_VALUES.
+PLOT_R_MAX = list(all_r_values)
+keep_idx = list(range(len(all_r_values)))
 
 data = data[keep_idx]
 x = np.arange(len(PLOT_R_MAX))
@@ -105,7 +104,9 @@ for cat_idx, cat in enumerate(active_cats):
 rates = rates[::-1]
 
 # Load rebalancing costs: shape (num_r_max, num_seeds)
-reb_costs = np.load(os.path.join(RESULTS_DIR, f"cost_reb_{num_seeds}seeds_{bf_token}.npy"))
+reb_costs = np.load(
+    os.path.join(RESULTS_DIR, f"cost_reb_{num_seeds}seeds_{bf_token}.npy")
+)
 reb_costs = np.array(reb_costs)[keep_idx][::-1]  # filter and reverse
 
 # Plot
@@ -189,8 +190,8 @@ ax.set_ylabel("Failure rate (%)", fontsize=20)
 ax.tick_params(labelsize=16)
 ax.set_xticks(x)
 xlabels = [f"{v * 100:g}" for v in reversed(PLOT_R_MAX)]
-if PLOT_R_MAX and all(v in all_r_values for v in (0.20, 1.0)) and PLOT_R_MAX[-1] in (0.20, 0.25):
-    xlabels[0] = "25=20=100" if 0.25 in PLOT_R_MAX else "20=100"
+if xlabels and xlabels[0] == "100":
+    xlabels[0] = "100\n(no constr.)"
 ax.set_xticklabels(xlabels)
 
 # Combined legend with morning/evening note
@@ -226,7 +227,7 @@ ax.legend(
     legend_labels,
     fontsize=11,
     loc="upper right",
-    bbox_to_anchor=(0.60, 1.0),
+    bbox_to_anchor=(0.45, 1.0),
     framealpha=0.9,
     handlelength=1.5,
     handletextpad=0.4,
