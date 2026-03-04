@@ -2,8 +2,8 @@
 Generate all CMDP plots for a given category scenario.
 
 Usage:
-    uv run cmdp/plots/generate_all.py --categories 5 --failure-cost-coef 1.0
     uv run cmdp/plots/generate_all.py --categories 5 --failure-cost-coef 0.0
+    uv run cmdp/plots/generate_all.py --categories 5 --failure-cost-coef 1.0
 """
 
 import argparse
@@ -19,7 +19,7 @@ scripts = [
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--categories", required=True, type=int)
-parser.add_argument("--failure-cost-coef", type=float, default=1.0)
+parser.add_argument("--failure-cost-coef", type=float, default=0.0)
 args = parser.parse_args()
 
 for script in scripts:

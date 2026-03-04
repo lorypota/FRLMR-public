@@ -9,8 +9,8 @@ and constraint satisfaction for constrained categories.
 Usage:
     uv run cmdp/evaluation.py --categories 2
     uv run cmdp/evaluation.py --categories 2 --r-max-values 0.20 0.25
-    uv run cmdp/evaluation.py --categories 5 --failure-cost-coef 1.0 --seeds 100 110
     uv run cmdp/evaluation.py --categories 5 --failure-cost-coef 0.0 --seeds 100 110
+    uv run cmdp/evaluation.py --categories 5 --failure-cost-coef 1.0 --seeds 100 110
 
 Output (saved to results/):
     results/gini_{M}_cat_{N}seeds.npy
@@ -67,7 +67,7 @@ def main():
     parser.add_argument(
         "--failure-cost-coef",
         type=float,
-        default=1.0,
+        default=0.0,
         help="Base failure coefficient token used in training filenames",
     )
     args = parser.parse_args()

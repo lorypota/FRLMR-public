@@ -2,8 +2,8 @@
 CMDP boxplots (Gini and cost components) from evaluation outputs.
 
 Usage:
-    uv run cmdp/plots/boxplots.py --categories 5 --failure-cost-coef 1.0
     uv run cmdp/plots/boxplots.py --categories 5 --failure-cost-coef 0.0 --save
+    uv run cmdp/plots/boxplots.py --categories 5 --failure-cost-coef 1.0 --save
 """
 
 import argparse
@@ -21,7 +21,7 @@ PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 parser = argparse.ArgumentParser()
 parser.add_argument("--categories", default=5, type=int)
 parser.add_argument("--save", action="store_true")
-parser.add_argument("--failure-cost-coef", type=float, default=1.0)
+parser.add_argument("--failure-cost-coef", type=float, default=0.0)
 args = parser.parse_args()
 RESULTS_DIR = os.path.join(PLOT_DIR, "..", "results", f"cat{args.categories}", "eval")
 bf_token = f"bf{fmt_token(args.failure_cost_coef)}"

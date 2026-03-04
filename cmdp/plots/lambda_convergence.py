@@ -2,8 +2,8 @@
 CMDP lambda convergence plots from saved lambda histories.
 
 Usage:
-    uv run cmdp/plots/lambda_convergence.py --categories 5 --failure-cost-coef 1.0
     uv run cmdp/plots/lambda_convergence.py --categories 5 --failure-cost-coef 0.0 --save
+    uv run cmdp/plots/lambda_convergence.py --categories 5 --failure-cost-coef 1.0 --save
 """
 
 import argparse
@@ -38,7 +38,7 @@ parser.add_argument(
     default=[100, 110],
     help="Seed range [start, end)",
 )
-parser.add_argument("--failure-cost-coef", type=float, default=1.0)
+parser.add_argument("--failure-cost-coef", type=float, default=0.0)
 args = parser.parse_args()
 
 seeds = list(range(args.seeds[0], args.seeds[1]))

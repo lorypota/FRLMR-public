@@ -4,8 +4,8 @@ CMDP Pareto-style cost vs max-failure-rate plots from evaluation outputs.
 Generates separate figures for morning (period 0) and evening (period 1).
 
 Usage:
-    uv run cmdp/plots/paretoplots.py --categories 5 --failure-cost-coef 1.0
     uv run cmdp/plots/paretoplots.py --categories 5 --failure-cost-coef 0.0 --save
+    uv run cmdp/plots/paretoplots.py --categories 5 --failure-cost-coef 1.0 --save
 """
 
 import argparse
@@ -50,7 +50,7 @@ def compute_pareto_frontier(costs, fairness):
 parser = argparse.ArgumentParser()
 parser.add_argument("--categories", default=5, type=int)
 parser.add_argument("--save", action="store_true")
-parser.add_argument("--failure-cost-coef", type=float, default=1.0)
+parser.add_argument("--failure-cost-coef", type=float, default=0.0)
 args = parser.parse_args()
 cat = args.categories
 RESULTS_DIR = os.path.join(PLOT_DIR, "..", "results", f"cat{cat}", "eval")

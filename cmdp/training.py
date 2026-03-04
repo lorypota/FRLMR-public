@@ -3,7 +3,7 @@ CMDP training script.
 
 Usage:
     uv run cmdp/training.py --r-max 0.075 --categories 5 --seed 100
-    uv run cmdp/training.py --r-max 0.075 --categories 5 --seed 100 --failure-cost-coef 0.0
+    uv run cmdp/training.py --r-max 0.075 --categories 5 --seed 100 --failure-cost-coef 1.0
 """
 
 import argparse
@@ -62,9 +62,9 @@ parser.add_argument(
 parser.add_argument("--cpu-cores", default=CPU_CORES, type=str, help="CPU core range")
 parser.add_argument(
     "--failure-cost-coef",
-    default=1.0,
+    default=0.0,
     type=float,
-    help="Coefficient for base failure penalty in CMDP reward",
+    help="Coefficient for base failure penalty in CMDP reward (default: 0.0)",
 )
 args = parser.parse_args()
 
