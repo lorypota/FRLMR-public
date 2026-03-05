@@ -2,6 +2,10 @@
 Inspect a Single Donkey Snapshot
 =========================================
 
+Run:
+    uv run python preliminary_studies/empirical_analysis/inspect_snapshot.py
+    uv run python preliminary_studies/empirical_analysis/inspect_snapshot.py --year 2025 --month 1 --day 1 --hour 0
+
 Extracts one donkey_denHaag tar.gz file and prints the contents of each
 data file. Produces a structured summary answering:
 - Does Donkey have station_status, free_bike_status, or both?

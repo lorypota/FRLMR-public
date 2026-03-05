@@ -1,4 +1,8 @@
-"""Build an index of saved artifacts under empirical_analysis/output."""
+"""Build an index of saved artifacts under empirical_analysis/output.
+
+Run:
+    uv run python preliminary_studies/empirical_analysis/artifact_index.py
+"""
 
 import argparse
 import csv

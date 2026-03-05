@@ -2,6 +2,9 @@
 Amsterdam Interactive PC4 Map with Time Slider
 ==============================================
 
+Run:
+    uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4_timeslider.py
+
 Same logic as map_den_haag_pc4_timeslider.py but for Amsterdam using donkey_am.
 
 Key differences from Den Haag:

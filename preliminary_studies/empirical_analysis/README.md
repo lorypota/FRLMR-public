@@ -10,6 +10,7 @@ This folder contains small scripts used to inspect Donkey GBFS snapshots and bui
 - `map_den_haag_pc4_timeslider.py`: build Den Haag PC4 map with date/hour controls.
 - `map_amsterdam_pc4_timeslider.py`: build Amsterdam PC4 map with date/hour controls.
 - `artifact_index.py`: rebuild output artifact index files.
+- `build_data_tables.py`: parse raw tar snapshots into docked/dockless CSV tables.
 - `data_utils.py`: shared data parsing and loading utilities.
 - `paths.py`: shared output folder paths.
 
@@ -50,6 +51,12 @@ If you only want to override one run:
 
 ```bash
 uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py --data-root /path/to/snapshots
+```
+
+To parse all available raw snapshots into CSV tables in one command:
+
+```bash
+uv run python preliminary_studies/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
 ```
 
 ## Output Structure

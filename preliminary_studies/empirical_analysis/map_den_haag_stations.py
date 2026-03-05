@@ -2,6 +2,9 @@
 Task 2: Map Den Haag Donkey Stations
 =====================================
 
+Run:
+    uv run python preliminary_studies/empirical_analysis/map_den_haag_stations.py
+
 Filters stations from station_information.json that fall within Den Haag's
 bounding box (lat 52.03-52.12, lon 4.22-4.38) and plots them on an
 interactive folium map, color-coded by capacity.

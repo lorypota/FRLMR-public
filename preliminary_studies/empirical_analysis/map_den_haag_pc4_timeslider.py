@@ -2,6 +2,9 @@
 Task 2b: Interactive PC4 Map with Time Slider (All Available Bikes)
 ====================================================================
 
+Run:
+    uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py
+
 Creates an interactive folium map showing Den Haag's 4-digit postcode (PC4)
 areas as polygons, colored by the total number of available Donkey bikes
 (docked + dockless) in each area.

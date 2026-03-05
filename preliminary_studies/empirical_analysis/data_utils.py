@@ -2,6 +2,9 @@
 Donkey Bike-Sharing Data Utilities
 ===================================
 
+Usage:
+    Import-only helper module used by empirical_analysis scripts.
+
 Shared functions for extracting and parsing Donkey GBFS data from tar.gz
 snapshots. The data files use Python dict syntax (not JSON), so we parse
 with ast.literal_eval().

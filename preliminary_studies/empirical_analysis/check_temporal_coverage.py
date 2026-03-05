@@ -2,6 +2,10 @@
 Check Temporal Coverage
 ================================
 
+Run:
+    uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py
+    uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py --data-root /full/path/to/snapshots
+
 Analyzes the directory structure of the Donkey data to understand:
 - What date range is available
 - How many snapshots per hour/day
