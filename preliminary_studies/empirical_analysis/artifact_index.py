@@ -51,6 +51,8 @@ def _iter_artifacts(output_dir: Path) -> list[dict]:
                 artifact_type = "docked_data"
             elif parts[1] in {"dockless", "free_bikes"}:
                 artifact_type = "dockless_data"
+            elif parts[1] == "stations":
+                artifact_type = "stations_data"
         elif parts[0] == "maps":
             artifact_type = "map"
             lower_name = path.name.lower()

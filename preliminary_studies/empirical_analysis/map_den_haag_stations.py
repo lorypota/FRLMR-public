@@ -3,11 +3,12 @@ Task 2: Map Den Haag Donkey Stations
 =====================================
 
 Run:
+    uv run python preliminary_studies/empirical_analysis/build_data_tables.py
     uv run python preliminary_studies/empirical_analysis/map_den_haag_stations.py
 
-Filters stations from station_information.json that fall within Den Haag's
-bounding box (lat 52.03-52.12, lon 4.22-4.38) and plots them on an
-interactive folium map, color-coded by capacity.
+Loads processed station metadata from output/data/stations and filters stations
+within Den Haag's bounding box (lat 52.03-52.12, lon 4.22-4.38). It then
+plots an interactive folium map, color-coded by capacity.
 
 Output:
     output/maps/den_haag_stations.html
@@ -16,20 +17,20 @@ Output:
 import argparse
 import os
 import sys
+from datetime import datetime
 
 import folium
+import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from artifact_index import rebuild_artifact_index
 from data_utils import (
-    DEFAULT_DATA_ROOT,
     DEN_HAAG_BBOX,
     DEN_HAAG_CENTER,
-    filter_den_haag_stations,
-    get_station_info,
-    list_tar_files,
+    filter_by_bbox,
 )
-from paths import MAPS_DIR, ensure_output_dirs
+from paths import DATA_DIR, MAPS_DIR, ensure_output_dirs
+from processed_data_utils import discover_station_dates, latest_date, load_station_day
 
 
 def capacity_color(cap: int) -> str:
@@ -48,26 +49,67 @@ def main():
     ensure_output_dirs()
 
     parser = argparse.ArgumentParser(description="Map Den Haag Donkey stations")
-    parser.add_argument("--data-root", default=DEFAULT_DATA_ROOT)
     parser.add_argument(
-        "--output", default=str(MAPS_DIR / "den_haag_stations.html")
+        "--data-dir",
+        default=str(DATA_DIR),
+        help="Directory with processed tables (default: output/data).",
     )
+    parser.add_argument(
+        "--date",
+        default=None,
+        help="Date to map in YYYY-MM-DD format. Default: latest available.",
+    )
+    parser.add_argument("--output", default=str(MAPS_DIR / "den_haag_stations.html"))
     args = parser.parse_args()
 
-    # Load station info from first snapshot of Jan 1
-    files = list_tar_files(args.data_root, 2025, 1, 1, hour=0)
-    if not files:
-        print("No data files found.")
+    station_dates = discover_station_dates(args.data_dir, provider="donkey_denHaag")
+    if not station_dates:
+        print("No processed station metadata found for donkey_denHaag.")
+        print("Run build_data_tables.py first.")
         return
 
-    all_stations = get_station_info(files[0])
-    if all_stations is None:
-        print("Failed to parse station_information.")
+    if args.date:
+        try:
+            dt = datetime.strptime(args.date, "%Y-%m-%d")
+            selected_date = (dt.year, dt.month, dt.day)
+        except ValueError:
+            print(f"Invalid --date: {args.date} (expected YYYY-MM-DD)")
+            return
+        if selected_date not in station_dates:
+            print(f"No station metadata for date {args.date}")
+            return
+    else:
+        selected_date = latest_date(station_dates)
+        if selected_date is None:
+            print("No station metadata dates found.")
+            return
+
+    year, month, day = selected_date
+    all_stations_df = load_station_day(
+        args.data_dir,
+        provider="donkey_denHaag",
+        year=year,
+        month=month,
+        day=day,
+    )
+    if all_stations_df is None or all_stations_df.empty:
+        print("Failed to load station metadata table.")
         return
 
-    dh_stations = filter_den_haag_stations(all_stations)
+    needed = {"station_id", "name", "lat", "lon", "capacity"}
+    if not needed.issubset(all_stations_df.columns):
+        print("Station metadata missing required columns.")
+        return
+
+    all_stations_df["lat"] = pd.to_numeric(all_stations_df["lat"], errors="coerce")
+    all_stations_df["lon"] = pd.to_numeric(all_stations_df["lon"], errors="coerce")
+    all_stations_df = all_stations_df.dropna(subset=["lat", "lon"])
+    all_stations = all_stations_df[list(needed)].to_dict("records")
+
+    dh_stations = filter_by_bbox(all_stations, DEN_HAAG_BBOX)
     print(f"Total stations: {len(all_stations)}")
     print(f"Den Haag stations (in bbox): {len(dh_stations)}")
+    print(f"Date used: {year}-{month:02d}-{day:02d}")
 
     # Create map
     m = folium.Map(location=DEN_HAAG_CENTER, zoom_start=13, tiles="OpenStreetMap")
@@ -88,12 +130,13 @@ def main():
 
     # Add station markers
     for s in dh_stations:
-        color = capacity_color(s["capacity"])
-        radius = max(4, s["capacity"] * 0.6)
+        cap = int(s["capacity"]) if pd.notna(s["capacity"]) else 0
+        color = capacity_color(cap)
+        radius = max(4, cap * 0.6)
         popup_text = (
             f"<b>{s['name']}</b><br>"
             f"ID: {s['station_id']}<br>"
-            f"Capacity: {s['capacity']}<br>"
+            f"Capacity: {cap}<br>"
             f"Lat: {s['lat']:.6f}<br>"
             f"Lon: {s['lon']:.6f}"
         )

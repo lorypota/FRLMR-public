@@ -3,9 +3,11 @@ Amsterdam Interactive PC4 Map with Time Slider
 ==============================================
 
 Run:
+    uv run python preliminary_studies/empirical_analysis/build_data_tables.py
     uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4_timeslider.py
 
-Same logic as map_den_haag_pc4_timeslider.py but for Amsterdam using donkey_am.
+Same logic as map_den_haag_pc4_timeslider.py but for Amsterdam using processed
+tables in `output/data`.
 
 Key differences from Den Haag:
     - Provider: donkey_am (station-only, no free floating bikes)
@@ -33,20 +35,18 @@ from data_utils import (
     AMSTERDAM_BBOX,
     AMSTERDAM_CENTER,
     AMSTERDAM_PROVIDER,
-    DEFAULT_DATA_ROOT,
-    discover_available_dates,
-    discover_available_hours,
     filter_by_bbox,
-    get_station_info,
-    get_station_status,
-    list_tar_files,
-    load_day_availability,
 )
 from paths import (
+    DATA_DIR,
     GEODATA_DIR,
     MAPS_DIR,
     ensure_output_dirs,
-    provider_docked_data_dir,
+)
+from processed_data_utils import (
+    discover_docked_dates,
+    load_docked_day,
+    load_station_day,
 )
 
 PC4_CACHE = str(GEODATA_DIR / "pc4_amsterdam.geojson")
@@ -85,58 +85,32 @@ def download_pc4_polygons(bbox: dict, cache_path: str) -> gpd.GeoDataFrame:
 
 
 def process_date(
-    data_root: str,
+    data_dir: str,
     year: int,
     month: int,
     day: int,
     pc4_gdf: gpd.GeoDataFrame,
-    docked_data_dir: str,
 ) -> dict | None:
-    """Process one date's data for Amsterdam. Returns dict with hours, counts, stations."""
+    """Process one date's processed tables for Amsterdam."""
     date_str = f"{year}-{month:02d}-{day:02d}"
-    hours = discover_available_hours(
-        data_root,
-        year,
-        month,
-        day,
-        provider=AMSTERDAM_PROVIDER,
-    )
-    if not hours:
-        print(f"  {date_str}: no data found, skipping")
-        return None
-    max_hour = max(hours)
-    print(f"\n  Processing {date_str} (hours {hours[0]}-{max_hour})...")
 
-    # Station info from first available hour
-    files = list_tar_files(
-        data_root,
-        year,
-        month,
-        day,
-        hour=hours[0],
-        provider=AMSTERDAM_PROVIDER,
-    )
-    if not files:
+    stations_df = load_station_day(data_dir, AMSTERDAM_PROVIDER, year, month, day)
+    if stations_df is None or stations_df.empty:
+        print(f"  {date_str}: station metadata not found, skipping")
         return None
-    all_stations = get_station_info(files[0])
-    if not all_stations:
+
+    required_station_cols = {"station_id", "name", "lat", "lon", "capacity"}
+    if not required_station_cols.issubset(stations_df.columns):
+        print(f"  {date_str}: station metadata columns missing, skipping")
         return None
+
+    all_stations = stations_df[list(required_station_cols)].to_dict("records")
     am_stations = filter_by_bbox(all_stations, AMSTERDAM_BBOX)
+    if not am_stations:
+        print(f"  {date_str}: no stations in bbox, skipping")
+        return None
 
-    # donkey_am doesn't have 'capacity' in station_info — compute from status
-    statuses = get_station_status(files[0])
-    if statuses:
-        status_map = {s["station_id"]: s for s in statuses}
-        for s in am_stations:
-            st = status_map.get(s["station_id"], {})
-            s["capacity"] = st.get("num_bikes_available", 0) + st.get(
-                "num_docks_available", 0
-            )
-    else:
-        for s in am_stations:
-            s.setdefault("capacity", 0)
-
-    am_station_ids = {s["station_id"] for s in am_stations}
+    am_station_ids = {str(s["station_id"]) for s in am_stations}
     print(f"    Stations: {len(am_stations)}")
 
     # Spatial join stations to PC4
@@ -156,17 +130,20 @@ def process_date(
         if pd.notna(row["postcode"]):
             station_to_pc4[row["station_id"]] = int(row["postcode"])
 
-    # Load docked-bike counts (hourly)
+    # Load docked-bike counts table.
     print("    Loading docked-bike data...")
-    df_avail = load_day_availability(
-        data_root,
-        year,
-        month,
-        day,
-        cache_dir=docked_data_dir,
-        provider=AMSTERDAM_PROVIDER,
-    )
+    df_avail = load_docked_day(data_dir, AMSTERDAM_PROVIDER, year, month, day)
+    if df_avail is None or df_avail.empty:
+        print(f"  {date_str}: docked table not found, skipping")
+        return None
+    df_avail.columns = df_avail.columns.map(str)
     df_hourly = df_avail.resample("h").first()
+    hours = sorted({int(ts.hour) for ts in df_hourly.index})
+    if not hours:
+        print(f"  {date_str}: no hourly docked data, skipping")
+        return None
+    max_hour = max(hours)
+    print(f"\n  Processing {date_str} (hours {hours[0]}-{max_hour})...")
 
     hour_to_row = {}
     for ts in df_hourly.index:
@@ -207,7 +184,7 @@ def process_date(
             {
                 "ll": [round(s["lat"], 6), round(s["lon"], 6)],
                 "n": s["name"],
-                "cap": s["capacity"],
+                "cap": int(s["capacity"]) if pd.notna(s["capacity"]) else 0,
                 "pc": pc4,
                 "av": hourly_avail,
             }
@@ -225,22 +202,31 @@ def main():
     ensure_output_dirs()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-root", default=DEFAULT_DATA_ROOT)
+    parser.add_argument(
+        "--data-dir",
+        default=str(DATA_DIR),
+        help="Directory with processed tables (default: output/data).",
+    )
     parser.add_argument(
         "--output",
         default=str(MAPS_DIR / "amsterdam_pc4_timeslider.html"),
     )
     args = parser.parse_args()
+    data_dir = args.data_dir
+    if not os.path.exists(data_dir):
+        print(f"Processed data directory not found: {data_dir}")
+        print("Run build_data_tables.py first to generate output/data tables.")
+        return
 
     # Step 1: PC4 polygons
     print("Step 1: Loading PC4 polygon boundaries...")
     pc4_gdf = download_pc4_polygons(AMSTERDAM_BBOX, PC4_CACHE)
 
-    # Step 2: Auto-discover available dates
-    print("\nStep 2: Discovering available dates...")
-    dates = discover_available_dates(args.data_root, provider=AMSTERDAM_PROVIDER)
+    # Step 2: Auto-discover available dates from processed docked tables
+    print("\nStep 2: Discovering available dates from processed data...")
+    dates = discover_docked_dates(data_dir, provider=AMSTERDAM_PROVIDER)
     if not dates:
-        print("  No donkey_am data found!")
+        print("  No processed donkey_am docked tables found!")
         return
     for y, m, d in dates:
         print(f"  Found: {y}-{m:02d}-{d:02d}")
@@ -248,22 +234,24 @@ def main():
     # Step 3: Process each date
     print("\nStep 3: Processing data for each date...")
     all_date_data = {}
-    docked_data_dir = str(provider_docked_data_dir(AMSTERDAM_PROVIDER))
     for year, month, day in dates:
         date_str = f"{year}-{month:02d}-{day:02d}"
         data = process_date(
-            args.data_root,
+            data_dir,
             year,
             month,
             day,
             pc4_gdf,
-            docked_data_dir,
         )
         if data:
             all_date_data[date_str] = data
 
     if not all_date_data:
         print("  No valid date data processed!")
+        print(
+            "  Ensure station tables exist under output/data/stations. "
+            "Run build_data_tables.py if needed."
+        )
         return
 
     sorted_dates = sorted(all_date_data.keys())

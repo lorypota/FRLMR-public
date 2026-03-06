@@ -276,9 +276,7 @@ def load_day_availability(
         for legacy_path in legacy_paths:
             if legacy_path != preferred_cache_path and os.path.exists(legacy_path):
                 print(f"  Loading legacy docked-bike table: {legacy_path}")
-                return pd.read_csv(
-                    legacy_path, index_col="timestamp", parse_dates=True
-                )
+                return pd.read_csv(legacy_path, index_col="timestamp", parse_dates=True)
     else:
         preferred_cache_path = None
 
@@ -328,6 +326,9 @@ def discover_available_dates(
     prefix = f"{provider}_fietsData_"
     dates = []
     base = Path(base_dir)
+    if not base.exists():
+        print(f"Data root does not exist: {base}")
+        return dates
     for year_dir in sorted(base.iterdir()):
         if not year_dir.is_dir():
             continue

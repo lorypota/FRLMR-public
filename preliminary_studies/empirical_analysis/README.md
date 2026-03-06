@@ -10,18 +10,19 @@ This folder contains small scripts used to inspect Donkey GBFS snapshots and bui
 - `map_den_haag_pc4_timeslider.py`: build Den Haag PC4 map with date/hour controls.
 - `map_amsterdam_pc4_timeslider.py`: build Amsterdam PC4 map with date/hour controls.
 - `artifact_index.py`: rebuild output artifact index files.
-- `build_data_tables.py`: parse raw tar snapshots into docked/dockless CSV tables.
+- `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
 - `data_utils.py`: shared data parsing and loading utilities.
+- `processed_data_utils.py`: helpers for reading processed CSV tables.
 - `paths.py`: shared output folder paths.
 
 ## How To Run
 
 From repository root (after cloning):
 
-- scripts look for raw snapshots in this order:
-  1. `--data-root` argument (per command)
-  2. `DONKEY_DATA_ROOT` environment variable (session/global override)
-  3. default `./data` (repo-relative fallback)
+Raw-processing scripts (`inspect_snapshot.py`, `check_temporal_coverage.py`, `build_data_tables.py`) look for raw snapshots in this order:
+1. `--data-root` argument (per command)
+2. `DONKEY_DATA_ROOT` environment variable (session/global override)
+3. default `./data` (repo-relative fallback)
 
 Data root means the folder that contains the date tree:
 
@@ -30,11 +31,12 @@ Data root means the folder that contains the date tree:
   YYYY/MM/DD/HH/<provider>_fietsData_YYYYMMDDHHMM.tar.gz
 ```
 
-If your data is in `./data`, you do not need extra flags:
+If raw data is in `./data`, you do not need extra flags:
 
 ```bash
 uv run python preliminary_studies/empirical_analysis/inspect_snapshot.py
 uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py
+uv run python preliminary_studies/empirical_analysis/build_data_tables.py
 uv run python preliminary_studies/empirical_analysis/map_den_haag_stations.py
 uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py
 uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4_timeslider.py
@@ -53,10 +55,17 @@ If you only want to override one run:
 uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py --data-root /path/to/snapshots
 ```
 
-To parse all available raw snapshots into CSV tables in one command:
+To parse all available raw snapshots into processed tables in one command:
 
 ```bash
 uv run python preliminary_studies/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
+```
+
+After preprocessing, map scripts use only `output/data` (not raw snapshots).
+Optional override if processed tables are elsewhere:
+
+```bash
+uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py --data-dir /path/to/processed/output/data
 ```
 
 ## Output Structure
@@ -74,6 +83,11 @@ output/
     dockless/
       donkey_denHaag/
         dockless_YYYYMMDD.csv
+    stations/
+      donkey_denHaag/
+        stations_YYYYMMDD.csv
+      donkey_am/
+        stations_YYYYMMDD.csv
   maps/
     den_haag_stations.html
     den_haag_pc4_timeslider.html
@@ -89,6 +103,7 @@ output/
 Category meaning:
 - `docked`: station-based bike counts from `station_status`
 - `dockless`: free-floating bike positions from `free_bike_status`
+- `stations`: station metadata (`station_id`, `name`, `lat`, `lon`, `capacity`)
 
 ## Artifact Indexing
 

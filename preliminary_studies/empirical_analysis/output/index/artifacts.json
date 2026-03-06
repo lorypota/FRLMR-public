@@ -6,7 +6,7 @@
     "date": "2025-01-01",
     "path": "data/docked/donkey_am/docked_20250101.csv",
     "size_bytes": 457377,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:55:15Z"
   },
   {
     "artifact_type": "docked_data",
@@ -15,7 +15,7 @@
     "date": "2025-01-02",
     "path": "data/docked/donkey_am/docked_20250102.csv",
     "size_bytes": 457682,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:56:23Z"
   },
   {
     "artifact_type": "docked_data",
@@ -24,7 +24,7 @@
     "date": "2025-01-03",
     "path": "data/docked/donkey_am/docked_20250103.csv",
     "size_bytes": 144567,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:56:42Z"
   },
   {
     "artifact_type": "docked_data",
@@ -33,7 +33,7 @@
     "date": "2025-01-28",
     "path": "data/docked/donkey_am/docked_20250128.csv",
     "size_bytes": 468400,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:57:45Z"
   },
   {
     "artifact_type": "docked_data",
@@ -42,7 +42,7 @@
     "date": "2025-01-29",
     "path": "data/docked/donkey_am/docked_20250129.csv",
     "size_bytes": 467203,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:58:52Z"
   },
   {
     "artifact_type": "docked_data",
@@ -51,7 +51,7 @@
     "date": "2025-01-30",
     "path": "data/docked/donkey_am/docked_20250130.csv",
     "size_bytes": 464536,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T11:00:31Z"
   },
   {
     "artifact_type": "docked_data",
@@ -60,7 +60,7 @@
     "date": "2025-01-31",
     "path": "data/docked/donkey_am/docked_20250131.csv",
     "size_bytes": 462531,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T11:01:49Z"
   },
   {
     "artifact_type": "docked_data",
@@ -69,7 +69,7 @@
     "date": "2026-03-01",
     "path": "data/docked/donkey_am/docked_20260301.csv",
     "size_bytes": 111836,
-    "modified_at_utc": "2026-03-05T15:38:50Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -78,7 +78,7 @@
     "date": "2026-03-02",
     "path": "data/docked/donkey_am/docked_20260302.csv",
     "size_bytes": 111407,
-    "modified_at_utc": "2026-03-05T15:38:51Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -87,7 +87,7 @@
     "date": "2026-03-03",
     "path": "data/docked/donkey_am/docked_20260303.csv",
     "size_bytes": 112482,
-    "modified_at_utc": "2026-03-05T15:38:53Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -96,7 +96,7 @@
     "date": "2026-03-04",
     "path": "data/docked/donkey_am/docked_20260304.csv",
     "size_bytes": 112414,
-    "modified_at_utc": "2026-03-05T15:38:54Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -105,7 +105,7 @@
     "date": "2026-03-05",
     "path": "data/docked/donkey_am/docked_20260305.csv",
     "size_bytes": 52207,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T11:02:02Z"
   },
   {
     "artifact_type": "docked_data",
@@ -114,7 +114,7 @@
     "date": "2025-01-01",
     "path": "data/docked/donkey_denHaag/docked_20250101.csv",
     "size_bytes": 763295,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-04T14:58:02Z"
   },
   {
     "artifact_type": "docked_data",
@@ -123,7 +123,7 @@
     "date": "2025-01-02",
     "path": "data/docked/donkey_denHaag/docked_20250102.csv",
     "size_bytes": 665959,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:37:44Z"
   },
   {
     "artifact_type": "docked_data",
@@ -132,7 +132,7 @@
     "date": "2025-01-03",
     "path": "data/docked/donkey_denHaag/docked_20250103.csv",
     "size_bytes": 241172,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:42:16Z"
   },
   {
     "artifact_type": "docked_data",
@@ -141,7 +141,7 @@
     "date": "2025-01-28",
     "path": "data/docked/donkey_denHaag/docked_20250128.csv",
     "size_bytes": 764205,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:28:43Z"
   },
   {
     "artifact_type": "docked_data",
@@ -150,7 +150,7 @@
     "date": "2025-01-29",
     "path": "data/docked/donkey_denHaag/docked_20250129.csv",
     "size_bytes": 764735,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:30:22Z"
   },
   {
     "artifact_type": "docked_data",
@@ -159,7 +159,7 @@
     "date": "2025-01-30",
     "path": "data/docked/donkey_denHaag/docked_20250130.csv",
     "size_bytes": 762284,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:33:09Z"
   },
   {
     "artifact_type": "docked_data",
@@ -168,7 +168,7 @@
     "date": "2025-01-31",
     "path": "data/docked/donkey_denHaag/docked_20250131.csv",
     "size_bytes": 761315,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:35:05Z"
   },
   {
     "artifact_type": "docked_data",
@@ -177,7 +177,7 @@
     "date": "2026-03-01",
     "path": "data/docked/donkey_denHaag/docked_20260301.csv",
     "size_bytes": 1000127,
-    "modified_at_utc": "2026-03-05T15:35:39Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -186,7 +186,7 @@
     "date": "2026-03-02",
     "path": "data/docked/donkey_denHaag/docked_20260302.csv",
     "size_bytes": 1070743,
-    "modified_at_utc": "2026-03-05T15:36:32Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -195,7 +195,7 @@
     "date": "2026-03-03",
     "path": "data/docked/donkey_denHaag/docked_20260303.csv",
     "size_bytes": 1060004,
-    "modified_at_utc": "2026-03-05T15:37:24Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -204,7 +204,7 @@
     "date": "2026-03-04",
     "path": "data/docked/donkey_denHaag/docked_20260304.csv",
     "size_bytes": 1059614,
-    "modified_at_utc": "2026-03-05T15:38:16Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -213,7 +213,7 @@
     "date": "2026-03-05",
     "path": "data/docked/donkey_denHaag/docked_20260305.csv",
     "size_bytes": 490056,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:43:19Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -222,7 +222,7 @@
     "date": "2025-01-01",
     "path": "data/dockless/donkey_denHaag/dockless_20250101.csv",
     "size_bytes": 21888970,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-04T15:13:28Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -231,7 +231,7 @@
     "date": "2025-01-02",
     "path": "data/dockless/donkey_denHaag/dockless_20250102.csv",
     "size_bytes": 23742975,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:38:16Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -240,7 +240,7 @@
     "date": "2025-01-03",
     "path": "data/dockless/donkey_denHaag/dockless_20250103.csv",
     "size_bytes": 8492345,
-    "modified_at_utc": "2026-03-05T15:23:03Z"
+    "modified_at_utc": "2026-03-05T10:42:27Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -249,7 +249,7 @@
     "date": "2025-01-28",
     "path": "data/dockless/donkey_denHaag/dockless_20250128.csv",
     "size_bytes": 29550165,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "modified_at_utc": "2026-03-05T10:29:01Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -258,7 +258,7 @@
     "date": "2025-01-29",
     "path": "data/dockless/donkey_denHaag/dockless_20250129.csv",
     "size_bytes": 29828107,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "modified_at_utc": "2026-03-05T10:31:32Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -267,7 +267,7 @@
     "date": "2025-01-30",
     "path": "data/dockless/donkey_denHaag/dockless_20250130.csv",
     "size_bytes": 29395305,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "modified_at_utc": "2026-03-05T10:33:51Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -276,7 +276,7 @@
     "date": "2025-01-31",
     "path": "data/dockless/donkey_denHaag/dockless_20250131.csv",
     "size_bytes": 28977371,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "modified_at_utc": "2026-03-05T10:35:37Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -285,7 +285,7 @@
     "date": "2026-03-01",
     "path": "data/dockless/donkey_denHaag/dockless_20260301.csv",
     "size_bytes": 48027461,
-    "modified_at_utc": "2026-03-05T15:36:13Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -294,7 +294,7 @@
     "date": "2026-03-02",
     "path": "data/dockless/donkey_denHaag/dockless_20260302.csv",
     "size_bytes": 46708762,
-    "modified_at_utc": "2026-03-05T15:37:04Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -303,7 +303,7 @@
     "date": "2026-03-03",
     "path": "data/dockless/donkey_denHaag/dockless_20260303.csv",
     "size_bytes": 46688271,
-    "modified_at_utc": "2026-03-05T15:37:56Z"
+    "modified_at_utc": "2026-03-05T15:49:49Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -312,7 +312,7 @@
     "date": "2026-03-04",
     "path": "data/dockless/donkey_denHaag/dockless_20260304.csv",
     "size_bytes": 46837921,
-    "modified_at_utc": "2026-03-05T15:38:48Z"
+    "modified_at_utc": "2026-03-05T15:49:49Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -321,7 +321,7 @@
     "date": "2026-03-05",
     "path": "data/dockless/donkey_denHaag/dockless_20260305.csv",
     "size_bytes": 21958914,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "modified_at_utc": "2026-03-05T10:43:52Z"
   },
   {
     "artifact_type": "geodata",
@@ -329,8 +329,8 @@
     "city": "amsterdam",
     "date": "",
     "path": "geodata/pc4_amsterdam.geojson",
-    "size_bytes": 1608541,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "size_bytes": 1608432,
+    "modified_at_utc": "2026-03-05T10:54:05Z"
   },
   {
     "artifact_type": "geodata",
@@ -338,8 +338,8 @@
     "city": "den_haag",
     "date": "",
     "path": "geodata/pc4_den_haag.geojson",
-    "size_bytes": 1995019,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "size_bytes": 1994929,
+    "modified_at_utc": "2026-03-05T09:32:32Z"
   },
   {
     "artifact_type": "map",
@@ -347,8 +347,8 @@
     "city": "amsterdam",
     "date": "",
     "path": "maps/amsterdam_pc4_timeslider.html",
-    "size_bytes": 1084461,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "size_bytes": 1084020,
+    "modified_at_utc": "2026-03-05T12:25:44Z"
   },
   {
     "artifact_type": "map",
@@ -356,8 +356,8 @@
     "city": "den_haag",
     "date": "",
     "path": "maps/den_haag_pc4_timeslider.html",
-    "size_bytes": 2948837,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "size_bytes": 2929884,
+    "modified_at_utc": "2026-03-06T12:31:16Z"
   },
   {
     "artifact_type": "map",
@@ -365,7 +365,151 @@
     "city": "den_haag",
     "date": "",
     "path": "maps/den_haag_stations.html",
-    "size_bytes": 345427,
-    "modified_at_utc": "2026-03-05T15:23:04Z"
+    "size_bytes": 337043,
+    "modified_at_utc": "2026-03-04T14:54:41Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-01",
+    "path": "data/stations/donkey_am/stations_20250101.csv",
+    "size_bytes": 6894,
+    "modified_at_utc": "2026-03-06T12:28:21Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-02",
+    "path": "data/stations/donkey_am/stations_20250102.csv",
+    "size_bytes": 6891,
+    "modified_at_utc": "2026-03-06T12:28:21Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-03",
+    "path": "data/stations/donkey_am/stations_20250103.csv",
+    "size_bytes": 6891,
+    "modified_at_utc": "2026-03-06T12:28:21Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-28",
+    "path": "data/stations/donkey_am/stations_20250128.csv",
+    "size_bytes": 6895,
+    "modified_at_utc": "2026-03-06T12:28:22Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-29",
+    "path": "data/stations/donkey_am/stations_20250129.csv",
+    "size_bytes": 6897,
+    "modified_at_utc": "2026-03-06T12:28:22Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-30",
+    "path": "data/stations/donkey_am/stations_20250130.csv",
+    "size_bytes": 6897,
+    "modified_at_utc": "2026-03-06T12:28:22Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2025-01-31",
+    "path": "data/stations/donkey_am/stations_20250131.csv",
+    "size_bytes": 6894,
+    "modified_at_utc": "2026-03-06T12:28:22Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_am",
+    "city": "",
+    "date": "2026-03-05",
+    "path": "data/stations/donkey_am/stations_20260305.csv",
+    "size_bytes": 2959,
+    "modified_at_utc": "2026-03-06T12:28:22Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-01",
+    "path": "data/stations/donkey_denHaag/stations_20250101.csv",
+    "size_bytes": 12452,
+    "modified_at_utc": "2026-03-06T12:28:17Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-02",
+    "path": "data/stations/donkey_denHaag/stations_20250102.csv",
+    "size_bytes": 12452,
+    "modified_at_utc": "2026-03-06T12:28:18Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-03",
+    "path": "data/stations/donkey_denHaag/stations_20250103.csv",
+    "size_bytes": 12452,
+    "modified_at_utc": "2026-03-06T12:28:18Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-28",
+    "path": "data/stations/donkey_denHaag/stations_20250128.csv",
+    "size_bytes": 12468,
+    "modified_at_utc": "2026-03-06T12:28:19Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-29",
+    "path": "data/stations/donkey_denHaag/stations_20250129.csv",
+    "size_bytes": 12468,
+    "modified_at_utc": "2026-03-06T12:28:19Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-30",
+    "path": "data/stations/donkey_denHaag/stations_20250130.csv",
+    "size_bytes": 12468,
+    "modified_at_utc": "2026-03-06T12:28:20Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2025-01-31",
+    "path": "data/stations/donkey_denHaag/stations_20250131.csv",
+    "size_bytes": 12468,
+    "modified_at_utc": "2026-03-06T12:28:20Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2026-03-05",
+    "path": "data/stations/donkey_denHaag/stations_20260305.csv",
+    "size_bytes": 31772,
+    "modified_at_utc": "2026-03-06T12:28:21Z"
   }
 ]

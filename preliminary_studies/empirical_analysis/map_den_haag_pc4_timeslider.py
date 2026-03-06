@@ -3,13 +3,15 @@ Task 2b: Interactive PC4 Map with Time Slider (All Available Bikes)
 ====================================================================
 
 Run:
+    uv run python preliminary_studies/empirical_analysis/build_data_tables.py
     uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py
 
 Creates an interactive folium map showing Den Haag's 4-digit postcode (PC4)
 areas as polygons, colored by the total number of available Donkey bikes
 (docked + dockless) in each area.
 
-Auto-discovers all available dates from the data directory. A date dropdown
+Auto-discovers all available dates from processed docked tables in `output/data`.
+A date dropdown
 and hour slider let the user explore any date/hour combination. The slider
 adapts to the available hours for each date.
 
@@ -43,24 +45,22 @@ from shapely.geometry import Point
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from artifact_index import rebuild_artifact_index
 from data_utils import (
-    DEFAULT_DATA_ROOT,
     DEN_HAAG_BBOX,
     DEN_HAAG_CENTER,
     PROVIDER,
-    discover_available_dates,
-    discover_available_hours,
-    filter_den_haag_stations,
-    get_station_info,
-    list_tar_files,
-    load_day_availability,
-    load_day_free_bikes,
+    filter_by_bbox,
 )
 from paths import (
+    DATA_DIR,
     GEODATA_DIR,
     MAPS_DIR,
     ensure_output_dirs,
-    provider_docked_data_dir,
-    provider_dockless_data_dir,
+)
+from processed_data_utils import (
+    discover_docked_dates,
+    load_docked_day,
+    load_dockless_day,
+    load_station_day,
 )
 
 PC4_CACHE = str(GEODATA_DIR / "pc4_den_haag.geojson")
@@ -99,32 +99,31 @@ def download_pc4_polygons(bbox: dict, cache_path: str) -> gpd.GeoDataFrame:
 
 
 def process_date(
-    data_root: str,
+    data_dir: str,
     year: int,
     month: int,
     day: int,
     pc4_gdf: gpd.GeoDataFrame,
-    docked_data_dir: str,
-    dockless_data_dir: str,
 ) -> dict | None:
-    """Process one date's data. Returns dict with hours, counts, bikes, stations."""
+    """Process one date's processed tables. Returns dict with hours/counts/bikes/stations."""
     date_str = f"{year}-{month:02d}-{day:02d}"
-    hours = discover_available_hours(data_root, year, month, day)
-    if not hours:
-        print(f"  {date_str}: no data found, skipping")
+    stations_df = load_station_day(data_dir, PROVIDER, year, month, day)
+    if stations_df is None or stations_df.empty:
+        print(f"  {date_str}: station metadata not found, skipping")
         return None
-    max_hour = max(hours)
-    print(f"\n  Processing {date_str} (hours {hours[0]}-{max_hour})...")
 
-    # Station info from first available hour
-    files = list_tar_files(data_root, year, month, day, hour=hours[0])
-    if not files:
+    required_station_cols = {"station_id", "name", "lat", "lon", "capacity"}
+    if not required_station_cols.issubset(stations_df.columns):
+        print(f"  {date_str}: station metadata columns missing, skipping")
         return None
-    all_stations = get_station_info(files[0])
-    if not all_stations:
+
+    # Convert to dict records and apply the same Den Haag bbox filter as before.
+    all_stations = stations_df[list(required_station_cols)].to_dict("records")
+    dh_stations = filter_by_bbox(all_stations, DEN_HAAG_BBOX)
+    if not dh_stations:
+        print(f"  {date_str}: no stations in bbox, skipping")
         return None
-    dh_stations = filter_den_haag_stations(all_stations)
-    dh_station_ids = {s["station_id"] for s in dh_stations}
+    dh_station_ids = {str(s["station_id"]) for s in dh_stations}
     print(f"    Stations: {len(dh_stations)}")
 
     # Spatial join stations to PC4
@@ -144,17 +143,20 @@ def process_date(
         if pd.notna(row["postcode"]):
             station_to_pc4[row["station_id"]] = int(row["postcode"])
 
-    # Load docked-bike counts (hourly)
+    # Load docked-bike counts table.
     print("    Loading docked-bike data...")
-    df_avail = load_day_availability(
-        data_root,
-        year,
-        month,
-        day,
-        cache_dir=docked_data_dir,
-        provider=PROVIDER,
-    )
+    df_avail = load_docked_day(data_dir, PROVIDER, year, month, day)
+    if df_avail is None or df_avail.empty:
+        print(f"  {date_str}: docked table not found, skipping")
+        return None
+    df_avail.columns = df_avail.columns.map(str)
     df_hourly = df_avail.resample("h").first()
+    hours = sorted({int(ts.hour) for ts in df_hourly.index})
+    if not hours:
+        print(f"  {date_str}: no hourly docked data, skipping")
+        return None
+    max_hour = max(hours)
+    print(f"\n  Processing {date_str} (hours {hours[0]}-{max_hour})...")
 
     # Build hour-to-row lookup
     hour_to_row = {}
@@ -163,15 +165,9 @@ def process_date(
 
     # Load dockless-bike positions
     print("    Loading dockless-bike data...")
-    bikes_df = load_day_free_bikes(
-        data_root,
-        year,
-        month,
-        day,
-        bbox=DEN_HAAG_BBOX,
-        cache_dir=dockless_data_dir,
-        provider=PROVIDER,
-    )
+    bikes_df = load_dockless_day(data_dir, PROVIDER, year, month, day)
+    if bikes_df is None:
+        bikes_df = pd.DataFrame(columns=["timestamp", "bike_id", "lat", "lon"])
 
     # Initialize counts for all PC4 areas
     counts = {}
@@ -201,8 +197,13 @@ def process_date(
 
     # Dockless-bike processing
     bikes_by_hour = {}
-    if not bikes_df.empty:
+    if not bikes_df.empty and {"timestamp", "bike_id", "lat", "lon"}.issubset(
+        bikes_df.columns
+    ):
         bikes_df["timestamp"] = pd.to_datetime(bikes_df["timestamp"])
+        bikes_df["lat"] = pd.to_numeric(bikes_df["lat"], errors="coerce")
+        bikes_df["lon"] = pd.to_numeric(bikes_df["lon"], errors="coerce")
+        bikes_df = bikes_df.dropna(subset=["timestamp", "bike_id", "lat", "lon"])
         bikes_df["hour_idx"] = bikes_df["timestamp"].dt.hour
 
         bike_gdf = gpd.GeoDataFrame(
@@ -267,7 +268,7 @@ def process_date(
             {
                 "ll": [round(s["lat"], 6), round(s["lon"], 6)],
                 "n": s["name"],
-                "cap": s["capacity"],
+                "cap": int(s["capacity"]) if pd.notna(s["capacity"]) else 0,
                 "pc": pc4,
                 "av": hourly_avail,
             }
@@ -286,22 +287,31 @@ def main():
     ensure_output_dirs()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-root", default=DEFAULT_DATA_ROOT)
+    parser.add_argument(
+        "--data-dir",
+        default=str(DATA_DIR),
+        help="Directory with processed tables (default: output/data).",
+    )
     parser.add_argument(
         "--output",
         default=str(MAPS_DIR / "den_haag_pc4_timeslider.html"),
     )
     args = parser.parse_args()
+    data_dir = args.data_dir
+    if not os.path.exists(data_dir):
+        print(f"Processed data directory not found: {data_dir}")
+        print("Run build_data_tables.py first to generate output/data tables.")
+        return
 
     # Step 1: PC4 polygons
     print("Step 1: Loading PC4 polygon boundaries...")
     pc4_gdf = download_pc4_polygons(DEN_HAAG_BBOX, PC4_CACHE)
 
-    # Step 2: Auto-discover available dates
-    print("\nStep 2: Discovering available dates...")
-    dates = discover_available_dates(args.data_root)
+    # Step 2: Auto-discover available dates from processed docked tables
+    print("\nStep 2: Discovering available dates from processed data...")
+    dates = discover_docked_dates(data_dir, provider=PROVIDER)
     if not dates:
-        print("  No donkey_denHaag data found!")
+        print("  No processed donkey_denHaag docked tables found!")
         return
     for y, m, d in dates:
         print(f"  Found: {y}-{m:02d}-{d:02d}")
@@ -309,24 +319,24 @@ def main():
     # Step 3: Process each date
     print("\nStep 3: Processing data for each date...")
     all_date_data = {}
-    docked_data_dir = str(provider_docked_data_dir(PROVIDER))
-    dockless_data_dir = str(provider_dockless_data_dir(PROVIDER))
     for year, month, day in dates:
         date_str = f"{year}-{month:02d}-{day:02d}"
         data = process_date(
-            args.data_root,
+            data_dir,
             year,
             month,
             day,
             pc4_gdf,
-            docked_data_dir,
-            dockless_data_dir,
         )
         if data:
             all_date_data[date_str] = data
 
     if not all_date_data:
         print("  No valid date data processed!")
+        print(
+            "  Ensure station tables exist under output/data/stations. "
+            "Run build_data_tables.py if needed."
+        )
         return
 
     sorted_dates = sorted(all_date_data.keys())
@@ -718,7 +728,7 @@ def main():
                         .setContent(
                             '<b>PC4 ' + pc + '</b><br>' +
                             'Available bikes: <b>' + total + '</b><br>' +
-                            '&nbsp;&nbsp;At stations: ' + fromStations + '<br>' +
+                            '&nbsp;&nbsp;Docked: ' + fromStations + '<br>' +
                             '&nbsp;&nbsp;Dockless: ' + fromFree
                         )
                         .openOn(map);

@@ -13,6 +13,7 @@ PROJECT_ROOT = ROOT_DIR.parents[1]
 DATA_DIR = OUTPUT_DIR / "data"
 DATA_DOCKED_DIR = DATA_DIR / "docked"
 DATA_DOCKLESS_DIR = DATA_DIR / "dockless"
+DATA_STATIONS_DIR = DATA_DIR / "stations"
 MAPS_DIR = OUTPUT_DIR / "maps"
 GEODATA_DIR = OUTPUT_DIR / "geodata"
 INDEX_DIR = OUTPUT_DIR / "index"
@@ -25,6 +26,7 @@ def ensure_output_dirs() -> None:
     for path in (
         DATA_DOCKED_DIR,
         DATA_DOCKLESS_DIR,
+        DATA_STATIONS_DIR,
         MAPS_DIR,
         GEODATA_DIR,
         INDEX_DIR,
@@ -38,3 +40,7 @@ def provider_docked_data_dir(provider: str) -> Path:
 
 def provider_dockless_data_dir(provider: str) -> Path:
     return DATA_DOCKLESS_DIR / provider
+
+
+def provider_stations_data_dir(provider: str) -> Path:
+    return DATA_STATIONS_DIR / provider
