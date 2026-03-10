@@ -8,8 +8,8 @@ This folder contains small scripts used to inspect Donkey GBFS snapshots and bui
 - `check_temporal_coverage.py`: scan available dates/hours and report missing minutes.
 - `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
 - `map_den_haag_stations.py`: build a Den Haag station map.
-- `map_den_haag_pc4_timeslider.py`: build Den Haag PC4 map with date/hour controls.
-- `map_amsterdam_pc4_timeslider.py`: build Amsterdam PC4 map with date/hour controls.
+- `map_den_haag_pc4.py`: build Den Haag PC4 map with date/hour controls, multiple visualization modes, and an optional side-by-side compare view.
+- `map_amsterdam_pc4.py`: build Amsterdam PC4 map with date/hour controls.
 - `artifact_index.py`: rebuild output artifact index files manually if needed.
 
 ## Internal Helper Modules
@@ -19,6 +19,7 @@ These are used by the runnable scripts above and do not need to be run directly.
 - `internal/data_utils.py`: shared data parsing and loading utilities.
 - `internal/processed_data_utils.py`: helpers for reading processed CSV tables.
 - `internal/paths.py`: shared output folder paths.
+- `internal/pc4_visualizations/`: modules per visualization type (`proportional`, `gradient`, `fixed`, `hotspot`).
 
 ## How To Run
 
@@ -44,8 +45,8 @@ uv run python preliminary_studies/empirical_analysis/inspect_snapshot.py
 uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py
 uv run python preliminary_studies/empirical_analysis/build_data_tables.py
 uv run python preliminary_studies/empirical_analysis/map_den_haag_stations.py
-uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py
-uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4_timeslider.py
+uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4.py
+uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4.py
 ```
 
 If data is outside the repo, set one override for all scripts:
@@ -71,7 +72,7 @@ After preprocessing, map scripts use only `output/data` (not raw snapshots).
 Optional override if processed tables are elsewhere:
 
 ```bash
-uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py --data-dir /path/to/processed/output/data
+uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4.py --data-dir /path/to/processed/output/data
 ```
 
 ## Output Structure
@@ -96,8 +97,8 @@ output/
         stations_YYYYMMDD.csv
   maps/
     den_haag_stations.html
-    den_haag_pc4_timeslider.html
-    amsterdam_pc4_timeslider.html
+    den_haag_pc4.html
+    amsterdam_pc4.html
   geodata/
     pc4_den_haag.geojson
     pc4_amsterdam.geojson

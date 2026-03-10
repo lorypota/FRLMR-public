@@ -1,34 +1,22 @@
 """
-Task 2b: Interactive PC4 Map with Time Slider (All Available Bikes)
-====================================================================
+Amsterdam Interactive PC4 Map with Time Slider
+==============================================
 
 Run:
     uv run python preliminary_studies/empirical_analysis/build_data_tables.py
-    uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4_timeslider.py
+    uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4.py
 
-Creates an interactive folium map showing Den Haag's 4-digit postcode (PC4)
-areas as polygons, colored by the total number of available Donkey bikes
-(docked + dockless) in each area.
+Creates an interactive Folium map showing Amsterdam's 4-digit postcode (PC4)
+areas and bike availability over time with multiple visualization modes.
 
-Auto-discovers all available dates from processed docked tables in `output/data`.
-A date dropdown
-and hour slider let the user explore any date/hour combination. The slider
-adapts to the available hours for each date.
-
-Interactions:
-    - Date dropdown: switches between available dates
-    - Slider: changes hour, updates everything
-    - Click polygon: bold border, popup with bike count breakdown
-    - Hover polygon: thicker border preview
-
-Color scheme (matching den_haag_stations.html):
-    blue   = 0 bikes
-    green  = 1-3 bikes
-    orange = 4-6 bikes
-    red    = 7+ bikes
+Differences from Den Haag's map:
+    - Provider: donkey_am (station-only, no free floating bikes)
+    - Capacity not in station_information, computed from station_status
+    - Different PC4 areas and bbox
+    - Might not work or be not as updated as map of Den Haag (I decided to focus on the latter)
 
 Output:
-    output/maps/den_haag_pc4_timeslider.html
+    output/maps/amsterdam_pc4.html
 """
 
 import argparse
@@ -45,9 +33,9 @@ from shapely.geometry import Point
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from artifact_index import rebuild_artifact_index
 from internal.data_utils import (
-    DEN_HAAG_BBOX,
-    DEN_HAAG_CENTER,
-    PROVIDER,
+    AMSTERDAM_BBOX,
+    AMSTERDAM_CENTER,
+    AMSTERDAM_PROVIDER,
     filter_by_bbox,
 )
 from internal.paths import (
@@ -59,11 +47,10 @@ from internal.paths import (
 from internal.processed_data_utils import (
     discover_docked_dates,
     load_docked_day,
-    load_dockless_day,
     load_station_day,
 )
 
-PC4_CACHE = str(GEODATA_DIR / "pc4_den_haag.geojson")
+PC4_CACHE = str(GEODATA_DIR / "pc4_amsterdam.geojson")
 
 PDOK_URL = (
     "https://api.pdok.nl/cbs/postcode4/ogc/v1/collections/postcode4/items"
@@ -105,9 +92,10 @@ def process_date(
     day: int,
     pc4_gdf: gpd.GeoDataFrame,
 ) -> dict | None:
-    """Process one date's processed tables. Returns dict with hours/counts/bikes/stations."""
+    """Process one date's processed tables for Amsterdam."""
     date_str = f"{year}-{month:02d}-{day:02d}"
-    stations_df = load_station_day(data_dir, PROVIDER, year, month, day)
+
+    stations_df = load_station_day(data_dir, AMSTERDAM_PROVIDER, year, month, day)
     if stations_df is None or stations_df.empty:
         print(f"  {date_str}: station metadata not found, skipping")
         return None
@@ -117,19 +105,19 @@ def process_date(
         print(f"  {date_str}: station metadata columns missing, skipping")
         return None
 
-    # Convert to dict records and apply the same Den Haag bbox filter as before.
     all_stations = stations_df[list(required_station_cols)].to_dict("records")
-    dh_stations = filter_by_bbox(all_stations, DEN_HAAG_BBOX)
-    if not dh_stations:
+    am_stations = filter_by_bbox(all_stations, AMSTERDAM_BBOX)
+    if not am_stations:
         print(f"  {date_str}: no stations in bbox, skipping")
         return None
-    dh_station_ids = {str(s["station_id"]) for s in dh_stations}
-    print(f"    Stations: {len(dh_stations)}")
+
+    am_station_ids = {str(s["station_id"]) for s in am_stations}
+    print(f"    Stations: {len(am_stations)}")
 
     # Spatial join stations to PC4
     station_gdf = gpd.GeoDataFrame(
-        dh_stations,
-        geometry=[Point(s["lon"], s["lat"]) for s in dh_stations],
+        am_stations,
+        geometry=[Point(s["lon"], s["lat"]) for s in am_stations],
         crs="EPSG:4326",
     )
     station_joined = gpd.sjoin(
@@ -145,7 +133,7 @@ def process_date(
 
     # Load docked-bike counts table.
     print("    Loading docked-bike data...")
-    df_avail = load_docked_day(data_dir, PROVIDER, year, month, day)
+    df_avail = load_docked_day(data_dir, AMSTERDAM_PROVIDER, year, month, day)
     if df_avail is None or df_avail.empty:
         print(f"  {date_str}: docked table not found, skipping")
         return None
@@ -158,33 +146,21 @@ def process_date(
     max_hour = max(hours)
     print(f"\n  Processing {date_str} (hours {hours[0]}-{max_hour})...")
 
-    # Build hour-to-row lookup
     hour_to_row = {}
     for ts in df_hourly.index:
         hour_to_row[ts.hour] = df_hourly.loc[ts]
 
-    # Load dockless-bike positions
-    print("    Loading dockless-bike data...")
-    bikes_df = load_dockless_day(data_dir, PROVIDER, year, month, day)
-    if bikes_df is None:
-        bikes_df = pd.DataFrame(columns=["timestamp", "bike_id", "lat", "lon"])
-
-    # Initialize counts for all PC4 areas
+    # Initialize counts for all PC4 areas (station only, no free bikes)
     counts = {}
     for pc4 in pc4_gdf["postcode"]:
         pc4_key = str(int(pc4))
-        counts[pc4_key] = {
-            "c": [0] * (max_hour + 1),
-            "s": [0] * (max_hour + 1),
-            "f": [0] * (max_hour + 1),
-        }
+        counts[pc4_key] = {"c": [0] * (max_hour + 1)}
 
-    # Fill station counts per PC4 per hour
     for h in hours:
         row = hour_to_row.get(h)
         if row is None:
             continue
-        for sid in dh_station_ids:
+        for sid in am_station_ids:
             if sid in df_hourly.columns:
                 pc4 = station_to_pc4.get(sid)
                 if pc4:
@@ -192,70 +168,11 @@ def process_date(
                     if pc4_key in counts:
                         raw = row.get(sid, 0)
                         val = int(raw) if pd.notna(raw) else 0
-                        counts[pc4_key]["s"][h] += val
                         counts[pc4_key]["c"][h] += val
-
-    # Dockless-bike processing
-    bikes_by_hour = {}
-    if not bikes_df.empty and {"timestamp", "bike_id", "lat", "lon"}.issubset(
-        bikes_df.columns
-    ):
-        bikes_df["timestamp"] = pd.to_datetime(bikes_df["timestamp"])
-        bikes_df["lat"] = pd.to_numeric(bikes_df["lat"], errors="coerce")
-        bikes_df["lon"] = pd.to_numeric(bikes_df["lon"], errors="coerce")
-        bikes_df = bikes_df.dropna(subset=["timestamp", "bike_id", "lat", "lon"])
-        bikes_df["hour_idx"] = bikes_df["timestamp"].dt.hour
-
-        bike_gdf = gpd.GeoDataFrame(
-            bikes_df,
-            geometry=[
-                Point(lon, lat)
-                for lon, lat in zip(bikes_df["lon"], bikes_df["lat"], strict=True)
-            ],
-            crs="EPSG:4326",
-        )
-        bikes_with_pc4 = gpd.sjoin(
-            bike_gdf,
-            pc4_gdf[["postcode", "geometry"]],
-            how="left",
-            predicate="within",
-        )
-
-        # Dockless-bike counts per PC4 per hour
-        free_bike_counts = (
-            bikes_with_pc4.groupby(["hour_idx", "postcode"])["bike_id"]
-            .nunique()
-            .reset_index(name="bike_count")
-        )
-        for _, row in free_bike_counts.iterrows():
-            h = int(row["hour_idx"])
-            pc4_key = str(int(row["postcode"]))
-            if pc4_key in counts and h <= max_hour:
-                counts[pc4_key]["f"][h] += int(row["bike_count"])
-                counts[pc4_key]["c"][h] += int(row["bike_count"])
-
-        # Bike positions per hour (first observation per bike per hour)
-        hourly_bikes = (
-            bikes_with_pc4.sort_values("timestamp")
-            .groupby(["hour_idx", "bike_id"])
-            .first()
-            .reset_index()
-        )
-        for h in hours:
-            hour_data = hourly_bikes[hourly_bikes["hour_idx"] == h]
-            bikes_by_hour[str(h)] = [
-                [round(r["lat"], 6), round(r["lon"], 6), int(r["postcode"])]
-                for _, r in hour_data.iterrows()
-                if pd.notna(r["postcode"])
-            ]
-            print(f"      Hour {h:02d}: {len(bikes_by_hour[str(h)])} dockless bikes")
-    else:
-        for h in hours:
-            bikes_by_hour[str(h)] = []
 
     # Station data with hourly availability
     stations_js = []
-    for s in dh_stations:
+    for s in am_stations:
         sid = s["station_id"]
         pc4 = station_to_pc4.get(sid, 0)
         hourly_avail = [0] * (max_hour + 1)
@@ -278,7 +195,6 @@ def process_date(
         "hours": hours,
         "maxHour": max_hour,
         "counts": counts,
-        "bikes": bikes_by_hour,
         "stations": stations_js,
     }
 
@@ -294,7 +210,7 @@ def main():
     )
     parser.add_argument(
         "--output",
-        default=str(MAPS_DIR / "den_haag_pc4_timeslider.html"),
+        default=str(MAPS_DIR / "amsterdam_pc4.html"),
     )
     args = parser.parse_args()
     data_dir = args.data_dir
@@ -305,13 +221,13 @@ def main():
 
     # Step 1: PC4 polygons
     print("Step 1: Loading PC4 polygon boundaries...")
-    pc4_gdf = download_pc4_polygons(DEN_HAAG_BBOX, PC4_CACHE)
+    pc4_gdf = download_pc4_polygons(AMSTERDAM_BBOX, PC4_CACHE)
 
     # Step 2: Auto-discover available dates from processed docked tables
     print("\nStep 2: Discovering available dates from processed data...")
-    dates = discover_docked_dates(data_dir, provider=PROVIDER)
+    dates = discover_docked_dates(data_dir, provider=AMSTERDAM_PROVIDER)
     if not dates:
-        print("  No processed donkey_denHaag docked tables found!")
+        print("  No processed donkey_am docked tables found!")
         return
     for y, m, d in dates:
         print(f"  Found: {y}-{m:02d}-{d:02d}")
@@ -357,9 +273,12 @@ def main():
 
     # Step 4: Build the map
     print("\nStep 4: Creating interactive map...")
-    m = folium.Map(location=DEN_HAAG_CENTER, zoom_start=13, tiles="CartoDB positron")
+    m = folium.Map(
+        location=AMSTERDAM_CENTER,
+        zoom_start=13,
+        tiles="CartoDB positron",
+    )
 
-    # PC4 GeoJSON (geometry only, no count data embedded)
     pc4_borders = pc4_gdf[["postcode", "geometry"]].copy()
     pc4_geojson = json.loads(pc4_borders.to_json())
 
@@ -378,7 +297,6 @@ def main():
     geojson_js = geojson_layer.get_name()
     map_js = m.get_name()
 
-    # Serialize all date data
     all_data_json = json.dumps(all_date_data, separators=(",", ":"))
     dates_json = json.dumps(sorted_dates, separators=(",", ":"))
 
@@ -389,13 +307,12 @@ def main():
                 border-radius: 5px; font-size: 13px; line-height: 1.8;">
         <b>Available Bikes</b><br>
         <span id="legend-content"></span>
-        <span style="color: #333;">&#9679;</span> Dockless bike<br>
         <span style="color: #e377c2;">&#9679;</span> Station
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
 
-    # Date selector + color mode + slider HTML
+    # Date selector + color mode + slider
     date_options = "\n".join(
         f'            <option value="{d}">{d}</option>' for d in sorted_dates
     )
@@ -466,10 +383,9 @@ def main():
                 return (dd && dd.dateMax) ? dd.dateMax : 1;
             }}
             if (colorMode === 'per-hour') return getHourMax(h);
-            return 1; // fixed mode — not used for ratio
+            return 1;
         }}
 
-        // Interpolate between two [r,g,b] arrays
         function lerpColor(a, b, t) {{
             return [
                 Math.round(a[0] + (b[0] - a[0]) * t),
@@ -481,7 +397,6 @@ def main():
         var LIGHT_BLUE = '#d0e4ff';
 
         function ratioToGradient(ratio) {{
-            // blue(0) -> green(0.33) -> orange(0.66) -> red(1)
             var blue   = [51, 136, 255];
             var green  = [44, 160, 44];
             var orange = [255, 127, 14];
@@ -501,8 +416,6 @@ def main():
             if (colorMode === 'gradient') {{
                 if (c === 0) return LIGHT_BLUE;
                 var mx = getEffectiveMax(h);
-                // Stretch 1-5 across the first 40% of the gradient for more
-                // visual separation at low counts, then 5+ fills the rest.
                 var lowCut = Math.min(5, mx);
                 var ratio;
                 if (c <= lowCut) {{
@@ -554,31 +467,8 @@ def main():
             }}
         }}
 
-        // Layers for dockless bikes and stations
-        var bikeLayer = L.layerGroup().addTo(map);
         var stationLayer = L.layerGroup().addTo(map);
-        var bikeMarkers = [];
         var stationMarkers = [];
-
-        function updateBikes(h) {{
-            bikeLayer.clearLayers();
-            bikeMarkers = [];
-            var dateData = allData[currentDate];
-            var bikes = (dateData && dateData.bikes[String(h)]) || [];
-            for (var i = 0; i < bikes.length; i++) {{
-                var isSelected = (selectedPC4 !== null && bikes[i][2] === selectedPC4);
-                var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {{
-                    radius: isSelected ? 8 : 5,
-                    color: isSelected ? '#000' : '#333',
-                    fillColor: isSelected ? '#000' : '#333',
-                    fillOpacity: isSelected ? 1.0 : 0.7,
-                    weight: isSelected ? 2 : 1
-                }});
-                marker._pc4 = bikes[i][2];
-                marker.addTo(bikeLayer);
-                bikeMarkers.push(marker);
-            }}
-        }}
 
         function updateStations(h) {{
             stationLayer.clearLayers();
@@ -627,16 +517,6 @@ def main():
         }}
 
         function highlightPC4(pc4) {{
-            for (var i = 0; i < bikeMarkers.length; i++) {{
-                var m = bikeMarkers[i];
-                if (m._pc4 === pc4) {{
-                    m.setRadius(6);
-                    m.setStyle({{ color: '#000', fillColor: '#000', fillOpacity: 1.0, weight: 2 }});
-                }} else {{
-                    m.setRadius(3);
-                    m.setStyle({{ color: '#333', fillColor: '#333', fillOpacity: 0.7, weight: 1 }});
-                }}
-            }}
             for (var i = 0; i < stationMarkers.length; i++) {{
                 var m = stationMarkers[i];
                 if (m._pc4 === pc4) {{
@@ -655,7 +535,6 @@ def main():
                 String(h).padStart(2, '0') + ':00';
             updateLegend(h);
             updatePolygons(h);
-            updateBikes(h);
             updateStations(h);
         }}
 
@@ -663,7 +542,6 @@ def main():
             currentDate = dateStr;
             selectedPC4 = null;
             map.closePopup();
-
             var dateData = allData[dateStr];
             var slider = document.getElementById('hour-slider');
             if (dateData) {{
@@ -675,48 +553,37 @@ def main():
             }}
         }}
 
-        // Date selector
         document.getElementById('date-selector').addEventListener('change', function() {{
             switchDate(this.value);
         }});
 
-        // Hour slider
         document.getElementById('hour-slider').addEventListener('input', function() {{
             updateHour(parseInt(this.value));
         }});
 
-        // Color mode selector
         document.getElementById('color-mode').addEventListener('change', function() {{
             colorMode = this.value;
             updateLegend(currentHour);
             updatePolygons(currentHour);
         }});
 
-        // Hover + click on polygons
         geojsonLayer.eachLayer(function(layer) {{
             layer.on('mouseover', function(e) {{
                 var pc = parseInt(layer.feature.properties.postcode) || layer.feature.properties.postcode;
-                if (selectedPC4 !== pc) {{
-                    layer.setStyle({{ weight: 5 }});
-                }}
+                if (selectedPC4 !== pc) layer.setStyle({{ weight: 5 }});
             }});
             layer.on('mouseout', function(e) {{
                 var pc = parseInt(layer.feature.properties.postcode) || layer.feature.properties.postcode;
-                if (selectedPC4 !== pc) {{
-                    layer.setStyle({{ weight: 2.5 }});
-                }}
+                if (selectedPC4 !== pc) layer.setStyle({{ weight: 2.5 }});
             }});
-
             layer.on('click', function(e) {{
                 L.DomEvent.stopPropagation(e);
                 var pc = parseInt(layer.feature.properties.postcode) || layer.feature.properties.postcode;
                 var pcKey = String(layer.feature.properties.postcode);
                 var dateData = allData[currentDate];
                 var dateCounts = dateData ? dateData.counts : {{}};
-                var pcData = dateCounts[pcKey] || {{c:[], s:[], f:[]}};
+                var pcData = dateCounts[pcKey] || {{c:[]}};
                 var total = pcData.c[currentHour] || 0;
-                var fromStations = pcData.s[currentHour] || 0;
-                var fromFree = pcData.f[currentHour] || 0;
 
                 if (selectedPC4 === pc) {{
                     selectedPC4 = null;
@@ -727,13 +594,10 @@ def main():
                         .setLatLng(e.latlng)
                         .setContent(
                             '<b>PC4 ' + pc + '</b><br>' +
-                            'Available bikes: <b>' + total + '</b><br>' +
-                            '&nbsp;&nbsp;Docked: ' + fromStations + '<br>' +
-                            '&nbsp;&nbsp;Dockless: ' + fromFree
+                            'Available bikes: <b>' + total + '</b>'
                         )
                         .openOn(map);
                 }}
-
                 updatePolygons(currentHour);
                 highlightPC4(selectedPC4 !== null ? selectedPC4 : -1);
             }});
@@ -745,14 +609,12 @@ def main():
             highlightPC4(-1);
         }});
 
-        // Initialize with first date
         switchDate(dates[0]);
     }});
     </script>
     """)
     m.get_root().html.add_child(custom_js)
 
-    # Save
     os.makedirs(os.path.dirname(args.output), exist_ok=True)
     m.save(args.output)
     print(f"\nMap saved to: {args.output}")
