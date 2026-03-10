@@ -11,6 +11,18 @@ import pandas as pd
 
 DATE_PATTERN = re.compile(r"(\d{8})")
 
+DOCKED_DISCOVERY_SPECS = (
+    ("docked", ("docked_",)),
+)
+
+DOCKED_LOAD_SPECS = (
+    ("docked", "docked_{tag}.csv"),
+)
+
+DOCKLESS_LOAD_SPECS = (
+    ("dockless", "dockless_{tag}.csv"),
+)
+
 
 def _date_tag(year: int, month: int, day: int) -> str:
     return f"{year}{month:02d}{day:02d}"
@@ -49,18 +61,49 @@ def _discover_dates_from_dir(
     return sorted(dates)
 
 
+def _discover_dates(
+    base: Path,
+    provider: str,
+    specs: tuple[tuple[str, tuple[str, ...]], ...],
+) -> list[tuple[int, int, int]]:
+    dates = set()
+    for subdir, prefixes in specs:
+        dates.update(_discover_dates_from_dir(base / subdir / provider, prefixes))
+    return sorted(dates)
+
+
+def _candidate_paths(
+    base: Path,
+    provider: str,
+    tag: str,
+    specs: tuple[tuple[str, str], ...],
+) -> list[Path]:
+    return [
+        base / subdir / provider / filename_template.format(tag=tag, provider=provider)
+        for subdir, filename_template in specs
+    ]
+
+
+def _load_csv_day(
+    data_dir: str | Path,
+    provider: str,
+    year: int,
+    month: int,
+    day: int,
+    specs: tuple[tuple[str, str], ...],
+    **read_csv_kwargs,
+) -> pd.DataFrame | None:
+    tag = _date_tag(year, month, day)
+    path = _first_existing(_candidate_paths(Path(data_dir), provider, tag, specs))
+    if path is None:
+        return None
+    return pd.read_csv(path, **read_csv_kwargs)
+
+
 def discover_docked_dates(
     data_dir: str | Path, provider: str
 ) -> list[tuple[int, int, int]]:
-    base = Path(data_dir)
-    return sorted(
-        set(
-            _discover_dates_from_dir(base / "docked" / provider, ("docked_",))
-            + _discover_dates_from_dir(
-                base / "availability" / provider, ("availability_",)
-            )
-        )
-    )
+    return _discover_dates(Path(data_dir), provider, DOCKED_DISCOVERY_SPECS)
 
 
 def discover_station_dates(
@@ -83,18 +126,16 @@ def load_docked_day(
     month: int,
     day: int,
 ) -> pd.DataFrame | None:
-    tag = _date_tag(year, month, day)
-    base = Path(data_dir)
-    path = _first_existing(
-        [
-            base / "docked" / provider / f"docked_{tag}.csv",
-            base / "availability" / provider / f"availability_{tag}.csv",
-            base / "availability" / provider / f"availability_{provider}_{tag}.csv",
-        ]
+    return _load_csv_day(
+        data_dir,
+        provider,
+        year,
+        month,
+        day,
+        DOCKED_LOAD_SPECS,
+        index_col="timestamp",
+        parse_dates=True,
     )
-    if path is None:
-        return None
-    return pd.read_csv(path, index_col="timestamp", parse_dates=True)
 
 
 def load_dockless_day(
@@ -104,18 +145,15 @@ def load_dockless_day(
     month: int,
     day: int,
 ) -> pd.DataFrame | None:
-    tag = _date_tag(year, month, day)
-    base = Path(data_dir)
-    path = _first_existing(
-        [
-            base / "dockless" / provider / f"dockless_{tag}.csv",
-            base / "free_bikes" / provider / f"free_bikes_{tag}.csv",
-            base / "free_bikes" / provider / f"free_bikes_{provider}_{tag}.csv",
-        ]
+    return _load_csv_day(
+        data_dir,
+        provider,
+        year,
+        month,
+        day,
+        DOCKLESS_LOAD_SPECS,
+        parse_dates=["timestamp"],
     )
-    if path is None:
-        return None
-    return pd.read_csv(path, parse_dates=["timestamp"])
 
 
 def load_station_day(
