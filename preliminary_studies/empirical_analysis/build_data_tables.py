@@ -9,7 +9,7 @@ import csv
 from pathlib import Path
 
 from artifact_index import rebuild_artifact_index
-from data_utils import (
+from internal.data_utils import (
     AMSTERDAM_PROVIDER,
     DEFAULT_DATA_ROOT,
     DEN_HAAG_BBOX,
@@ -21,7 +21,7 @@ from data_utils import (
     load_day_availability,
     load_day_free_bikes,
 )
-from paths import (
+from internal.paths import (
     ensure_output_dirs,
     provider_docked_data_dir,
     provider_dockless_data_dir,

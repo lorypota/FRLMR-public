@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from data_utils import DEFAULT_DATA_ROOT, PROVIDER, parse_timestamp_from_filename
+from internal.data_utils import DEFAULT_DATA_ROOT, PROVIDER, parse_timestamp_from_filename
 
 # =============================================================================
 # MAIN

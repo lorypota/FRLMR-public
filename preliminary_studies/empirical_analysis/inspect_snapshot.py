@@ -22,7 +22,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from data_utils import DEFAULT_DATA_ROOT, extract_all_from_tar, list_tar_files
+from internal.data_utils import DEFAULT_DATA_ROOT, extract_all_from_tar, list_tar_files
 
 # =============================================================================
 # MAIN

@@ -6,20 +6,26 @@ This folder contains small scripts used to inspect Donkey GBFS snapshots and bui
 
 - `inspect_snapshot.py`: print and inspect one raw snapshot archive.
 - `check_temporal_coverage.py`: scan available dates/hours and report missing minutes.
+- `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
 - `map_den_haag_stations.py`: build a Den Haag station map.
 - `map_den_haag_pc4_timeslider.py`: build Den Haag PC4 map with date/hour controls.
 - `map_amsterdam_pc4_timeslider.py`: build Amsterdam PC4 map with date/hour controls.
-- `artifact_index.py`: rebuild output artifact index files.
-- `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
-- `data_utils.py`: shared data parsing and loading utilities.
-- `processed_data_utils.py`: helpers for reading processed CSV tables.
-- `paths.py`: shared output folder paths.
+- `artifact_index.py`: rebuild output artifact index files manually if needed.
+
+## Internal Helper Modules
+
+These are used by the runnable scripts above and do not need to be run directly.
+
+- `internal/data_utils.py`: shared data parsing and loading utilities.
+- `internal/processed_data_utils.py`: helpers for reading processed CSV tables.
+- `internal/paths.py`: shared output folder paths.
 
 ## How To Run
 
 From repository root (after cloning):
 
 Raw-processing scripts (`inspect_snapshot.py`, `check_temporal_coverage.py`, `build_data_tables.py`) look for raw snapshots in this order:
+
 1. `--data-root` argument (per command)
 2. `DONKEY_DATA_ROOT` environment variable (session/global override)
 3. default `./data` (repo-relative fallback)
@@ -101,13 +107,14 @@ output/
 ```
 
 Category meaning:
+
 - `docked`: station-based bike counts from `station_status`
 - `dockless`: free-floating bike positions from `free_bike_status`
 - `stations`: station metadata (`station_id`, `name`, `lat`, `lon`, `capacity`)
 
 ## Artifact Indexing
 
-The map scripts rebuild the artifact index automatically at the end of each run.
+The map scripts and `build_data_tables.py` rebuild the artifact index automatically at the end of each run.
 
 You can also rebuild it manually:
 

@@ -44,19 +44,19 @@ from shapely.geometry import Point
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from artifact_index import rebuild_artifact_index
-from data_utils import (
+from internal.data_utils import (
     DEN_HAAG_BBOX,
     DEN_HAAG_CENTER,
     PROVIDER,
     filter_by_bbox,
 )
-from paths import (
+from internal.paths import (
     DATA_DIR,
     GEODATA_DIR,
     MAPS_DIR,
     ensure_output_dirs,
 )
-from processed_data_utils import (
+from internal.processed_data_utils import (
     discover_docked_dates,
     load_docked_day,
     load_dockless_day,
@@ -568,7 +568,7 @@ def main():
             for (var i = 0; i < bikes.length; i++) {{
                 var isSelected = (selectedPC4 !== null && bikes[i][2] === selectedPC4);
                 var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {{
-                    radius: isSelected ? 6 : 3,
+                    radius: isSelected ? 8 : 5,
                     color: isSelected ? '#000' : '#333',
                     fillColor: isSelected ? '#000' : '#333',
                     fillOpacity: isSelected ? 1.0 : 0.7,

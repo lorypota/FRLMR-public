@@ -236,7 +236,7 @@
             for (var i = 0; i < bikes.length; i++) {
                 var isSelected = (selectedPC4 !== null && bikes[i][2] === selectedPC4);
                 var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {
-                    radius: isSelected ? 6 : 3,
+                    radius: isSelected ? 8 : 5,
                     color: isSelected ? '#000' : '#333',
                     fillColor: isSelected ? '#000' : '#333',
                     fillOpacity: isSelected ? 1.0 : 0.7,

@@ -11,7 +11,7 @@ import re
 from datetime import UTC, datetime
 from pathlib import Path
 
-from paths import OUTPUT_DIR, ensure_output_dirs
+from internal.paths import OUTPUT_DIR, ensure_output_dirs
 
 DATE_PATTERN = re.compile(r"(\d{8})")
 

@@ -23,7 +23,8 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from paths import DEFAULT_DATA_ROOT as REPO_DEFAULT_DATA_ROOT
+
+from .paths import DEFAULT_DATA_ROOT as REPO_DEFAULT_DATA_ROOT
 
 # =============================================================================
 # CONSTANTS
