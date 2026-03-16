@@ -2,9 +2,8 @@
 Amsterdam Interactive PC4 Map with Time Slider
 ==============================================
 
-Run:
-    uv run python preliminary_studies/empirical_analysis/build_data_tables.py
-    uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4.py
+Usage:
+    uv run preliminary_studies/empirical_analysis/map_amsterdam_pc4.py
 
 Creates an interactive Folium map showing Amsterdam's 4-digit postcode (PC4)
 areas and bike availability over time with multiple visualization modes.

@@ -1,7 +1,11 @@
 """Build docked/dockless/station CSV tables from raw tar snapshots.
 
-Run:
-    uv run python preliminary_studies/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
+Usage:
+    uv run preliminary_studies/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
+
+    uv run preliminary_studies/empirical_analysis/build_data_tables.py `
+    --data-root preliminary_studies/empirical_analysis/output/raw_staging `
+    --providers donkey_denHaag ns_ov_fiets
 """
 
 import argparse
@@ -15,6 +19,7 @@ from internal.data_utils import (
     DEN_HAAG_BBOX,
     PROVIDER,
     discover_available_dates,
+    extract_file_from_tar,
     get_station_info,
     get_station_status,
     list_tar_files,
@@ -75,6 +80,8 @@ def build_station_table(
                 "lat": station.get("lat"),
                 "lon": station.get("lon"),
                 "capacity": int(capacity) if capacity is not None else 0,
+                "is_virtual_station": station.get("is_virtual_station", False),
+                "region_id": station.get("region_id", ""),
             }
         )
 
@@ -87,7 +94,15 @@ def build_station_table(
     with out_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=["station_id", "name", "lat", "lon", "capacity"],
+            fieldnames=[
+                "station_id",
+                "name",
+                "lat",
+                "lon",
+                "capacity",
+                "is_virtual_station",
+                "region_id",
+            ],
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -115,7 +130,7 @@ def main() -> None:
     parser.add_argument(
         "--skip-dockless",
         action="store_true",
-        help="Skip dockless table generation (only applies to donkey_denHaag).",
+        help="Skip dockless table generation for all providers.",
     )
     parser.add_argument(
         "--skip-index",
@@ -175,20 +190,32 @@ def main() -> None:
             )
             total_docked_days += 1
 
-            if provider == PROVIDER and not args.skip_dockless:
-                dockless_dir = provider_dockless_data_dir(provider)
-                dockless_dir.mkdir(parents=True, exist_ok=True)
-                print(f"  Building dockless table for {date_str}...")
-                load_day_free_bikes(
-                    data_root=str(data_root),
-                    year=year,
-                    month=month,
-                    day=day,
-                    bbox=DEN_HAAG_BBOX,
-                    cache_dir=str(dockless_dir),
-                    provider=provider,
+            if not args.skip_dockless:
+                first_file = list_tar_files(
+                    str(data_root), year, month, day, provider=provider
                 )
-                total_dockless_days += 1
+                try:
+                    has_free = (
+                        first_file
+                        and extract_file_from_tar(first_file[0], "free_bike_status")
+                        is not None
+                    )
+                except KeyError:
+                    has_free = False
+                if has_free:
+                    dockless_dir = provider_dockless_data_dir(provider)
+                    dockless_dir.mkdir(parents=True, exist_ok=True)
+                    print(f"  Building dockless table for {date_str}...")
+                    load_day_free_bikes(
+                        data_root=str(data_root),
+                        year=year,
+                        month=month,
+                        day=day,
+                        bbox=DEN_HAAG_BBOX,
+                        cache_dir=str(dockless_dir),
+                        provider=provider,
+                    )
+                    total_dockless_days += 1
 
     if not args.skip_index:
         csv_path, json_path, n_rows = rebuild_artifact_index()

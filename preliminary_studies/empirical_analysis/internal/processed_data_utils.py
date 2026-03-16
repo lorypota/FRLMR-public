@@ -19,6 +19,10 @@ DOCKED_LOAD_SPECS = (
     ("docked", "docked_{tag}.csv"),
 )
 
+DOCKS_LOAD_SPECS = (
+    ("docked", "docks_{tag}.csv"),
+)
+
 DOCKLESS_LOAD_SPECS = (
     ("dockless", "dockless_{tag}.csv"),
 )
@@ -133,6 +137,26 @@ def load_docked_day(
         month,
         day,
         DOCKED_LOAD_SPECS,
+        index_col="timestamp",
+        parse_dates=True,
+    )
+
+
+def load_docks_day(
+    data_dir: str | Path,
+    provider: str,
+    year: int,
+    month: int,
+    day: int,
+) -> pd.DataFrame | None:
+    """Load the docks-available (num_docks_available) wide table for one day."""
+    return _load_csv_day(
+        data_dir,
+        provider,
+        year,
+        month,
+        day,
+        DOCKS_LOAD_SPECS,
         index_col="timestamp",
         parse_dates=True,
     )

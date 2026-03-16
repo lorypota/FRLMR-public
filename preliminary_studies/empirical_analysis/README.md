@@ -1,11 +1,25 @@
 # Empirical Analysis Folder
 
-This folder contains small scripts used to inspect Donkey GBFS snapshots and build map artifacts for Den Haag and Amsterdam.
+This folder contains small scripts used to inspect GBFS snapshots and build map artifacts.
+
+The main current focus is **Den Haag** (although older exploration files of Amsterdam are not deleted), which has four shared-mobility operators of interest:
+
+| Operator            | Vehicle type                     | In GBFS feed?          | Notes                                                        |
+| ------------------- | -------------------------------- | ---------------------- | ------------------------------------------------------------ |
+| **Donkey Republic** | Shared bikes (docked + dockless) | Yes (`donkey_denHaag`) | Main data source: 436 stations, ~900 free bikes              |
+| **HTM**             | Shared bikes                     | No                     | HTM ended shared-bike activity early 2024                    |
+| **Cargoroo**        | Cargo bikes                      | No                     | Listed by municipality but no GBFS feed on the network share |
+| **Bondi**           | Shared bikes                     | No                     | Not listed on municipal provider page                        |
+
+Additionally, **NS OV-fiets** (`ns_ov_fiets`) has 6 docked stations in Den Haag at train stations (HS, Centraal, Voorburg, Rijswijk, Mariahoeve, Laan van NOI).
+
+The GBFS network share (TNO internal folder) contains 13 providers total (see full list in the data exploration notes below), but only `donkey_denHaag` and `ns_ov_fiets` have data within Den Haag. Providers that cover other cities: CKL/Cykl, check*\*, dott*\*, goabout, donkey.
+
+The [Dashboard Deelmobiliteit](https://crow-smartmobility.nl/kenniscatalogus/dashboard-deelmobiliteit/) aggregates data from shared-mobility providers across NL using GBFS/MDS/TOMP standards. Access requires a government login via <info@deelfietsdashboard.nl>. HTM, Cargoroo, and Bondi data may be available there but is not on the TNO network share.
 
 ## Scripts
 
-- `inspect_snapshot.py`: print and inspect one raw snapshot archive.
-- `check_temporal_coverage.py`: scan available dates/hours and report missing minutes.
+- `stage_gbfs_subset.py`: stage selected providers and snapshots from TNO server into a local folder.
 - `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
 - `map_den_haag_stations.py`: build a Den Haag station map.
 - `map_den_haag_pc4.py`: build Den Haag PC4 map with date/hour controls, multiple visualization modes, and an optional side-by-side compare view.
@@ -23,56 +37,50 @@ These are used by the runnable scripts above and do not need to be run directly.
 
 ## How To Run
 
-From repository root (after cloning):
+The workflow is: **stage** raw data from the network share → **build** CSV tables (for now stored in repository since light) → **map** visualizations.
 
-Raw-processing scripts (`inspect_snapshot.py`, `check_temporal_coverage.py`, `build_data_tables.py`) look for raw snapshots in this order:
+### 1. Stage raw data (not uploaded to repository)
 
-1. `--data-root` argument (per command)
-2. `DONKEY_DATA_ROOT` environment variable (session/global override)
-3. default `./data` (repo-relative fallback)
+Copy selected providers from the TNO network share into `output/raw_staging/`. Uses `--start`/`--end` for date ranges and skips already-staged files:
 
-Data root means the folder that contains the date tree:
-
-```text
-<data-root>/
-  YYYY/MM/DD/HH/<provider>_fietsData_YYYYMMDDHHMM.tar.gz
+```powershell
+uv run preliminary_studies/empirical_analysis/stage_gbfs_subset.py `
+  --source-root "\\\\tsn.tno.nl\\RA-Data\\SV\\sv-057767\\Feeds\\OpenOV\\GBFS" `
+  --start 2026-02-01 --end 2026-02-07 `
+  --providers donkey_denHaag ns_ov_fiets
 ```
 
-If raw data is in `./data`, you do not need extra flags:
+Use `--mode first-per-hour` for lighter transfers every hour instead of every minute (24 snapshots/day instead of 1440).
 
-```bash
-uv run python preliminary_studies/empirical_analysis/inspect_snapshot.py
-uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py
-uv run python preliminary_studies/empirical_analysis/build_data_tables.py
-uv run python preliminary_studies/empirical_analysis/map_den_haag_stations.py
-uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4.py
-uv run python preliminary_studies/empirical_analysis/map_amsterdam_pc4.py
+**Size estimates** for `donkey_denHaag + ns_ov_fiets`:
+
+| Period  | 2026 per-minute | 2022 per-minute | 2026 per-hour |
+| ------- | --------------- | --------------- | ------------- |
+| 1 day   | ~130 MB         | ~40 MB          | ~2.2 MB       |
+| 1 week  | ~900 MB         | ~280 MB         | ~15 MB        |
+| 1 month | ~3.6 GB         | ~1.1 GB         | ~62 MB        |
+
+Data is available from 2021-04 through 2026-03. `donkey_denHaag` starts from 2021-10. File sizes grew over time as Donkey added more stations (15 KB/file in 2021 → 78 KB/file in 2026). NS OV-fiets stays ~14 KB/file throughout.
+
+### 2. Build CSV tables
+
+Parse the staged raw tars into processed CSVs in `output/data/`:
+
+```powershell
+uv run preliminary_studies/empirical_analysis/build_data_tables.py `
+  --data-root preliminary_studies/empirical_analysis/output/raw_staging `
+  --providers donkey_denHaag ns_ov_fiets
 ```
 
-If data is outside the repo, set one override for all scripts:
+### 3. Generate maps
+
+Map scripts read from `output/data/` (processed CSVs, not raw snapshots):
 
 ```bash
-export DONKEY_DATA_ROOT=/path/to/snapshots
-uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py
-```
+uv run preliminary_studies/empirical_analysis/map_den_haag_stations.py
+uv run preliminary_studies/empirical_analysis/map_den_haag_pc4.py
 
-If you only want to override one run:
-
-```bash
-uv run python preliminary_studies/empirical_analysis/check_temporal_coverage.py --data-root /path/to/snapshots
-```
-
-To parse all available raw snapshots into processed tables in one command:
-
-```bash
-uv run python preliminary_studies/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
-```
-
-After preprocessing, map scripts use only `output/data` (not raw snapshots).
-Optional override if processed tables are elsewhere:
-
-```bash
-uv run python preliminary_studies/empirical_analysis/map_den_haag_pc4.py --data-dir /path/to/processed/output/data
+uv run preliminary_studies/empirical_analysis/map_amsterdam_pc4.py  #possibly outdated
 ```
 
 ## Output Structure
@@ -83,18 +91,18 @@ All generated artifacts are under `output/`:
 output/
   data/
     docked/
-      donkey_denHaag/
-        docked_YYYYMMDD.csv
-      donkey_am/
-        docked_YYYYMMDD.csv
+      donkey_denHaag/ (and ns_ov_fiets/)
+        docked_YYYYMMDD.csv  ← num_bikes_available per station (timestamp × station_id)
+        docks_YYYYMMDD.csv   ← num_docks_available per station (timestamp × station_id)
     dockless/
       donkey_denHaag/
-        dockless_YYYYMMDD.csv
+        dockless_YYYYMMDD.csv  ← free bike positions (timestamp, bike_id, lat, lon,
+                                  is_reserved, is_disabled, last_reported, station_id,
+                                  vehicle_type_id)
     stations/
-      donkey_denHaag/
-        stations_YYYYMMDD.csv
-      donkey_am/
-        stations_YYYYMMDD.csv
+      donkey_denHaag/ (and ns_ov_fiets/)
+        stations_YYYYMMDD.csv  ← station metadata (station_id, name, lat, lon, capacity,
+                                  is_virtual_station, region_id)
   maps/
     den_haag_stations.html
     den_haag_pc4.html
@@ -107,12 +115,6 @@ output/
     artifacts.json
 ```
 
-Category meaning:
-
-- `docked`: station-based bike counts from `station_status`
-- `dockless`: free-floating bike positions from `free_bike_status`
-- `stations`: station metadata (`station_id`, `name`, `lat`, `lon`, `capacity`)
-
 ## Artifact Indexing
 
 The map scripts and `build_data_tables.py` rebuild the artifact index automatically at the end of each run.
@@ -120,7 +122,7 @@ The map scripts and `build_data_tables.py` rebuild the artifact index automatica
 You can also rebuild it manually:
 
 ```bash
-uv run python preliminary_studies/empirical_analysis/artifact_index.py
+uv run preliminary_studies/empirical_analysis/artifact_index.py
 ```
 
 `artifacts.csv` and `artifacts.json` include:

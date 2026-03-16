@@ -2,9 +2,8 @@
 Task 2: Map Den Haag Donkey Stations
 =====================================
 
-Run:
-    uv run python preliminary_studies/empirical_analysis/build_data_tables.py
-    uv run python preliminary_studies/empirical_analysis/map_den_haag_stations.py
+Usage:
+    uv run preliminary_studies/empirical_analysis/map_den_haag_stations.py
 
 Loads processed station metadata from output/data/stations and filters stations
 within Den Haag's bounding box (lat 52.03-52.12, lon 4.22-4.38). It then

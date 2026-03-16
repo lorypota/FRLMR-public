@@ -6,7 +6,7 @@
     "date": "2025-01-01",
     "path": "data/docked/donkey_am/docked_20250101.csv",
     "size_bytes": 457377,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:55:15Z"
   },
   {
     "artifact_type": "docked_data",
@@ -15,7 +15,7 @@
     "date": "2025-01-02",
     "path": "data/docked/donkey_am/docked_20250102.csv",
     "size_bytes": 457682,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:56:23Z"
   },
   {
     "artifact_type": "docked_data",
@@ -24,7 +24,7 @@
     "date": "2025-01-03",
     "path": "data/docked/donkey_am/docked_20250103.csv",
     "size_bytes": 144567,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:56:42Z"
   },
   {
     "artifact_type": "docked_data",
@@ -33,7 +33,7 @@
     "date": "2025-01-28",
     "path": "data/docked/donkey_am/docked_20250128.csv",
     "size_bytes": 468400,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:57:45Z"
   },
   {
     "artifact_type": "docked_data",
@@ -42,7 +42,7 @@
     "date": "2025-01-29",
     "path": "data/docked/donkey_am/docked_20250129.csv",
     "size_bytes": 467203,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:58:52Z"
   },
   {
     "artifact_type": "docked_data",
@@ -51,7 +51,7 @@
     "date": "2025-01-30",
     "path": "data/docked/donkey_am/docked_20250130.csv",
     "size_bytes": 464536,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T11:00:31Z"
   },
   {
     "artifact_type": "docked_data",
@@ -60,7 +60,7 @@
     "date": "2025-01-31",
     "path": "data/docked/donkey_am/docked_20250131.csv",
     "size_bytes": 462531,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T11:01:49Z"
   },
   {
     "artifact_type": "docked_data",
@@ -69,7 +69,7 @@
     "date": "2026-03-01",
     "path": "data/docked/donkey_am/docked_20260301.csv",
     "size_bytes": 111836,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -78,7 +78,7 @@
     "date": "2026-03-02",
     "path": "data/docked/donkey_am/docked_20260302.csv",
     "size_bytes": 111407,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -87,7 +87,7 @@
     "date": "2026-03-03",
     "path": "data/docked/donkey_am/docked_20260303.csv",
     "size_bytes": 112482,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -96,7 +96,7 @@
     "date": "2026-03-04",
     "path": "data/docked/donkey_am/docked_20260304.csv",
     "size_bytes": 112414,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -105,7 +105,7 @@
     "date": "2026-03-05",
     "path": "data/docked/donkey_am/docked_20260305.csv",
     "size_bytes": 52207,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T11:02:02Z"
   },
   {
     "artifact_type": "docked_data",
@@ -114,7 +114,7 @@
     "date": "2025-01-01",
     "path": "data/docked/donkey_denHaag/docked_20250101.csv",
     "size_bytes": 763295,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-04T14:58:02Z"
   },
   {
     "artifact_type": "docked_data",
@@ -123,7 +123,7 @@
     "date": "2025-01-02",
     "path": "data/docked/donkey_denHaag/docked_20250102.csv",
     "size_bytes": 665959,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:37:44Z"
   },
   {
     "artifact_type": "docked_data",
@@ -132,7 +132,7 @@
     "date": "2025-01-03",
     "path": "data/docked/donkey_denHaag/docked_20250103.csv",
     "size_bytes": 241172,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:42:16Z"
   },
   {
     "artifact_type": "docked_data",
@@ -141,7 +141,7 @@
     "date": "2025-01-28",
     "path": "data/docked/donkey_denHaag/docked_20250128.csv",
     "size_bytes": 764205,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:28:43Z"
   },
   {
     "artifact_type": "docked_data",
@@ -150,7 +150,7 @@
     "date": "2025-01-29",
     "path": "data/docked/donkey_denHaag/docked_20250129.csv",
     "size_bytes": 764735,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:30:22Z"
   },
   {
     "artifact_type": "docked_data",
@@ -159,7 +159,7 @@
     "date": "2025-01-30",
     "path": "data/docked/donkey_denHaag/docked_20250130.csv",
     "size_bytes": 762284,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:33:09Z"
   },
   {
     "artifact_type": "docked_data",
@@ -168,7 +168,25 @@
     "date": "2025-01-31",
     "path": "data/docked/donkey_denHaag/docked_20250131.csv",
     "size_bytes": 761315,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:35:05Z"
+  },
+  {
+    "artifact_type": "docked_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/docked/donkey_denHaag/docked_20260201.csv",
+    "size_bytes": 24201,
+    "modified_at_utc": "2026-03-16T13:00:24Z"
+  },
+  {
+    "artifact_type": "docked_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/docked/donkey_denHaag/docks_20260201.csv",
+    "size_bytes": 25030,
+    "modified_at_utc": "2026-03-16T13:00:24Z"
   },
   {
     "artifact_type": "docked_data",
@@ -177,7 +195,7 @@
     "date": "2026-03-01",
     "path": "data/docked/donkey_denHaag/docked_20260301.csv",
     "size_bytes": 1000127,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -186,7 +204,7 @@
     "date": "2026-03-02",
     "path": "data/docked/donkey_denHaag/docked_20260302.csv",
     "size_bytes": 1070743,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -195,7 +213,7 @@
     "date": "2026-03-03",
     "path": "data/docked/donkey_denHaag/docked_20260303.csv",
     "size_bytes": 1060004,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -204,7 +222,7 @@
     "date": "2026-03-04",
     "path": "data/docked/donkey_denHaag/docked_20260304.csv",
     "size_bytes": 1059614,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "docked_data",
@@ -213,7 +231,25 @@
     "date": "2026-03-05",
     "path": "data/docked/donkey_denHaag/docked_20260305.csv",
     "size_bytes": 490056,
-    "modified_at_utc": "2026-03-09T18:46:57Z"
+    "modified_at_utc": "2026-03-05T10:43:19Z"
+  },
+  {
+    "artifact_type": "docked_data",
+    "provider": "ns_ov_fiets",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/docked/ns_ov_fiets/docked_20260201.csv",
+    "size_bytes": 19653,
+    "modified_at_utc": "2026-03-16T13:00:25Z"
+  },
+  {
+    "artifact_type": "docked_data",
+    "provider": "ns_ov_fiets",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/docked/ns_ov_fiets/docks_20260201.csv",
+    "size_bytes": 15854,
+    "modified_at_utc": "2026-03-16T13:00:25Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -222,7 +258,7 @@
     "date": "2025-01-01",
     "path": "data/dockless/donkey_denHaag/dockless_20250101.csv",
     "size_bytes": 21888970,
-    "modified_at_utc": "2026-03-09T18:46:58Z"
+    "modified_at_utc": "2026-03-04T15:13:28Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -231,7 +267,7 @@
     "date": "2025-01-02",
     "path": "data/dockless/donkey_denHaag/dockless_20250102.csv",
     "size_bytes": 23742975,
-    "modified_at_utc": "2026-03-09T18:46:58Z"
+    "modified_at_utc": "2026-03-05T10:38:16Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -240,7 +276,7 @@
     "date": "2025-01-03",
     "path": "data/dockless/donkey_denHaag/dockless_20250103.csv",
     "size_bytes": 8492345,
-    "modified_at_utc": "2026-03-09T18:46:58Z"
+    "modified_at_utc": "2026-03-05T10:42:27Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -249,7 +285,7 @@
     "date": "2025-01-28",
     "path": "data/dockless/donkey_denHaag/dockless_20250128.csv",
     "size_bytes": 29550165,
-    "modified_at_utc": "2026-03-09T18:46:58Z"
+    "modified_at_utc": "2026-03-05T10:29:01Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -258,7 +294,7 @@
     "date": "2025-01-29",
     "path": "data/dockless/donkey_denHaag/dockless_20250129.csv",
     "size_bytes": 29828107,
-    "modified_at_utc": "2026-03-09T18:46:58Z"
+    "modified_at_utc": "2026-03-05T10:31:32Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -267,7 +303,7 @@
     "date": "2025-01-30",
     "path": "data/dockless/donkey_denHaag/dockless_20250130.csv",
     "size_bytes": 29395305,
-    "modified_at_utc": "2026-03-09T18:46:58Z"
+    "modified_at_utc": "2026-03-05T10:33:51Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -276,7 +312,16 @@
     "date": "2025-01-31",
     "path": "data/dockless/donkey_denHaag/dockless_20250131.csv",
     "size_bytes": 28977371,
-    "modified_at_utc": "2026-03-09T18:46:59Z"
+    "modified_at_utc": "2026-03-05T10:35:37Z"
+  },
+  {
+    "artifact_type": "dockless_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/dockless/donkey_denHaag/dockless_20260201.csv",
+    "size_bytes": 2050667,
+    "modified_at_utc": "2026-03-16T13:00:25Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -285,7 +330,7 @@
     "date": "2026-03-01",
     "path": "data/dockless/donkey_denHaag/dockless_20260301.csv",
     "size_bytes": 48027461,
-    "modified_at_utc": "2026-03-09T18:47:00Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -294,7 +339,7 @@
     "date": "2026-03-02",
     "path": "data/dockless/donkey_denHaag/dockless_20260302.csv",
     "size_bytes": 46708762,
-    "modified_at_utc": "2026-03-09T18:47:00Z"
+    "modified_at_utc": "2026-03-05T15:49:48Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -303,7 +348,7 @@
     "date": "2026-03-03",
     "path": "data/dockless/donkey_denHaag/dockless_20260303.csv",
     "size_bytes": 46688271,
-    "modified_at_utc": "2026-03-09T18:47:01Z"
+    "modified_at_utc": "2026-03-05T15:49:49Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -312,7 +357,7 @@
     "date": "2026-03-04",
     "path": "data/dockless/donkey_denHaag/dockless_20260304.csv",
     "size_bytes": 46837921,
-    "modified_at_utc": "2026-03-09T18:47:01Z"
+    "modified_at_utc": "2026-03-05T15:49:49Z"
   },
   {
     "artifact_type": "dockless_data",
@@ -321,7 +366,7 @@
     "date": "2026-03-05",
     "path": "data/dockless/donkey_denHaag/dockless_20260305.csv",
     "size_bytes": 21958914,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-05T10:43:52Z"
   },
   {
     "artifact_type": "geodata",
@@ -329,8 +374,8 @@
     "city": "amsterdam",
     "date": "",
     "path": "geodata/pc4_amsterdam.geojson",
-    "size_bytes": 1608541,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "size_bytes": 1608432,
+    "modified_at_utc": "2026-03-05T10:54:05Z"
   },
   {
     "artifact_type": "geodata",
@@ -338,8 +383,8 @@
     "city": "den_haag",
     "date": "",
     "path": "geodata/pc4_den_haag.geojson",
-    "size_bytes": 1995019,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "size_bytes": 1994929,
+    "modified_at_utc": "2026-03-05T09:32:32Z"
   },
   {
     "artifact_type": "map",
@@ -347,8 +392,8 @@
     "city": "amsterdam",
     "date": "",
     "path": "maps/amsterdam_pc4.html",
-    "size_bytes": 1081551,
-    "modified_at_utc": "2026-03-10T13:07:28Z"
+    "size_bytes": 1081992,
+    "modified_at_utc": "2026-03-16T10:23:20Z"
   },
   {
     "artifact_type": "map",
@@ -356,8 +401,8 @@
     "city": "den_haag",
     "date": "",
     "path": "maps/den_haag_pc4.html",
-    "size_bytes": 3869503,
-    "modified_at_utc": "2026-03-11T16:30:04Z"
+    "size_bytes": 4787114,
+    "modified_at_utc": "2026-03-16T15:17:45Z"
   },
   {
     "artifact_type": "map",
@@ -365,8 +410,440 @@
     "city": "den_haag",
     "date": "",
     "path": "maps/den_haag_stations.html",
-    "size_bytes": 345427,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "size_bytes": 663682,
+    "modified_at_utc": "2026-03-16T15:19:14Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/00/donkey_denHaag_fietsData_202602010000.tar.gz",
+    "size_bytes": 67283,
+    "modified_at_utc": "2026-01-31T23:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/00/ns_ov_fiets_fietsData_202602010000.tar.gz",
+    "size_bytes": 13882,
+    "modified_at_utc": "2026-01-31T23:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/01/donkey_denHaag_fietsData_202602010100.tar.gz",
+    "size_bytes": 66737,
+    "modified_at_utc": "2026-02-01T00:00:37Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/01/ns_ov_fiets_fietsData_202602010100.tar.gz",
+    "size_bytes": 13870,
+    "modified_at_utc": "2026-02-01T00:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/02/donkey_denHaag_fietsData_202602010200.tar.gz",
+    "size_bytes": 66702,
+    "modified_at_utc": "2026-02-01T01:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/02/ns_ov_fiets_fietsData_202602010200.tar.gz",
+    "size_bytes": 13877,
+    "modified_at_utc": "2026-02-01T01:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/03/donkey_denHaag_fietsData_202602010300.tar.gz",
+    "size_bytes": 67395,
+    "modified_at_utc": "2026-02-01T02:00:37Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/03/ns_ov_fiets_fietsData_202602010300.tar.gz",
+    "size_bytes": 13879,
+    "modified_at_utc": "2026-02-01T02:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/04/donkey_denHaag_fietsData_202602010400.tar.gz",
+    "size_bytes": 67470,
+    "modified_at_utc": "2026-02-01T03:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/04/ns_ov_fiets_fietsData_202602010400.tar.gz",
+    "size_bytes": 13884,
+    "modified_at_utc": "2026-02-01T03:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/05/donkey_denHaag_fietsData_202602010500.tar.gz",
+    "size_bytes": 67409,
+    "modified_at_utc": "2026-02-01T04:00:37Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/05/ns_ov_fiets_fietsData_202602010500.tar.gz",
+    "size_bytes": 13873,
+    "modified_at_utc": "2026-02-01T04:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/06/donkey_denHaag_fietsData_202602010600.tar.gz",
+    "size_bytes": 67837,
+    "modified_at_utc": "2026-02-01T05:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/06/ns_ov_fiets_fietsData_202602010600.tar.gz",
+    "size_bytes": 13924,
+    "modified_at_utc": "2026-02-01T05:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/07/donkey_denHaag_fietsData_202602010700.tar.gz",
+    "size_bytes": 67794,
+    "modified_at_utc": "2026-02-01T06:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/07/ns_ov_fiets_fietsData_202602010700.tar.gz",
+    "size_bytes": 13884,
+    "modified_at_utc": "2026-02-01T06:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/08/donkey_denHaag_fietsData_202602010800.tar.gz",
+    "size_bytes": 67564,
+    "modified_at_utc": "2026-02-01T07:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/08/ns_ov_fiets_fietsData_202602010800.tar.gz",
+    "size_bytes": 13864,
+    "modified_at_utc": "2026-02-01T07:00:43Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/09/donkey_denHaag_fietsData_202602010900.tar.gz",
+    "size_bytes": 67624,
+    "modified_at_utc": "2026-02-01T08:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/09/ns_ov_fiets_fietsData_202602010900.tar.gz",
+    "size_bytes": 13885,
+    "modified_at_utc": "2026-02-01T08:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/10/donkey_denHaag_fietsData_202602011000.tar.gz",
+    "size_bytes": 67632,
+    "modified_at_utc": "2026-02-01T09:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/10/ns_ov_fiets_fietsData_202602011000.tar.gz",
+    "size_bytes": 13891,
+    "modified_at_utc": "2026-02-01T09:00:43Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/11/donkey_denHaag_fietsData_202602011100.tar.gz",
+    "size_bytes": 66891,
+    "modified_at_utc": "2026-02-01T10:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/11/ns_ov_fiets_fietsData_202602011100.tar.gz",
+    "size_bytes": 13884,
+    "modified_at_utc": "2026-02-01T10:00:43Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/12/donkey_denHaag_fietsData_202602011200.tar.gz",
+    "size_bytes": 67097,
+    "modified_at_utc": "2026-02-01T11:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/12/ns_ov_fiets_fietsData_202602011200.tar.gz",
+    "size_bytes": 13878,
+    "modified_at_utc": "2026-02-01T11:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/13/donkey_denHaag_fietsData_202602011300.tar.gz",
+    "size_bytes": 67146,
+    "modified_at_utc": "2026-02-01T12:00:40Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/13/ns_ov_fiets_fietsData_202602011300.tar.gz",
+    "size_bytes": 13888,
+    "modified_at_utc": "2026-02-01T12:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/14/donkey_denHaag_fietsData_202602011400.tar.gz",
+    "size_bytes": 66781,
+    "modified_at_utc": "2026-02-01T13:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/14/ns_ov_fiets_fietsData_202602011400.tar.gz",
+    "size_bytes": 13873,
+    "modified_at_utc": "2026-02-01T13:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/15/donkey_denHaag_fietsData_202602011500.tar.gz",
+    "size_bytes": 66947,
+    "modified_at_utc": "2026-02-01T14:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/15/ns_ov_fiets_fietsData_202602011500.tar.gz",
+    "size_bytes": 13865,
+    "modified_at_utc": "2026-02-01T14:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/16/donkey_denHaag_fietsData_202602011600.tar.gz",
+    "size_bytes": 66813,
+    "modified_at_utc": "2026-02-01T15:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/16/ns_ov_fiets_fietsData_202602011600.tar.gz",
+    "size_bytes": 13908,
+    "modified_at_utc": "2026-02-01T15:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/17/donkey_denHaag_fietsData_202602011700.tar.gz",
+    "size_bytes": 66978,
+    "modified_at_utc": "2026-02-01T16:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/17/ns_ov_fiets_fietsData_202602011700.tar.gz",
+    "size_bytes": 13868,
+    "modified_at_utc": "2026-02-01T16:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/18/donkey_denHaag_fietsData_202602011800.tar.gz",
+    "size_bytes": 66688,
+    "modified_at_utc": "2026-02-01T17:00:39Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/18/ns_ov_fiets_fietsData_202602011800.tar.gz",
+    "size_bytes": 13886,
+    "modified_at_utc": "2026-02-01T17:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/19/donkey_denHaag_fietsData_202602011900.tar.gz",
+    "size_bytes": 67354,
+    "modified_at_utc": "2026-02-01T18:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/19/ns_ov_fiets_fietsData_202602011900.tar.gz",
+    "size_bytes": 13909,
+    "modified_at_utc": "2026-02-01T18:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/20/donkey_denHaag_fietsData_202602012000.tar.gz",
+    "size_bytes": 67394,
+    "modified_at_utc": "2026-02-01T19:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/20/ns_ov_fiets_fietsData_202602012000.tar.gz",
+    "size_bytes": 13904,
+    "modified_at_utc": "2026-02-01T19:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/21/donkey_denHaag_fietsData_202602012100.tar.gz",
+    "size_bytes": 67626,
+    "modified_at_utc": "2026-02-01T20:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/21/ns_ov_fiets_fietsData_202602012100.tar.gz",
+    "size_bytes": 13869,
+    "modified_at_utc": "2026-02-01T20:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/22/donkey_denHaag_fietsData_202602012200.tar.gz",
+    "size_bytes": 67672,
+    "modified_at_utc": "2026-02-01T21:00:59Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/22/ns_ov_fiets_fietsData_202602012200.tar.gz",
+    "size_bytes": 13887,
+    "modified_at_utc": "2026-02-01T21:00:42Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/23/donkey_denHaag_fietsData_202602012300.tar.gz",
+    "size_bytes": 67845,
+    "modified_at_utc": "2026-02-01T22:00:38Z"
+  },
+  {
+    "artifact_type": "other",
+    "provider": "",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "raw_staging/2026/02/01/23/ns_ov_fiets_fietsData_202602012300.tar.gz",
+    "size_bytes": 13905,
+    "modified_at_utc": "2026-02-01T22:00:42Z"
   },
   {
     "artifact_type": "stations_data",
@@ -375,7 +852,7 @@
     "date": "2025-01-01",
     "path": "data/stations/donkey_am/stations_20250101.csv",
     "size_bytes": 6894,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:21Z"
   },
   {
     "artifact_type": "stations_data",
@@ -384,7 +861,7 @@
     "date": "2025-01-02",
     "path": "data/stations/donkey_am/stations_20250102.csv",
     "size_bytes": 6891,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:21Z"
   },
   {
     "artifact_type": "stations_data",
@@ -393,7 +870,7 @@
     "date": "2025-01-03",
     "path": "data/stations/donkey_am/stations_20250103.csv",
     "size_bytes": 6891,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:21Z"
   },
   {
     "artifact_type": "stations_data",
@@ -402,7 +879,7 @@
     "date": "2025-01-28",
     "path": "data/stations/donkey_am/stations_20250128.csv",
     "size_bytes": 6895,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:22Z"
   },
   {
     "artifact_type": "stations_data",
@@ -411,7 +888,7 @@
     "date": "2025-01-29",
     "path": "data/stations/donkey_am/stations_20250129.csv",
     "size_bytes": 6897,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:22Z"
   },
   {
     "artifact_type": "stations_data",
@@ -420,7 +897,7 @@
     "date": "2025-01-30",
     "path": "data/stations/donkey_am/stations_20250130.csv",
     "size_bytes": 6897,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:22Z"
   },
   {
     "artifact_type": "stations_data",
@@ -429,7 +906,7 @@
     "date": "2025-01-31",
     "path": "data/stations/donkey_am/stations_20250131.csv",
     "size_bytes": 6894,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:22Z"
   },
   {
     "artifact_type": "stations_data",
@@ -438,7 +915,7 @@
     "date": "2026-03-05",
     "path": "data/stations/donkey_am/stations_20260305.csv",
     "size_bytes": 2959,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:22Z"
   },
   {
     "artifact_type": "stations_data",
@@ -447,7 +924,7 @@
     "date": "2025-01-01",
     "path": "data/stations/donkey_denHaag/stations_20250101.csv",
     "size_bytes": 12452,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:17Z"
   },
   {
     "artifact_type": "stations_data",
@@ -456,7 +933,7 @@
     "date": "2025-01-02",
     "path": "data/stations/donkey_denHaag/stations_20250102.csv",
     "size_bytes": 12452,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:18Z"
   },
   {
     "artifact_type": "stations_data",
@@ -465,7 +942,7 @@
     "date": "2025-01-03",
     "path": "data/stations/donkey_denHaag/stations_20250103.csv",
     "size_bytes": 12452,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:18Z"
   },
   {
     "artifact_type": "stations_data",
@@ -474,7 +951,7 @@
     "date": "2025-01-28",
     "path": "data/stations/donkey_denHaag/stations_20250128.csv",
     "size_bytes": 12468,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:19Z"
   },
   {
     "artifact_type": "stations_data",
@@ -483,7 +960,7 @@
     "date": "2025-01-29",
     "path": "data/stations/donkey_denHaag/stations_20250129.csv",
     "size_bytes": 12468,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:19Z"
   },
   {
     "artifact_type": "stations_data",
@@ -492,7 +969,7 @@
     "date": "2025-01-30",
     "path": "data/stations/donkey_denHaag/stations_20250130.csv",
     "size_bytes": 12468,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:20Z"
   },
   {
     "artifact_type": "stations_data",
@@ -501,7 +978,16 @@
     "date": "2025-01-31",
     "path": "data/stations/donkey_denHaag/stations_20250131.csv",
     "size_bytes": 12468,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:20Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "donkey_denHaag",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/stations/donkey_denHaag/stations_20260201.csv",
+    "size_bytes": 24901,
+    "modified_at_utc": "2026-03-16T15:16:27Z"
   },
   {
     "artifact_type": "stations_data",
@@ -510,6 +996,15 @@
     "date": "2026-03-05",
     "path": "data/stations/donkey_denHaag/stations_20260305.csv",
     "size_bytes": 31772,
-    "modified_at_utc": "2026-03-09T18:47:02Z"
+    "modified_at_utc": "2026-03-06T12:28:21Z"
+  },
+  {
+    "artifact_type": "stations_data",
+    "provider": "ns_ov_fiets",
+    "city": "",
+    "date": "2026-02-01",
+    "path": "data/stations/ns_ov_fiets/stations_20260201.csv",
+    "size_bytes": 15537,
+    "modified_at_utc": "2026-03-16T15:16:27Z"
   }
 ]

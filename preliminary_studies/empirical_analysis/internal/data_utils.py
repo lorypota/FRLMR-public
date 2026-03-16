@@ -257,6 +257,9 @@ def load_day_availability(
         - Columns: station_id strings
         - Values: num_bikes_available (int)
 
+    Also saves a parallel ``docks_<date>.csv`` table with
+    ``num_docks_available`` values when *cache_dir* is set.
+
     If cache_dir is set, saves/loads a derived table for speed.
     """
     if provider is None:
@@ -264,6 +267,7 @@ def load_day_availability(
     if cache_dir:
         date_tag = f"{year}{month:02d}{day:02d}"
         preferred_cache_path = os.path.join(cache_dir, f"docked_{date_tag}.csv")
+        docks_cache_path = os.path.join(cache_dir, f"docks_{date_tag}.csv")
         legacy_tag = "" if provider == PROVIDER else f"{provider}_"
         legacy_paths = [
             os.path.join(cache_dir, f"availability_{date_tag}.csv"),
@@ -280,11 +284,13 @@ def load_day_availability(
                 return pd.read_csv(legacy_path, index_col="timestamp", parse_dates=True)
     else:
         preferred_cache_path = None
+        docks_cache_path = None
 
     tar_files = list_tar_files(data_root, year, month, day, provider=provider)
     print(f"  Found {len(tar_files)} snapshots to process...")
 
-    records = []
+    bikes_records = []
+    docks_records = []
     for i, tar_path in enumerate(tar_files):
         if i % 100 == 0:
             print(f"  Processing snapshot {i + 1}/{len(tar_files)}...")
@@ -292,17 +298,24 @@ def load_day_availability(
         statuses = get_station_status(tar_path)
         if statuses is None:
             continue
-        row = {"timestamp": ts}
+        bikes_row = {"timestamp": ts}
+        docks_row = {"timestamp": ts}
         for s in statuses:
-            row[s["station_id"]] = s["num_bikes_available"]
-        records.append(row)
+            bikes_row[s["station_id"]] = s["num_bikes_available"]
+            docks_row[s["station_id"]] = s.get("num_docks_available", 0)
+        bikes_records.append(bikes_row)
+        docks_records.append(docks_row)
 
-    df = pd.DataFrame(records).set_index("timestamp").sort_index()
+    df = pd.DataFrame(bikes_records).set_index("timestamp").sort_index()
+    docks_df = pd.DataFrame(docks_records).set_index("timestamp").sort_index()
 
     if preferred_cache_path:
         os.makedirs(os.path.dirname(preferred_cache_path), exist_ok=True)
         df.to_csv(preferred_cache_path)
         print(f"  Saved docked-bike table: {preferred_cache_path}")
+    if docks_cache_path:
+        docks_df.to_csv(docks_cache_path)
+        print(f"  Saved docks-available table: {docks_cache_path}")
 
     return df
 
@@ -458,6 +471,11 @@ def load_day_free_bikes(
                     "bike_id": b["bike_id"],
                     "lat": b["lat"],
                     "lon": b["lon"],
+                    "is_reserved": b.get("is_reserved", False),
+                    "is_disabled": b.get("is_disabled", False),
+                    "last_reported": b.get("last_reported"),
+                    "station_id": b.get("station_id", ""),
+                    "vehicle_type_id": b.get("vehicle_type_id", ""),
                 }
             )
 
