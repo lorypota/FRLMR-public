@@ -35,22 +35,22 @@ def build_visualization_js() -> str:
                                 dateKey,
                                 hour
                             ),
-                            fillOpacity: 0.6,
-                            color: 'black'
+                            fillOpacity: getPolygonFillOpacity(mode),
+                            color: getPolygonStrokeColor(mode)
                         };
                     }
                     if (mode === 'fixed') {
                         return {
                             fillColor: fixedColorForCount(count),
-                            fillOpacity: 0.6,
-                            color: 'black'
+                            fillOpacity: getPolygonFillOpacity(mode),
+                            color: getPolygonStrokeColor(mode)
                         };
                     }
                     if (mode === 'hotspot') {
                         return {
-                            fillColor: '#ffffff',
-                            fillOpacity: 0.04,
-                            color: '#7a7a7a'
+                            fillColor: themeColor('hotspotPolygonFill'),
+                            fillOpacity: getPolygonFillOpacity(mode),
+                            color: getPolygonStrokeColor(mode)
                         };
                     }
                     return {
@@ -62,8 +62,8 @@ def build_visualization_js() -> str:
                             dateKey,
                             hour
                         ),
-                        fillOpacity: 0.6,
-                        color: 'black'
+                        fillOpacity: getPolygonFillOpacity(mode),
+                        color: getPolygonStrokeColor(mode)
                     };
                 }
 

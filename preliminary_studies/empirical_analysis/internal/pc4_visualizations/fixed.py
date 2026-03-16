@@ -2,8 +2,6 @@
 
 from textwrap import dedent
 
-from .common import COLOR_BLUE, COLOR_GREEN, COLOR_ORANGE, COLOR_RED
-
 MODE = {"value": "fixed", "label": "Fixed (0 / 1-3 / 4-6 / 7+)"}
 
 
@@ -11,18 +9,19 @@ def build_js() -> str:
     """JavaScript helpers for fixed visualization."""
     return dedent(
         f"""
+        {""}
         function fixedColorForCount(count) {{
-            if (count === 0) return '{COLOR_BLUE}';
-            if (count <= 3) return '{COLOR_GREEN}';
-            if (count <= 6) return '{COLOR_ORANGE}';
-            return '{COLOR_RED}';
+            if (count === 0) return themeColor('scaleBlue');
+            if (count <= 3) return themeColor('scaleGreen');
+            if (count <= 6) return themeColor('scaleOrange');
+            return themeColor('scaleRed');
         }}
 
         function fixedLegendHtml() {{
-            return '<span style="color:{COLOR_BLUE}">&#9632;</span> 0 bikes<br>' +
-                   '<span style="color:{COLOR_GREEN}">&#9632;</span> 1 &ndash; 3<br>' +
-                   '<span style="color:{COLOR_ORANGE}">&#9632;</span> 4 &ndash; 6<br>' +
-                   '<span style="color:{COLOR_RED}">&#9632;</span> 7+<br>';
+            return '<span style="color:' + themeColor('scaleBlue') + ';">&#9632;</span> 0 bikes<br>' +
+                   '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 1 &ndash; 3<br>' +
+                   '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> 4 &ndash; 6<br>' +
+                   '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 7+<br>';
         }}
         """
     ).strip()

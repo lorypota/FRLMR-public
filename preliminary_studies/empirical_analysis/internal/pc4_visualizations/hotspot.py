@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from textwrap import dedent
 
-from .common import HOTSPOT_HIGH, HOTSPOT_LOW, HOTSPOT_MEDIUM, HOTSPOT_PEAK
-
 MODE = {"value": "hotspot", "label": "Space-time hotspot"}
 
 DOCKLESS_RADIUS_METERS = 125
@@ -86,17 +84,17 @@ def build_js() -> str:
         }}
 
         function hotspotLegendHtml() {{
-            return '<div style="margin-bottom:4px;color:#555;">Overlapping density circles</div>' +
-                   '<span style="color:{HOTSPOT_LOW}">&#9632;</span> Dockless bikes: vivid magenta-violet circles<br>' +
-                   '<span style="color:{HOTSPOT_HIGH}">&#9632;</span> Stations with availability: larger brighter circles<br>' +
-                   '<span style="color:{HOTSPOT_PEAK}">&#9632;</span> Brighter overlap = more supply in this area';
+            return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">Overlapping density circles</div>' +
+                   '<span style="color:' + themeColor('hotspotDockless') + ';">&#9632;</span> Dockless bikes: vivid magenta-violet circles<br>' +
+                   '<span style="color:' + themeColor('hotspotMedium') + ';">&#9632;</span> Stations with availability: larger brighter circles<br>' +
+                   '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> Brighter overlap = more supply in this area';
         }}
 
         function hotspotFillColor(avail, stationMax) {{
             var ratio = stationMax > 0 ? Math.min(avail / stationMax, 1.0) : 0;
-            if (ratio <= 0.33) return '{HOTSPOT_MEDIUM}';
-            if (ratio <= 0.75) return '{HOTSPOT_HIGH}';
-            return '{HOTSPOT_PEAK}';
+            if (ratio <= 0.33) return themeColor('hotspotLow');
+            if (ratio <= 0.75) return themeColor('hotspotMedium');
+            return themeColor('hotspotPeak');
         }}
         """
     ).strip()

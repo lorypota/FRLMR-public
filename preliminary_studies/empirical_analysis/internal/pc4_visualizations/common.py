@@ -28,6 +28,47 @@ def build_common_js() -> str:
     """Shared JavaScript helpers used by multiple visualization modes."""
     return dedent(
         f"""
+        var THEME_PALETTES = {{
+            light: {{
+                scaleZero: '{LIGHT_BLUE}',
+                scaleBlue: '{COLOR_BLUE}',
+                scaleGreen: '{COLOR_GREEN}',
+                scaleOrange: '{COLOR_ORANGE}',
+                scaleRed: '{COLOR_RED}',
+                polygonStroke: '#000000',
+                hotspotPolygonFill: '#ffffff',
+                hotspotPolygonStroke: '#7a7a7a',
+                docklessMarker: '#333333',
+                stationMarker: '#e377c2',
+                selectedMarker: '#000000',
+                hotspotDockless: '{HOTSPOT_LOW}',
+                hotspotLow: '{HOTSPOT_MEDIUM}',
+                hotspotMedium: '{HOTSPOT_HIGH}',
+                hotspotPeak: '{HOTSPOT_PEAK}',
+                gradientBorder: '#999999',
+                legendSubtleText: '#555555'
+            }},
+            dark: {{
+                scaleZero: '#35526e',
+                scaleBlue: '#58a6ff',
+                scaleGreen: '#5ee38b',
+                scaleOrange: '#ffb454',
+                scaleRed: '#ff7373',
+                polygonStroke: '#e3ebf3',
+                hotspotPolygonFill: '#d7e4f1',
+                hotspotPolygonStroke: '#a7b8ca',
+                docklessMarker: '#d0dae4',
+                stationMarker: '#ff8fda',
+                selectedMarker: '#ffffff',
+                hotspotDockless: '#b96aff',
+                hotspotLow: '#ff5db8',
+                hotspotMedium: '#ff9d57',
+                hotspotPeak: '#ffe08a',
+                gradientBorder: '#c0ccd8',
+                legendSubtleText: '#c7d3df'
+            }}
+        }};
+
         function isHotspotMode(mode) {{
             return mode === 'hotspot';
         }}
@@ -44,11 +85,58 @@ def build_common_js() -> str:
             ];
         }}
 
+        function hexToRgbArray(hex) {{
+            var normalized = String(hex || '').replace('#', '');
+            if (normalized.length === 3) {{
+                normalized = normalized[0] + normalized[0] +
+                             normalized[1] + normalized[1] +
+                             normalized[2] + normalized[2];
+            }}
+            return [
+                parseInt(normalized.slice(0, 2), 16),
+                parseInt(normalized.slice(2, 4), 16),
+                parseInt(normalized.slice(4, 6), 16)
+            ];
+        }}
+
+        function getThemeName() {{
+            return document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+        }}
+
+        function getThemePalette() {{
+            return THEME_PALETTES[getThemeName()];
+        }}
+
+        function themeColor(name) {{
+            return getThemePalette()[name];
+        }}
+
+        function getPolygonStrokeColor(mode) {{
+            if (isHotspotMode(mode)) return themeColor('hotspotPolygonStroke');
+            return themeColor('polygonStroke');
+        }}
+
+        function getPolygonFillOpacity(mode) {{
+            if (isHotspotMode(mode)) {{
+                return getThemeName() === 'dark' ? 0.08 : 0.04;
+            }}
+            return getThemeName() === 'dark' ? 0.72 : 0.6;
+        }}
+
+        function stationColorForAvailability(avail) {{
+            var count = Number(avail);
+            if (!isFinite(count) || count <= 0) return themeColor('scaleBlue');
+            if (count <= 3) return themeColor('scaleGreen');
+            if (count <= 6) return themeColor('scaleOrange');
+            return themeColor('scaleRed');
+        }}
+
         function ratioToGradient(ratio) {{
-            var blue = [51, 136, 255];
-            var green = [44, 160, 44];
-            var orange = [255, 127, 14];
-            var red = [214, 39, 40];
+            var palette = getThemePalette();
+            var blue = hexToRgbArray(palette.scaleBlue);
+            var green = hexToRgbArray(palette.scaleGreen);
+            var orange = hexToRgbArray(palette.scaleOrange);
+            var red = hexToRgbArray(palette.scaleRed);
             var rgb;
             if (ratio <= 0.33) {{
                 rgb = lerpColor(blue, green, ratio / 0.33);
@@ -68,7 +156,5 @@ def build_common_js() -> str:
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }}
-
-        var LIGHT_BLUE = '{LIGHT_BLUE}';
         """
     ).strip()

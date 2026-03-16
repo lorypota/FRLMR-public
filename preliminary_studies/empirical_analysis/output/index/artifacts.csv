@@ -38,7 +38,7 @@ dockless_data,donkey_denHaag,,2026-03-05,data/dockless/donkey_denHaag/dockless_2
 geodata,,amsterdam,,geodata/pc4_amsterdam.geojson,1608541,2026-03-09T18:47:02Z
 geodata,,den_haag,,geodata/pc4_den_haag.geojson,1995019,2026-03-09T18:47:02Z
 map,,amsterdam,,maps/amsterdam_pc4.html,1081551,2026-03-10T13:07:28Z
-map,,den_haag,,maps/den_haag_pc4.html,3860443,2026-03-10T14:17:25Z
+map,,den_haag,,maps/den_haag_pc4.html,3869503,2026-03-11T16:30:04Z
 map,,den_haag,,maps/den_haag_stations.html,345427,2026-03-09T18:47:02Z
 stations_data,donkey_am,,2025-01-01,data/stations/donkey_am/stations_20250101.csv,6894,2026-03-09T18:47:02Z
 stations_data,donkey_am,,2025-01-02,data/stations/donkey_am/stations_20250102.csv,6891,2026-03-09T18:47:02Z

@@ -56,8 +56,9 @@ PDOK_URL = (
     "&jaarcode=2024"
 )
 
-RIGHT_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-RIGHT_MAP_TILE_ATTRIBUTION = (
+LIGHT_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+DARK_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+MAP_TILE_ATTRIBUTION = (
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> '
     'contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
 )
@@ -475,6 +476,26 @@ def build_page_styles(left_map_id: str) -> str:
             width: 100%;
         }}
 
+        .legend-symbol-dockless {{
+            color: #333;
+        }}
+
+        .legend-scale-zero {{
+            color: #3388ff;
+        }}
+
+        .legend-scale-low {{
+            color: #2ca02c;
+        }}
+
+        .legend-scale-medium {{
+            color: #ff7f0e;
+        }}
+
+        .legend-scale-high {{
+            color: #d62728;
+        }}
+
         .hotspot-size-label {{
             min-width: 44px;
             font-size: 13px;
@@ -626,6 +647,107 @@ def build_page_styles(left_map_id: str) -> str:
             margin: 10px 12px;
         }}
 
+        body.theme-dark {{
+            background: #111923;
+            color: #e5edf5;
+        }}
+
+        body.theme-dark .map-panel {{
+            background: #16202b;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
+        }}
+
+        body.theme-dark .panel-controls,
+        body.theme-dark #legend-box {{
+            background: rgba(20, 29, 39, 0.95);
+            border-color: #314253;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+        }}
+
+        body.theme-dark .panel-heading-label,
+        body.theme-dark .hotspot-size-label,
+        body.theme-dark .legend-static,
+        body.theme-dark .legend-unified-label,
+        body.theme-dark .legend-panel-title,
+        body.theme-dark .legend-toggle {{
+            color: #c3d0dc;
+        }}
+
+        body.theme-dark .control-inline label,
+        body.theme-dark .legend-title,
+        body.theme-dark .legend-hotspot-control label,
+        body.theme-dark .date-readout,
+        body.theme-dark .hour-readout {{
+            color: #edf4fb;
+        }}
+
+        body.theme-dark .panel-controls select {{
+            background: #13202c;
+            color: #edf4fb;
+            border-color: #38506a;
+        }}
+
+        body.theme-dark .panel-controls select,
+        body.theme-dark .panel-controls input[type="range"],
+        body.theme-dark .legend-hotspot-control input[type="range"] {{
+            accent-color: #66b7ff;
+        }}
+
+        body.theme-dark .legend-hotspot-control,
+        body.theme-dark .compare-sync-options,
+        body.theme-dark .legend-section {{
+            border-color: #314253;
+        }}
+
+        body.theme-dark .legend-symbol-dockless {{
+            color: #d0dae4;
+        }}
+
+        body.theme-dark .legend-scale-zero {{
+            color: #58a6ff;
+        }}
+
+        body.theme-dark .legend-scale-low {{
+            color: #5ee38b;
+        }}
+
+        body.theme-dark .legend-scale-medium {{
+            color: #ffb454;
+        }}
+
+        body.theme-dark .legend-scale-high {{
+            color: #ff7373;
+        }}
+
+        body.theme-dark .leaflet-control-zoom a {{
+            background: rgba(20, 29, 39, 0.96);
+            color: #edf4fb;
+            border-bottom-color: #314253;
+        }}
+
+        body.theme-dark .leaflet-control-zoom a:hover {{
+            background: #233242;
+        }}
+
+        body.theme-dark .leaflet-control-attribution {{
+            background: rgba(20, 29, 39, 0.92);
+            color: #c3d0dc;
+        }}
+
+        body.theme-dark .leaflet-control-attribution a {{
+            color: #8ec8ff;
+        }}
+
+        body.theme-dark .leaflet-popup-content-wrapper,
+        body.theme-dark .leaflet-popup-tip {{
+            background: #16202b;
+            color: #edf4fb;
+        }}
+
+        body.theme-dark .leaflet-popup-content {{
+            color: #edf4fb;
+        }}
+
         @media (max-width: 1100px) {{
             body.compare-on #map-grid {{
                 grid-template-columns: minmax(0, 1fr);
@@ -688,6 +810,10 @@ def build_page_html(
                 <span class="legend-title">Available Bikes</span>
             </div>
             <div class="legend-top">
+                <label class="legend-toggle" for="theme-toggle">
+                    <input type="checkbox" id="theme-toggle">
+                    <span>Dark mode</span>
+                </label>
                 <label class="legend-toggle" for="compare-toggle">
                     <input type="checkbox" id="compare-toggle">
                     <span>Compare mode</span>
@@ -712,8 +838,12 @@ def build_page_html(
                 </label>
             </div>
             <div class="legend-static">
-                <span style="color: #333;">&#9679;</span> Dockless bike<br>
-                <span style="color: #e377c2;">&#9679;</span> Station
+                <span class="legend-symbol-dockless">&#9679;</span> Dockless bike<br>
+                Station bikes stored:<br>
+                <span class="legend-scale-zero">&#9679;</span> 0<br>
+                <span class="legend-scale-low">&#9679;</span> 1 &ndash; 3<br>
+                <span class="legend-scale-medium">&#9679;</span> 4 &ndash; 6<br>
+                <span class="legend-scale-high">&#9679;</span> 7+
             </div>
             <div class="legend-section" id="legend-left-section">
                 <div class="legend-panel-title" id="legend-left-title">Current map</div>
@@ -744,6 +874,7 @@ def build_custom_js(
     <script>
     window.addEventListener('load', function() {
         document.body.classList.add('compare-off');
+        document.body.classList.add('theme-light');
 
         var leftMap = __LEFT_MAP__;
         var allData = __ALL_DATA__;
@@ -758,6 +889,7 @@ def build_custom_js(
         var viewportSyncInProgress = false;
         var panelStateSyncInProgress = false;
         var rightPanelInitialized = false;
+        var panels = null;
 
         __VISUALIZATION_JS__
 
@@ -771,13 +903,9 @@ def build_custom_js(
             zoomControl: true,
             attributionControl: true
         });
-        L.tileLayer('__RIGHT_MAP_TILE_URL__', {
-            subdomains: 'abcd',
-            maxZoom: 20,
-            attribution: '__RIGHT_MAP_TILE_ATTRIBUTION__'
-        }).addTo(rightMap);
         rightMap.setView(defaultCenter, defaultZoom);
 
+        var themeToggle = document.getElementById('theme-toggle');
         var compareToggle = document.getElementById('compare-toggle');
         var syncMovementToggle = document.getElementById('sync-movement-toggle');
         var syncVisualizationToggle = document.getElementById('sync-visualization-toggle');
@@ -785,6 +913,18 @@ def build_custom_js(
         var syncTimeToggle = document.getElementById('sync-time-toggle');
         var legendLeftTitle = document.getElementById('legend-left-title');
         var legendRightTitle = document.getElementById('legend-right-title');
+        var themeStorageKey = 'fairmss-den-haag-pc4-theme';
+        var baseLayers = { left: null, right: null };
+        var tileConfig = {
+            light: {
+                url: '__LIGHT_MAP_TILE_URL__',
+                attribution: '__MAP_TILE_ATTRIBUTION__'
+            },
+            dark: {
+                url: '__DARK_MAP_TILE_URL__',
+                attribution: '__MAP_TILE_ATTRIBUTION__'
+            }
+        };
         var syncSettings = {
             movement: true,
             visualization: true,
@@ -793,6 +933,82 @@ def build_custom_js(
         };
         var POINT_MARKER_RADIUS = 5;
         var POINT_MARKER_RADIUS_SELECTED = 8;
+
+        function readStoredTheme() {
+            try {
+                return window.localStorage.getItem(themeStorageKey);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function storeTheme(themeName) {
+            try {
+                window.localStorage.setItem(themeStorageKey, themeName);
+            } catch (error) {
+                return;
+            }
+        }
+
+        function applyBodyTheme(themeName) {
+            var dark = themeName === 'dark';
+            document.body.classList.toggle('theme-dark', dark);
+            document.body.classList.toggle('theme-light', !dark);
+            if (themeToggle) {
+                themeToggle.checked = dark;
+            }
+        }
+
+        function setBaseLayer(map, panelId, themeName) {
+            if (baseLayers[panelId]) {
+                map.removeLayer(baseLayers[panelId]);
+            }
+            var cfg = tileConfig[themeName] || tileConfig.light;
+            baseLayers[panelId] = L.tileLayer(cfg.url, {
+                subdomains: 'abcd',
+                maxZoom: 20,
+                attribution: cfg.attribution
+            }).addTo(map);
+        }
+
+        function applyTheme(themeName) {
+            var normalized = themeName === 'dark' ? 'dark' : 'light';
+            applyBodyTheme(normalized);
+            storeTheme(normalized);
+            setBaseLayer(leftMap, 'left', normalized);
+            setBaseLayer(rightMap, 'right', normalized);
+            if (panels) {
+                panels.left.renderAll();
+                panels.right.renderAll();
+                updateLegendLayout();
+            }
+        }
+
+        function getDocklessMarkerStyle(isSelected, muted) {
+            var selectedColor = themeColor('selectedMarker');
+            var baseColor = themeColor('docklessMarker');
+            return {
+                color: isSelected ? selectedColor : baseColor,
+                fillColor: isSelected ? selectedColor : baseColor,
+                fillOpacity: isSelected ? 0.95 : (muted ? 0.25 : 0.7),
+                weight: isSelected ? 2 : 1
+            };
+        }
+
+        function getStationMarkerStyle(isSelected, muted, availability) {
+            var selectedColor = themeColor('selectedMarker');
+            var baseColor = stationColorForAvailability(availability);
+            return {
+                color: isSelected ? selectedColor : baseColor,
+                fillColor: baseColor,
+                fillOpacity: isSelected ? 1.0 : (muted ? 0.45 : 0.8),
+                weight: isSelected ? 2.5 : 1.5
+            };
+        }
+
+        applyBodyTheme(readStoredTheme() === 'dark' ? 'dark' : 'light');
+        setBaseLayer(leftMap, 'left', getThemeName());
+        setBaseLayer(rightMap, 'right', getThemeName());
 
         function buildControls(panelId) {
             return {
@@ -1140,10 +1356,10 @@ def build_custom_js(
                     var pc = parseInt(feature.properties.postcode, 10) ||
                              feature.properties.postcode;
                     return {
-                        color: 'black',
+                        color: getPolygonStrokeColor(panel.visualizationMode),
                         weight: getPolygonWeight(panel, pc),
-                        fillColor: '#3388ff',
-                        fillOpacity: 0.6
+                        fillColor: themeColor('scaleBlue'),
+                        fillOpacity: getPolygonFillOpacity(panel.visualizationMode)
                     };
                 },
                 onEachFeature: function(feature, layer) {
@@ -1306,7 +1522,7 @@ def build_custom_js(
                         L.circle(dockless[i], {
                             radius: DOCKLESS_RADIUS_METERS * this.hotspotRadiusScale,
                             stroke: false,
-                            fillColor: '#8f1cff',
+                            fillColor: themeColor('hotspotDockless'),
                             fillOpacity: 0.15,
                             interactive: false
                         }).addTo(this.hotspotLayer);
@@ -1340,10 +1556,10 @@ def build_custom_js(
                         var isSelected = (selectedPC4 !== null && bikes[i][2] === selectedPC4);
                         var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {
                             radius: isSelected ? POINT_MARKER_RADIUS_SELECTED : POINT_MARKER_RADIUS,
-                            color: isSelected ? '#000' : '#333',
-                            fillColor: isSelected ? '#000' : '#333',
-                            fillOpacity: isSelected ? 0.95 : (muted ? 0.25 : 0.7),
-                            weight: isSelected ? 2 : 1
+                            color: getDocklessMarkerStyle(isSelected, muted).color,
+                            fillColor: getDocklessMarkerStyle(isSelected, muted).fillColor,
+                            fillOpacity: getDocklessMarkerStyle(isSelected, muted).fillOpacity,
+                            weight: getDocklessMarkerStyle(isSelected, muted).weight
                         });
                         marker._pc4 = bikes[i][2];
                         marker.addTo(this.bikeLayer);
@@ -1367,18 +1583,20 @@ def build_custom_js(
                         var isSelected = (
                             selectedPC4 !== null && station.pc === selectedPC4
                         );
+                        var style = getStationMarkerStyle(isSelected, muted, avail);
                         var marker = L.circleMarker(station.ll, {
                             radius: isSelected ? POINT_MARKER_RADIUS_SELECTED : POINT_MARKER_RADIUS,
-                            color: isSelected ? '#000' : '#e377c2',
-                            fillColor: '#e377c2',
-                            fillOpacity: isSelected ? 1.0 : (muted ? 0.45 : 0.8),
-                            weight: isSelected ? 2.5 : 1.5
+                            color: style.color,
+                            fillColor: style.fillColor,
+                            fillOpacity: style.fillOpacity,
+                            weight: style.weight
                         });
                         marker.bindTooltip(
                             escapeHtml(station.n) +
                             '<br>Available: ' + avail + ' / ' + station.cap
                         );
                         marker._pc4 = station.pc;
+                        marker._avail = avail;
                         marker.addTo(this.stationLayer);
                         this.stationMarkers.push(marker);
                     }
@@ -1389,39 +1607,31 @@ def build_custom_js(
                         var bikeMarker = this.bikeMarkers[i];
                         if (pc4 !== null && bikeMarker._pc4 === pc4) {
                             bikeMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
-                            bikeMarker.setStyle({
-                                color: '#000',
-                                fillColor: '#000',
-                                fillOpacity: 0.95,
-                                weight: 2
-                            });
+                            bikeMarker.setStyle(getDocklessMarkerStyle(true, muted));
                         } else {
                             bikeMarker.setRadius(POINT_MARKER_RADIUS);
-                            bikeMarker.setStyle({
-                                color: '#333',
-                                fillColor: '#333',
-                                fillOpacity: muted ? 0.25 : 0.7,
-                                weight: 1
-                            });
+                            bikeMarker.setStyle(getDocklessMarkerStyle(false, muted));
                         }
                     }
                     for (var j = 0; j < this.stationMarkers.length; j++) {
                         var stationMarker = this.stationMarkers[j];
+                        var stationStyle;
                         if (pc4 !== null && stationMarker._pc4 === pc4) {
                             stationMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
-                            stationMarker.setStyle({
-                                color: '#000',
-                                weight: 2.5,
-                                fillOpacity: 1.0
-                            });
+                            stationStyle = getStationMarkerStyle(
+                                true,
+                                muted,
+                                stationMarker._avail
+                            );
                         } else {
                             stationMarker.setRadius(POINT_MARKER_RADIUS);
-                            stationMarker.setStyle({
-                                color: '#e377c2',
-                                weight: 1.5,
-                                fillOpacity: muted ? 0.45 : 0.8
-                            });
+                            stationStyle = getStationMarkerStyle(
+                                false,
+                                muted,
+                                stationMarker._avail
+                            );
                         }
+                        stationMarker.setStyle(stationStyle);
                     }
                 },
                 clearSelection: function() {
@@ -1556,6 +1766,12 @@ def build_custom_js(
             }
         }
 
+        if (themeToggle) {
+            themeToggle.addEventListener('change', function() {
+                applyTheme(this.checked ? 'dark' : 'light');
+            });
+        }
+
         compareToggle.addEventListener('change', function() {
             setCompareMode(this.checked);
         });
@@ -1597,8 +1813,9 @@ def build_custom_js(
         .replace("__DEFAULT_ZOOM__", str(DEFAULT_ZOOM))
         .replace("__VISUALIZATION_JS__", visualization_js)
         .replace("__LEFT_MAP_ID__", map_id)
-        .replace("__RIGHT_MAP_TILE_URL__", RIGHT_MAP_TILE_URL)
-        .replace("__RIGHT_MAP_TILE_ATTRIBUTION__", RIGHT_MAP_TILE_ATTRIBUTION)
+        .replace("__LIGHT_MAP_TILE_URL__", LIGHT_MAP_TILE_URL)
+        .replace("__DARK_MAP_TILE_URL__", DARK_MAP_TILE_URL)
+        .replace("__MAP_TILE_ATTRIBUTION__", MAP_TILE_ATTRIBUTION)
     )
 
 
@@ -1668,7 +1885,7 @@ def main():
     m = folium.Map(
         location=DEN_HAAG_CENTER,
         zoom_start=DEFAULT_ZOOM,
-        tiles="CartoDB positron",
+        tiles=None,
     )
     map_js = m.get_name()
     map_id = map_js

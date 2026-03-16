@@ -2,8 +2,6 @@
 
 from textwrap import dedent
 
-from .common import LIGHT_BLUE
-
 MODE = {"value": "gradient", "label": "Continuous gradient"}
 
 
@@ -11,8 +9,9 @@ def build_js() -> str:
     """JavaScript helpers for gradient visualization."""
     return dedent(
         f"""
+        {""}
         function gradientColorForCount(count, allData, globalMax, mode, dateKey, hour) {{
-            if (count === 0) return '{LIGHT_BLUE}';
+            if (count === 0) return themeColor('scaleZero');
             var mx = getEffectiveMax(allData, globalMax, mode, dateKey, hour);
             var lowCut = Math.min(5, mx);
             var ratio;
@@ -26,9 +25,13 @@ def build_js() -> str:
 
         function gradientLegendHtml(allData, globalMax, mode, dateKey, hour) {{
             var mx = getEffectiveMax(allData, globalMax, mode, dateKey, hour);
-            return '<span style="color:{LIGHT_BLUE}">&#9632;</span> 0<br>' +
-                   '<div style="height:14px;width:120px;border:1px solid #999;border-radius:2px;' +
-                   'background:linear-gradient(to right,rgb(51,136,255),rgb(44,160,44),rgb(255,127,14),rgb(214,39,40));' +
+            return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
+                   '<div style="height:14px;width:120px;border:1px solid ' + themeColor('gradientBorder') + ';border-radius:2px;' +
+                   'background:linear-gradient(to right,' +
+                   themeColor('scaleBlue') + ',' +
+                   themeColor('scaleGreen') + ',' +
+                   themeColor('scaleOrange') + ',' +
+                   themeColor('scaleRed') + ');' +
                    'margin:4px 0;"></div>' +
                    '1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' + mx + '<br>';
         }}
