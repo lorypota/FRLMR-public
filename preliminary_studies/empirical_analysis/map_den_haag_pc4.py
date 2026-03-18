@@ -1,6 +1,5 @@
 """
-Task 2b: Interactive PC4 Map with Time Slider (All Available Bikes)
-====================================================================
+Interactive PC4 Map with Time Slider
 
 Usage:
     uv run preliminary_studies/empirical_analysis/map_den_haag_pc4.py
@@ -16,12 +15,14 @@ import argparse
 import json
 import os
 import sys
+import urllib.parse
 import urllib.request
 from textwrap import dedent
 
 import folium
 import geopandas as gpd
 import pandas as pd
+from pyproj import Transformer
 from shapely.geometry import Point
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -40,13 +41,20 @@ from internal.pc4_visualizations import (
 )
 from internal.pc4_visualizations.hotspot import build_hourly_hotspot_data
 from internal.processed_data_utils import (
-    discover_docked_dates,
     load_docked_day,
     load_dockless_day,
     load_station_day,
 )
 
 PC4_CACHE = str(GEODATA_DIR / "pc4_den_haag.geojson")
+HOUSE_POINTS_CACHE = str(GEODATA_DIR / "houses_den_haag.json")
+HOUSE_POINTS_CACHE_VERSION = 2
+
+BAG_WFS_URL = "https://service.pdok.nl/kadaster/bag/wfs/v2_0"
+BAG_PAGE_SIZE = 1000
+HOUSE_CELL_SIZE_DEGREES = 0.0025
+HOUSE_DOWNLOAD_TILE_COUNT = 6
+HOUSE_BBOX_BUFFER = 0.005  # ~500m buffer to catch edge houses
 
 PDOK_URL = (
     "https://api.pdok.nl/cbs/postcode4/ogc/v1/collections/postcode4/items"
@@ -62,6 +70,158 @@ MAP_TILE_ATTRIBUTION = (
     'contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
 )
 DEFAULT_ZOOM = 13
+ALL_PROVIDERS_VALUE = "__all__"
+MAP_PROVIDER_INFO = {
+    "donkey_denHaag": {"label": "Donkey Republic"},
+    "ns_ov_fiets": {"label": "NS OV-fiets"},
+}
+
+
+def _build_bag_bbox_28992(bbox: dict[str, float]) -> str:
+    """Return a BAG WFS bbox string in the default service CRS."""
+    transformer = Transformer.from_crs("EPSG:4326", "EPSG:28992", always_xy=True)
+    min_x, min_y = transformer.transform(bbox["lon_min"], bbox["lat_min"])
+    max_x, max_y = transformer.transform(bbox["lon_max"], bbox["lat_max"])
+    return f"{min_x:.3f},{min_y:.3f},{max_x:.3f},{max_y:.3f},EPSG:28992"
+
+
+def download_house_points(bbox: dict[str, float], cache_path: str) -> dict:
+    """Download and cache Den Haag residential BAG points in a compact grid.
+
+    Each coordinate stores [lat_i, lon_i, address_count] triples so we know
+    how many addresses (apartments) share the same building location.
+    """
+    if os.path.exists(cache_path):
+        with open(cache_path, encoding="utf-8") as f:
+            cached = json.load(f)
+        if cached.get("version") == HOUSE_POINTS_CACHE_VERSION:
+            print(f"  Loading cached house points from {cache_path}")
+            return cached
+        print("  House-point cache version changed, rebuilding...")
+
+    print("  Downloading BAG residential points from PDOK...")
+    transformer = Transformer.from_crs("EPSG:28992", "EPSG:4326", always_xy=True)
+
+    # Count how many addresses share each coordinate (apartments in same building)
+    coord_counts: dict[tuple[int, int], int] = {}
+    fetched_count = 0
+
+    # Expand bbox slightly to catch edge houses
+    dl_bbox = {
+        "lat_min": bbox["lat_min"] - HOUSE_BBOX_BUFFER,
+        "lat_max": bbox["lat_max"] + HOUSE_BBOX_BUFFER,
+        "lon_min": bbox["lon_min"] - HOUSE_BBOX_BUFFER,
+        "lon_max": bbox["lon_max"] + HOUSE_BBOX_BUFFER,
+    }
+
+    tile_total = HOUSE_DOWNLOAD_TILE_COUNT * HOUSE_DOWNLOAD_TILE_COUNT
+    pages_fetched = 0
+    lat_step = (dl_bbox["lat_max"] - dl_bbox["lat_min"]) / HOUSE_DOWNLOAD_TILE_COUNT
+    lon_step = (dl_bbox["lon_max"] - dl_bbox["lon_min"]) / HOUSE_DOWNLOAD_TILE_COUNT
+
+    for tile_y in range(HOUSE_DOWNLOAD_TILE_COUNT):
+        for tile_x in range(HOUSE_DOWNLOAD_TILE_COUNT):
+            tile_bbox = {
+                "lat_min": dl_bbox["lat_min"] + (tile_y * lat_step),
+                "lat_max": dl_bbox["lat_min"] + ((tile_y + 1) * lat_step),
+                "lon_min": dl_bbox["lon_min"] + (tile_x * lon_step),
+                "lon_max": dl_bbox["lon_min"] + ((tile_x + 1) * lon_step),
+            }
+            tile_bbox_28992 = _build_bag_bbox_28992(tile_bbox)
+            page_index = 0
+
+            while True:
+                params = urllib.parse.urlencode(
+                    {
+                        "service": "WFS",
+                        "version": "2.0.0",
+                        "request": "GetFeature",
+                        "typeNames": "bag:verblijfsobject",
+                        "count": BAG_PAGE_SIZE,
+                        "startIndex": page_index * BAG_PAGE_SIZE,
+                        "bbox": tile_bbox_28992,
+                        "outputFormat": "application/json; subtype=geojson",
+                    }
+                )
+                url = f"{BAG_WFS_URL}?{params}"
+                with urllib.request.urlopen(url, timeout=60) as resp:
+                    payload = json.load(resp)
+
+                features = payload.get("features", [])
+                if not features:
+                    break
+
+                fetched_count += len(features)
+                pages_fetched += 1
+                for feature in features:
+                    props = feature.get("properties") or {}
+                    if "woonfunctie" not in str(
+                        props.get("gebruiksdoel", "")
+                    ).lower():
+                        continue
+                    if "in gebruik" not in str(props.get("status", "")).lower():
+                        continue
+
+                    geometry = feature.get("geometry") or {}
+                    coords = geometry.get("coordinates") or []
+                    if geometry.get("type") != "Point" or len(coords) < 2:
+                        continue
+
+                    lon, lat = transformer.transform(coords[0], coords[1])
+                    if not (
+                        dl_bbox["lat_min"] <= lat <= dl_bbox["lat_max"]
+                        and dl_bbox["lon_min"] <= lon <= dl_bbox["lon_max"]
+                    ):
+                        continue
+
+                    lat_i = int(round(lat * 1_000_000))
+                    lon_i = int(round(lon * 1_000_000))
+                    coord_key = (lat_i, lon_i)
+                    coord_counts[coord_key] = coord_counts.get(coord_key, 0) + 1
+
+                page_index += 1
+                if pages_fetched == 1 or pages_fetched % 25 == 0:
+                    tile_number = (tile_y * HOUSE_DOWNLOAD_TILE_COUNT) + tile_x + 1
+                    print(
+                        f"    Tiles done: {tile_number}/{tile_total} | "
+                        f"pages fetched: {pages_fetched} | "
+                        f"raw points: {fetched_count} | "
+                        f"unique locations: {len(coord_counts)}"
+                    )
+                if len(features) < BAG_PAGE_SIZE:
+                    break
+
+    # Build cells: each cell stores [lat_i, lon_i, count, lat_i, lon_i, count, ...]
+    cells: dict[str, list[int]] = {}
+    for (lat_i, lon_i), count in coord_counts.items():
+        lon = lon_i / 1_000_000
+        lat = lat_i / 1_000_000
+        cell_x = int(lon // HOUSE_CELL_SIZE_DEGREES)
+        cell_y = int(lat // HOUSE_CELL_SIZE_DEGREES)
+        cell_key = f"{cell_x}:{cell_y}"
+        if cell_key not in cells:
+            cells[cell_key] = []
+        cells[cell_key].extend((lat_i, lon_i, count))
+
+    kept_count = len(coord_counts)
+    total_addresses = sum(coord_counts.values())
+    payload = {
+        "version": HOUSE_POINTS_CACHE_VERSION,
+        "cellSize": HOUSE_CELL_SIZE_DEGREES,
+        "count": kept_count,
+        "totalAddresses": total_addresses,
+        "cells": cells,
+    }
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    tmp_path = f"{cache_path}.tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, separators=(",", ":"))
+    os.replace(tmp_path, cache_path)
+    print(
+        f"  Cached {kept_count} unique locations "
+        f"({total_addresses} total addresses) to {cache_path}"
+    )
+    return payload
 
 
 def download_pc4_polygons(bbox: dict, cache_path: str) -> gpd.GeoDataFrame:
@@ -544,6 +704,53 @@ def build_page_styles(left_map_id: str) -> str:
             line-height: 1.5;
         }}
 
+        .runtime-status {{
+            position: fixed;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1400;
+            max-width: min(680px, calc(100% - 36px));
+            padding: 10px 14px;
+            border: 1px solid #c8d0d7;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 10px 24px rgba(36, 49, 63, 0.16);
+            box-sizing: border-box;
+            color: #22303d;
+            font-size: 13px;
+            line-height: 1.4;
+        }}
+
+        .runtime-status-text {{
+            margin-bottom: 8px;
+            font-weight: 600;
+        }}
+
+        .runtime-status-progress {{
+            height: 8px;
+            border-radius: 999px;
+            background: #dfe7ee;
+            overflow: hidden;
+        }}
+
+        .runtime-status-progress-bar {{
+            width: 0%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #1f7ae0 0%, #4db6ff 100%);
+            transition: width 180ms ease;
+        }}
+
+        .runtime-status.is-error {{
+            border-color: #c94747;
+            color: #8f1f1f;
+        }}
+
+        .runtime-status.is-error .runtime-status-progress {{
+            display: none;
+        }}
+
         .legend-top {{
             display: flex;
             align-items: flex-start;
@@ -593,53 +800,45 @@ def build_page_styles(left_map_id: str) -> str:
             margin-bottom: 10px;
         }}
 
-        .legend-section {{
-            border-top: 1px solid #e1e7ec;
-            padding-top: 8px;
-            margin-top: 8px;
+        .legend-provider-filter {{
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 10px;
         }}
 
-        #legend-right-section {{
+        .legend-provider-filter label {{
+            font-size: 13px;
+            font-weight: 600;
+            color: #304050;
+        }}
+
+        .legend-provider-filter select {{
+            font-size: 13px;
+            padding: 4px 8px;
+            border: 1px solid #c6cdd4;
+            border-radius: 6px;
+            background: white;
+            color: #1d2b38;
+            width: 100%;
+        }}
+
+        #legend-dynamic {{
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }}
+
+        #legend-right-content {{
             display: none;
         }}
 
-        body.compare-on #legend-right-section {{
+        body.compare-on #legend-right-content {{
             display: block;
         }}
 
-        body.compare-on.legend-unified #legend-right-section {{
+        body.compare-on.legend-unified #legend-right-content {{
             display: none;
-        }}
-
-        body.compare-on.legend-unified .legend-panel-title {{
-            display: none;
-        }}
-
-        .legend-unified-grid {{
-            display: grid;
-            gap: 10px;
-        }}
-
-        .legend-unified-pane {{
-            padding-top: 2px;
-        }}
-
-        .legend-unified-label {{
-            margin-bottom: 4px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #627181;
-        }}
-
-        .legend-panel-title {{
-            margin-bottom: 4px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #627181;
         }}
 
         .leaflet-popup-content {{
@@ -663,17 +862,32 @@ def build_page_styles(left_map_id: str) -> str:
             box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
         }}
 
+        body.theme-dark .runtime-status {{
+            background: rgba(20, 29, 39, 0.95);
+            border-color: #314253;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+            color: #d6e1ec;
+        }}
+
+        body.theme-dark .runtime-status-progress {{
+            background: #223244;
+        }}
+
+        body.theme-dark .runtime-status.is-error {{
+            border-color: #da6c6c;
+            color: #ffb1b1;
+        }}
+
         body.theme-dark .panel-heading-label,
         body.theme-dark .hotspot-size-label,
         body.theme-dark .legend-static,
-        body.theme-dark .legend-unified-label,
-        body.theme-dark .legend-panel-title,
         body.theme-dark .legend-toggle {{
             color: #c3d0dc;
         }}
 
         body.theme-dark .control-inline label,
         body.theme-dark .legend-title,
+        body.theme-dark .legend-provider-filter label,
         body.theme-dark .legend-hotspot-control label,
         body.theme-dark .date-readout,
         body.theme-dark .hour-readout {{
@@ -686,15 +900,21 @@ def build_page_styles(left_map_id: str) -> str:
             border-color: #38506a;
         }}
 
+        body.theme-dark .legend-provider-filter select {{
+            background: #13202c;
+            color: #edf4fb;
+            border-color: #38506a;
+        }}
+
         body.theme-dark .panel-controls select,
         body.theme-dark .panel-controls input[type="range"],
+        body.theme-dark .legend-provider-filter select,
         body.theme-dark .legend-hotspot-control input[type="range"] {{
             accent-color: #66b7ff;
         }}
 
         body.theme-dark .legend-hotspot-control,
-        body.theme-dark .compare-sync-options,
-        body.theme-dark .legend-section {{
+        body.theme-dark .compare-sync-options {{
             border-color: #314253;
         }}
 
@@ -768,6 +988,12 @@ def build_page_styles(left_map_id: str) -> str:
                 max-width: none;
             }}
         }}
+
+        .house-marker-icon,
+        .house-cluster-icon {{
+            background: none !important;
+            border: none !important;
+        }}
         </style>
         """
     ).strip()
@@ -837,6 +1063,10 @@ def build_page_html(
                 </label>
             </div>
             <div class="legend-static">
+                <div class="legend-provider-filter">
+                    <label for="provider-filter">Provider</label>
+                    <select id="provider-filter"></select>
+                </div>
                 <span class="legend-symbol-dockless">&#9679;</span> Dockless bike<br>
                 Station bikes stored:<br>
                 <span class="legend-scale-zero">&#9679;</span> 0<br>
@@ -844,13 +1074,15 @@ def build_page_html(
                 <span class="legend-scale-medium">&#9679;</span> 4 &ndash; 6<br>
                 <span class="legend-scale-high">&#9679;</span> 7+
             </div>
-            <div class="legend-section" id="legend-left-section">
-                <div class="legend-panel-title" id="legend-left-title">Current map</div>
+            <div id="legend-dynamic">
                 <div id="legend-left-content"></div>
-            </div>
-            <div class="legend-section" id="legend-right-section">
-                <div class="legend-panel-title" id="legend-right-title">Right map</div>
                 <div id="legend-right-content"></div>
+            </div>
+        </div>
+        <div id="runtime-status" class="runtime-status" hidden>
+            <div id="runtime-status-text" class="runtime-status-text"></div>
+            <div class="runtime-status-progress">
+                <div id="runtime-status-progress-bar" class="runtime-status-progress-bar"></div>
             </div>
         </div>
         """
@@ -861,34 +1093,55 @@ def build_custom_js(
     *,
     map_js: str,
     map_id: str,
-    all_data_json: str,
-    dates_json: str,
-    global_max: int,
-    pc4_geojson_json: str,
     default_visualization_json: str,
     visualization_js: str,
+    artifacts_index_path: str,
+    pc4_geojson_path: str,
+    house_data_path: str,
 ) -> str:
     """Build the client-side compare-mode behavior."""
     js_template = """
     <script>
-    window.addEventListener('load', function() {
+    window.addEventListener('load', async function() {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
         var leftMap = __LEFT_MAP__;
-        var allData = __ALL_DATA__;
-        var dates = __DATES__;
-        var globalMax = __GLOBAL_MAX__;
-        var pc4Geojson = __PC4_GEOJSON__;
+        var allData = Object.create(null);
+        var dates = [];
+        var globalMax = 0;
+        var pc4Geojson = null;
+        var pc4Index = [];
+        var dateArtifacts = Object.create(null);
+        var stationArtifacts = Object.create(null);
+        var dateLoadPromises = Object.create(null);
+        var providerLoadPromises = Object.create(null);
+        var stationMetadataPromises = Object.create(null);
+        var loadedDateKeys = Object.create(null);
+        var providerDateData = Object.create(null);
         var defaultVisualizationMode = __DEFAULT_VISUALIZATION_MODE__;
         var defaultCenter = __DEFAULT_CENTER__;
         var defaultZoom = __DEFAULT_ZOOM__;
+        var artifactsIndexPath = '__ARTIFACTS_INDEX_PATH__';
+        var pc4GeojsonPath = '__PC4_GEOJSON_PATH__';
+        var houseDataPath = '__HOUSE_DATA_PATH__';
+        var denHaagBBox = __DEN_HAAG_BBOX__;
+        var allProvidersValue = __ALL_PROVIDERS_VALUE__;
+        var providerInfo = __MAP_PROVIDER_INFO__;
+        var providerOrder = __MAP_PROVIDER_ORDER__;
+        var availableProviderKeys = [];
+        var activeProvider = __DEFAULT_PROVIDER__;
         var compareEnabled = false;
         var selectedPC4 = null;
         var viewportSyncInProgress = false;
         var panelStateSyncInProgress = false;
         var rightPanelInitialized = false;
         var panels = null;
+        var statusEl = document.getElementById('runtime-status');
+        var statusTextEl = document.getElementById('runtime-status-text');
+        var statusProgressBarEl = document.getElementById('runtime-status-progress-bar');
+        var houseData = null;
+        var houseDataPromise = null;
 
         __VISUALIZATION_JS__
 
@@ -910,8 +1163,7 @@ def build_custom_js(
         var syncVisualizationToggle = document.getElementById('sync-visualization-toggle');
         var syncDateToggle = document.getElementById('sync-date-toggle');
         var syncTimeToggle = document.getElementById('sync-time-toggle');
-        var legendLeftTitle = document.getElementById('legend-left-title');
-        var legendRightTitle = document.getElementById('legend-right-title');
+        var providerFilterEl = document.getElementById('provider-filter');
         var themeStorageKey = 'fairmss-den-haag-pc4-theme';
         var baseLayers = { left: null, right: null };
         var tileConfig = {
@@ -932,6 +1184,785 @@ def build_custom_js(
         };
         var POINT_MARKER_RADIUS = 5;
         var POINT_MARKER_RADIUS_SELECTED = 8;
+
+        function setStatusProgress(percent) {
+            if (!statusProgressBarEl) return;
+            var bounded = Math.max(0, Math.min(100, Number(percent) || 0));
+            statusProgressBarEl.style.width = bounded + '%';
+        }
+
+        function clearStatusSoon(delayMs) {
+            window.setTimeout(function() {
+                showStatus('', 'info');
+            }, delayMs || 0);
+        }
+
+        function showStatus(message, kind, progressPercent) {
+            if (!statusEl) return;
+            if (!message) {
+                statusEl.hidden = true;
+                if (statusTextEl) {
+                    statusTextEl.textContent = '';
+                }
+                statusEl.classList.remove('is-error');
+                setStatusProgress(0);
+                return;
+            }
+            statusEl.hidden = false;
+            if (statusTextEl) {
+                statusTextEl.textContent = message;
+            } else {
+                statusEl.textContent = message;
+            }
+            statusEl.classList.toggle('is-error', kind === 'error');
+            if (kind !== 'error') {
+                setStatusProgress(progressPercent);
+            }
+        }
+
+        function fetchJson(path) {
+            return fetch(path).then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Request failed for ' + path + ' (' + response.status + ')');
+                }
+                return response.json();
+            });
+        }
+
+        function fetchText(path) {
+            return fetch(path).then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Request failed for ' + path + ' (' + response.status + ')');
+                }
+                return response.text();
+            });
+        }
+
+        function ensureHouseDataLoaded(silent) {
+            if (houseData) {
+                return Promise.resolve(houseData);
+            }
+            if (houseDataPromise) {
+                return houseDataPromise;
+            }
+            if (!silent) {
+                showStatus('Loading house points...', 'info', 78);
+            }
+            houseDataPromise = fetchJson(houseDataPath).then(function(payload) {
+                houseData = payload;
+                return payload;
+            }).then(function(payload) {
+                if (!silent) {
+                    showStatus('Loaded house points', 'info', 92);
+                    clearStatusSoon(500);
+                }
+                return payload;
+            }).catch(function(error) {
+                houseDataPromise = null;
+                showStatus('Failed to load house points: ' + error.message, 'error');
+                throw error;
+            });
+            return houseDataPromise;
+        }
+
+        function csvLines(text) {
+            var normalized = String(text || '');
+            if (normalized.charCodeAt(0) === 0xFEFF) {
+                normalized = normalized.slice(1);
+            }
+            return normalized
+                .split('\\n')
+                .map(function(line) {
+                    return line.endsWith('\\r') ? line.slice(0, -1) : line;
+                })
+                .filter(function(line) {
+                    return line.trim().length > 0;
+                });
+        }
+
+        function parseCsvLine(line) {
+            var result = [];
+            var current = '';
+            var inQuotes = false;
+            for (var i = 0; i < line.length; i += 1) {
+                var ch = line[i];
+                if (ch === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i += 1;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (ch === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += ch;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        function round6(value) {
+            return Math.round(value * 1000000) / 1000000;
+        }
+
+        function parseHourFromTimestamp(timestamp) {
+            if (!timestamp || timestamp.length < 13) return 0;
+            return parseInt(timestamp.slice(11, 13), 10) || 0;
+        }
+
+        function zeroArray(length) {
+            var arr = new Array(length);
+            for (var i = 0; i < length; i += 1) {
+                arr[i] = 0;
+            }
+            return arr;
+        }
+
+        function withinDenHaagBBox(lat, lon) {
+            return lat >= denHaagBBox.lat_min &&
+                   lat <= denHaagBBox.lat_max &&
+                   lon >= denHaagBBox.lon_min &&
+                   lon <= denHaagBBox.lon_max;
+        }
+
+        function pointInRing(lon, lat, ring) {
+            var inside = false;
+            for (var i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+                var xi = ring[i][0];
+                var yi = ring[i][1];
+                var xj = ring[j][0];
+                var yj = ring[j][1];
+                var intersects = ((yi > lat) !== (yj > lat)) &&
+                    (lon < ((xj - xi) * (lat - yi)) / ((yj - yi) || 1e-12) + xi);
+                if (intersects) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        function pointInPolygon(lon, lat, polygon) {
+            if (!polygon || polygon.length === 0) return false;
+            if (!pointInRing(lon, lat, polygon[0])) return false;
+            for (var i = 1; i < polygon.length; i += 1) {
+                if (pointInRing(lon, lat, polygon[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function buildPc4Index(geojson) {
+            var features = geojson && geojson.features ? geojson.features : [];
+            return features.map(function(feature) {
+                var rawPostcode = feature.properties && feature.properties.postcode;
+                var postcode = parseInt(rawPostcode, 10) || rawPostcode;
+                var polygons = [];
+                if (feature.geometry && feature.geometry.type === 'Polygon') {
+                    polygons = [feature.geometry.coordinates];
+                } else if (feature.geometry && feature.geometry.type === 'MultiPolygon') {
+                    polygons = feature.geometry.coordinates;
+                }
+                var bbox = {
+                    minLon: Infinity,
+                    minLat: Infinity,
+                    maxLon: -Infinity,
+                    maxLat: -Infinity
+                };
+                for (var p = 0; p < polygons.length; p += 1) {
+                    for (var r = 0; r < polygons[p].length; r += 1) {
+                        for (var c = 0; c < polygons[p][r].length; c += 1) {
+                            var coord = polygons[p][r][c];
+                            bbox.minLon = Math.min(bbox.minLon, coord[0]);
+                            bbox.maxLon = Math.max(bbox.maxLon, coord[0]);
+                            bbox.minLat = Math.min(bbox.minLat, coord[1]);
+                            bbox.maxLat = Math.max(bbox.maxLat, coord[1]);
+                        }
+                    }
+                }
+                return {
+                    key: String(postcode),
+                    postcode: postcode,
+                    polygons: polygons,
+                    bbox: bbox
+                };
+            });
+        }
+
+        function findPc4ForPoint(lat, lon) {
+            for (var i = 0; i < pc4Index.length; i += 1) {
+                var entry = pc4Index[i];
+                if (lon < entry.bbox.minLon || lon > entry.bbox.maxLon ||
+                    lat < entry.bbox.minLat || lat > entry.bbox.maxLat) {
+                    continue;
+                }
+                for (var p = 0; p < entry.polygons.length; p += 1) {
+                    if (pointInPolygon(lon, lat, entry.polygons[p])) {
+                        return entry.postcode;
+                    }
+                }
+            }
+            return 0;
+        }
+
+        function getProviderLabel(providerKey) {
+            var info = providerInfo[providerKey] || {};
+            return info.label || providerKey;
+        }
+
+        function getSelectedProviderKeys() {
+            if (activeProvider === allProvidersValue) {
+                return availableProviderKeys.slice();
+            }
+            return availableProviderKeys.indexOf(activeProvider) !== -1 ? [activeProvider] : [];
+        }
+
+        function artifactPathRank(path) {
+            if (!path) return 0;
+            if (path.indexOf('/docked_') !== -1) return 3;
+            if (path.indexOf('/dockless_') !== -1) return 3;
+            if (path.indexOf('/stations_') !== -1) return 3;
+            if (path.indexOf('/docks_') !== -1) return 2;
+            return 1;
+        }
+
+        function shouldReplaceArtifactPath(currentPath, nextPath) {
+            if (!currentPath) return true;
+            return artifactPathRank(nextPath) >= artifactPathRank(currentPath);
+        }
+
+        function buildArtifactCatalog(rows) {
+            var discoveredProviders = Object.create(null);
+            dateArtifacts = Object.create(null);
+            stationArtifacts = Object.create(null);
+            rows.forEach(function(row) {
+                if (!row || !row.path || !row.date || !row.provider) return;
+                if (!Object.prototype.hasOwnProperty.call(providerInfo, row.provider)) return;
+                discoveredProviders[row.provider] = true;
+                if (!dateArtifacts[row.date]) {
+                    dateArtifacts[row.date] = Object.create(null);
+                }
+                if (!dateArtifacts[row.date][row.provider]) {
+                    dateArtifacts[row.date][row.provider] = Object.create(null);
+                }
+                if (!stationArtifacts[row.provider]) {
+                    stationArtifacts[row.provider] = [];
+                }
+
+                var relativePath = '../' + row.path;
+                var providerArtifacts = dateArtifacts[row.date][row.provider];
+                if (row.artifact_type === 'docked_data') {
+                    if (shouldReplaceArtifactPath(providerArtifacts.docked, relativePath)) {
+                        providerArtifacts.docked = relativePath;
+                    }
+                } else if (row.artifact_type === 'dockless_data') {
+                    if (shouldReplaceArtifactPath(providerArtifacts.dockless, relativePath)) {
+                        providerArtifacts.dockless = relativePath;
+                    }
+                } else if (row.artifact_type === 'stations_data') {
+                    stationArtifacts[row.provider].push({
+                        date: row.date,
+                        path: relativePath
+                    });
+                }
+            });
+
+            providerOrder.forEach(function(providerKey) {
+                if (!stationArtifacts[providerKey]) {
+                    stationArtifacts[providerKey] = [];
+                }
+                stationArtifacts[providerKey].sort(function(a, b) {
+                    return a.date.localeCompare(b.date);
+                });
+                if (!providerDateData[providerKey]) {
+                    providerDateData[providerKey] = Object.create(null);
+                }
+            });
+
+            availableProviderKeys = providerOrder.filter(function(providerKey) {
+                return !!discoveredProviders[providerKey];
+            });
+            dates = Object.keys(dateArtifacts).filter(function(dateKey) {
+                var perProvider = dateArtifacts[dateKey];
+                return availableProviderKeys.some(function(providerKey) {
+                    return !!(perProvider[providerKey] && perProvider[providerKey].docked);
+                });
+            }).sort();
+        }
+
+        function populateProviderFilterOptions() {
+            if (!providerFilterEl) return;
+            providerFilterEl.innerHTML = '';
+
+            var allOption = document.createElement('option');
+            allOption.value = allProvidersValue;
+            allOption.textContent = 'All providers';
+            providerFilterEl.appendChild(allOption);
+
+            availableProviderKeys.forEach(function(providerKey) {
+                var option = document.createElement('option');
+                option.value = providerKey;
+                option.textContent = getProviderLabel(providerKey);
+                providerFilterEl.appendChild(option);
+            });
+
+            if (availableProviderKeys.indexOf(activeProvider) === -1) {
+                activeProvider = allProvidersValue;
+            }
+            providerFilterEl.value = activeProvider;
+            providerFilterEl.disabled = availableProviderKeys.length <= 1;
+        }
+
+        function getStationArtifactForProviderDate(providerKey, dateKey) {
+            var rows = stationArtifacts[providerKey] || [];
+            if (!rows.length) return null;
+            for (var i = rows.length - 1; i >= 0; i -= 1) {
+                if (rows[i].date <= dateKey) {
+                    return rows[i];
+                }
+            }
+            return rows[0];
+        }
+
+        function loadStationMetadataForProviderDate(providerKey, dateKey) {
+            var artifact = getStationArtifactForProviderDate(providerKey, dateKey);
+            if (!artifact) {
+                return Promise.resolve({
+                    sourceDate: null,
+                    stations: [],
+                    stationToPc4: Object.create(null)
+                });
+            }
+            if (stationMetadataPromises[artifact.path]) {
+                return stationMetadataPromises[artifact.path];
+            }
+            stationMetadataPromises[artifact.path] = fetchText(artifact.path).then(function(csvText) {
+                var lines = csvLines(csvText);
+                if (!lines.length) {
+                    return {
+                        sourceDate: artifact.date,
+                        stations: [],
+                        stationToPc4: Object.create(null)
+                    };
+                }
+                var header = parseCsvLine(lines[0]);
+                var idxStationId = header.indexOf('station_id');
+                var idxName = header.indexOf('name');
+                var idxLat = header.indexOf('lat');
+                var idxLon = header.indexOf('lon');
+                var idxCapacity = header.indexOf('capacity');
+                if (idxStationId === -1 || idxName === -1 || idxLat === -1 ||
+                    idxLon === -1 || idxCapacity === -1) {
+                    throw new Error('Station metadata missing required columns in ' + artifact.path);
+                }
+                var stations = [];
+                var stationToPc4 = Object.create(null);
+                for (var i = 1; i < lines.length; i += 1) {
+                    var fields = parseCsvLine(lines[i]);
+                    var lat = parseFloat(fields[idxLat]);
+                    var lon = parseFloat(fields[idxLon]);
+                    if (!isFinite(lat) || !isFinite(lon)) continue;
+                    if (!withinDenHaagBBox(lat, lon)) continue;
+                    var stationId = String(fields[idxStationId] || '').trim();
+                    if (!stationId) continue;
+                    var pc4 = findPc4ForPoint(lat, lon);
+                    stations.push({
+                        id: stationId,
+                        name: fields[idxName] || stationId,
+                        lat: lat,
+                        lon: lon,
+                        capacity: parseInt(fields[idxCapacity], 10) || 0,
+                        pc4: pc4
+                    });
+                    if (pc4) {
+                        stationToPc4[stationId] = pc4;
+                    }
+                }
+                return {
+                    sourceDate: artifact.date,
+                    stations: stations,
+                    stationToPc4: stationToPc4
+                };
+            });
+            return stationMetadataPromises[artifact.path];
+        }
+
+        function computeDateMax(dateData) {
+            var dateMax = 0;
+            var counts = dateData && dateData.counts ? dateData.counts : {};
+            for (var pc in counts) {
+                if (!Object.prototype.hasOwnProperty.call(counts, pc)) continue;
+                var values = counts[pc].c || [];
+                for (var i = 0; i < values.length; i += 1) {
+                    if (values[i] > dateMax) {
+                        dateMax = values[i];
+                    }
+                }
+            }
+            return dateMax;
+        }
+
+        function buildHotspotData(stations, bikesByHour, hours) {
+            var hotspot = Object.create(null);
+            for (var i = 0; i < hours.length; i += 1) {
+                var hour = hours[i];
+                var dockless = (bikesByHour[String(hour)] || []).map(function(bike) {
+                    return [bike[0], bike[1]];
+                });
+                var stationPoints = [];
+                var stationMax = 0;
+                for (var j = 0; j < stations.length; j += 1) {
+                    var station = stations[j];
+                    if (hour >= station.av.length) continue;
+                    var avail = station.av[hour];
+                    if (avail <= 0) continue;
+                    stationPoints.push([station.ll[0], station.ll[1], avail]);
+                    if (avail > stationMax) {
+                        stationMax = avail;
+                    }
+                }
+                hotspot[String(hour)] = {
+                    dockless: dockless,
+                    stations: stationPoints,
+                    stationMax: stationMax
+                };
+            }
+            return hotspot;
+        }
+
+        function buildDateData(providerKey, dateKey, stationMeta, dockedCsvText, docklessCsvText) {
+            var dockedLines = csvLines(dockedCsvText);
+            if (dockedLines.length < 2) {
+                throw new Error('Docked table is empty for ' + dateKey);
+            }
+            var header = parseCsvLine(dockedLines[0]);
+            var colIndexByStationId = Object.create(null);
+            for (var c = 1; c < header.length; c += 1) {
+                colIndexByStationId[String(header[c])] = c;
+            }
+
+            var hourToRow = Object.create(null);
+            for (var i = 1; i < dockedLines.length; i += 1) {
+                var fields = parseCsvLine(dockedLines[i]);
+                if (!fields.length || !fields[0]) continue;
+                var hour = parseHourFromTimestamp(fields[0]);
+                if (!Object.prototype.hasOwnProperty.call(hourToRow, hour)) {
+                    hourToRow[hour] = fields;
+                }
+            }
+
+            var hours = Object.keys(hourToRow).map(function(value) {
+                return parseInt(value, 10);
+            }).sort(function(a, b) {
+                return a - b;
+            });
+            if (!hours.length) {
+                throw new Error('No hourly docked data found for ' + dateKey);
+            }
+
+            var maxHour = hours[hours.length - 1];
+            var counts = Object.create(null);
+            for (var p = 0; p < pc4Index.length; p += 1) {
+                counts[pc4Index[p].key] = {
+                    c: zeroArray(maxHour + 1),
+                    s: zeroArray(maxHour + 1),
+                    f: zeroArray(maxHour + 1)
+                };
+            }
+
+            var stationsJs = [];
+            var stationToPc4 = stationMeta.stationToPc4 || Object.create(null);
+            var stations = stationMeta.stations || [];
+            for (var s = 0; s < stations.length; s += 1) {
+                var station = stations[s];
+                var stationId = station.id;
+                var hourlyAvail = zeroArray(maxHour + 1);
+                var colIndex = colIndexByStationId[stationId];
+                if (colIndex !== undefined) {
+                    for (var h = 0; h < hours.length; h += 1) {
+                        var hourKey = hours[h];
+                        var row = hourToRow[hourKey];
+                        var rawValue = row && row[colIndex] !== undefined ? row[colIndex] : '0';
+                        var value = parseInt(rawValue, 10) || 0;
+                        hourlyAvail[hourKey] = value;
+                        var pc4 = stationToPc4[stationId];
+                        if (pc4 && counts[String(pc4)]) {
+                            counts[String(pc4)].s[hourKey] += value;
+                            counts[String(pc4)].c[hourKey] += value;
+                        }
+                    }
+                }
+                stationsJs.push({
+                    ll: [round6(station.lat), round6(station.lon)],
+                    n: station.name,
+                    cap: station.capacity,
+                    pc: station.pc4 || 0,
+                    av: hourlyAvail,
+                    pr: providerKey
+                });
+            }
+
+            var bikesByHour = Object.create(null);
+            var validHours = Object.create(null);
+            for (var h2 = 0; h2 < hours.length; h2 += 1) {
+                bikesByHour[String(hours[h2])] = [];
+                validHours[hours[h2]] = true;
+            }
+
+            var docklessLines = csvLines(docklessCsvText);
+            if (docklessLines.length > 1) {
+                var docklessHeader = parseCsvLine(docklessLines[0]);
+                var idxTimestamp = docklessHeader.indexOf('timestamp');
+                var idxBikeId = docklessHeader.indexOf('bike_id');
+                var idxLat = docklessHeader.indexOf('lat');
+                var idxLon = docklessHeader.indexOf('lon');
+                if (idxTimestamp !== -1 && idxBikeId !== -1 && idxLat !== -1 && idxLon !== -1) {
+                    var seenByHour = Object.create(null);
+                    for (var j = 1; j < docklessLines.length; j += 1) {
+                        var bikeFields = parseCsvLine(docklessLines[j]);
+                        var hourVal = parseHourFromTimestamp(bikeFields[idxTimestamp]);
+                        if (!validHours[hourVal] || hourVal > maxHour) continue;
+                        var bikeId = bikeFields[idxBikeId];
+                        if (!bikeId) continue;
+                        if (!seenByHour[hourVal]) {
+                            seenByHour[hourVal] = Object.create(null);
+                        }
+                        if (seenByHour[hourVal][bikeId]) continue;
+                        var latVal = parseFloat(bikeFields[idxLat]);
+                        var lonVal = parseFloat(bikeFields[idxLon]);
+                        if (!isFinite(latVal) || !isFinite(lonVal)) continue;
+                        if (!withinDenHaagBBox(latVal, lonVal)) continue;
+                        var bikePc4 = findPc4ForPoint(latVal, lonVal);
+                        if (!bikePc4) continue;
+                        seenByHour[hourVal][bikeId] = true;
+                        bikesByHour[String(hourVal)].push([
+                            round6(latVal),
+                            round6(lonVal),
+                            bikePc4,
+                            providerKey
+                        ]);
+                        if (counts[String(bikePc4)]) {
+                            counts[String(bikePc4)].f[hourVal] += 1;
+                            counts[String(bikePc4)].c[hourVal] += 1;
+                        }
+                    }
+                }
+            }
+
+            var dateData = {
+                hours: hours,
+                maxHour: maxHour,
+                counts: counts,
+                bikes: bikesByHour,
+                stations: stationsJs,
+                hotspot: buildHotspotData(stationsJs, bikesByHour, hours)
+            };
+            dateData.dateMax = computeDateMax(dateData);
+            return dateData;
+        }
+
+        function composeDateData(dateKey) {
+            var providerKeys = getSelectedProviderKeys();
+            var sourceItems = [];
+            var hoursLookup = Object.create(null);
+            var maxHour = 0;
+            for (var i = 0; i < providerKeys.length; i += 1) {
+                var providerKey = providerKeys[i];
+                var providerDates = providerDateData[providerKey] || Object.create(null);
+                var sourceDateData = providerDates[dateKey];
+                if (!sourceDateData) continue;
+                sourceItems.push(sourceDateData);
+                var sourceHours = sourceDateData.hours || [];
+                for (var j = 0; j < sourceHours.length; j += 1) {
+                    var hour = sourceHours[j];
+                    hoursLookup[hour] = true;
+                    if (hour > maxHour) {
+                        maxHour = hour;
+                    }
+                }
+            }
+
+            if (!sourceItems.length) {
+                delete allData[dateKey];
+                return null;
+            }
+
+            var hours = Object.keys(hoursLookup).map(function(value) {
+                return parseInt(value, 10);
+            }).sort(function(a, b) {
+                return a - b;
+            });
+            var counts = Object.create(null);
+            for (var p = 0; p < pc4Index.length; p += 1) {
+                counts[pc4Index[p].key] = {
+                    c: zeroArray(maxHour + 1),
+                    s: zeroArray(maxHour + 1),
+                    f: zeroArray(maxHour + 1)
+                };
+            }
+
+            var stations = [];
+            var bikesByHour = Object.create(null);
+            for (var h = 0; h < hours.length; h += 1) {
+                bikesByHour[String(hours[h])] = [];
+            }
+
+            for (var s = 0; s < sourceItems.length; s += 1) {
+                var item = sourceItems[s];
+                var itemCounts = item.counts || {};
+                for (var pcKey in itemCounts) {
+                    if (!Object.prototype.hasOwnProperty.call(itemCounts, pcKey)) continue;
+                    if (!counts[pcKey]) continue;
+                    var targetCount = counts[pcKey];
+                    var sourceCount = itemCounts[pcKey];
+                    for (var idx = 0; idx < sourceCount.c.length; idx += 1) {
+                        targetCount.c[idx] += sourceCount.c[idx] || 0;
+                        targetCount.s[idx] += sourceCount.s[idx] || 0;
+                        targetCount.f[idx] += sourceCount.f[idx] || 0;
+                    }
+                }
+
+                var itemStations = item.stations || [];
+                for (var st = 0; st < itemStations.length; st += 1) {
+                    stations.push(itemStations[st]);
+                }
+
+                var itemHours = item.hours || [];
+                for (var ih = 0; ih < itemHours.length; ih += 1) {
+                    var hourKey = String(itemHours[ih]);
+                    var bikes = item.bikes[hourKey] || [];
+                    for (var b = 0; b < bikes.length; b += 1) {
+                        bikesByHour[hourKey].push(bikes[b]);
+                    }
+                }
+            }
+
+            var dateData = {
+                hours: hours,
+                maxHour: maxHour,
+                counts: counts,
+                bikes: bikesByHour,
+                stations: stations,
+                hotspot: buildHotspotData(stations, bikesByHour, hours)
+            };
+            dateData.dateMax = computeDateMax(dateData);
+            allData[dateKey] = dateData;
+            return dateData;
+        }
+
+        function recomputeActiveData() {
+            allData = Object.create(null);
+            globalMax = 0;
+            for (var i = 0; i < dates.length; i += 1) {
+                var dateData = composeDateData(dates[i]);
+                if (dateData) {
+                    globalMax = Math.max(globalMax, dateData.dateMax || 0);
+                }
+            }
+        }
+
+        function refreshActivePanels() {
+            if (!panels) return;
+            panels.left.renderAll();
+            panels.right.renderAll();
+            updateLegendLayout();
+        }
+
+        function ensureDateDataLoaded(dateKey, options) {
+            var silent = options && options.silent;
+            if (loadedDateKeys[dateKey]) {
+                return Promise.resolve(getDateData(dateKey));
+            }
+            if (dateLoadPromises[dateKey]) {
+                return dateLoadPromises[dateKey];
+            }
+            var artifactsByProvider = dateArtifacts[dateKey];
+            if (!artifactsByProvider) {
+                return Promise.reject(new Error('Missing docked table for ' + dateKey));
+            }
+            if (!silent) {
+                showStatus('Loading ' + dateKey + '...', 'info', 70);
+            }
+            var providerLoads = availableProviderKeys.map(function(providerKey) {
+                var artifacts = artifactsByProvider[providerKey];
+                if (!artifacts || !artifacts.docked) {
+                    return Promise.resolve(null);
+                }
+                if (!providerDateData[providerKey]) {
+                    providerDateData[providerKey] = Object.create(null);
+                }
+                if (providerDateData[providerKey][dateKey]) {
+                    return Promise.resolve(providerDateData[providerKey][dateKey]);
+                }
+                var cacheKey = providerKey + '|' + dateKey;
+                if (providerLoadPromises[cacheKey]) {
+                    return providerLoadPromises[cacheKey];
+                }
+                providerLoadPromises[cacheKey] = Promise.all([
+                    loadStationMetadataForProviderDate(providerKey, dateKey),
+                    fetchText(artifacts.docked),
+                    artifacts.dockless ? fetchText(artifacts.dockless) : Promise.resolve('')
+                ]).then(function(results) {
+                    var dateData = buildDateData(
+                        providerKey,
+                        dateKey,
+                        results[0],
+                        results[1],
+                        results[2]
+                    );
+                    providerDateData[providerKey][dateKey] = dateData;
+                    return dateData;
+                });
+                return providerLoadPromises[cacheKey];
+            });
+            dateLoadPromises[dateKey] = Promise.all(providerLoads).then(function() {
+                loadedDateKeys[dateKey] = true;
+                recomputeActiveData();
+                var dateData = getDateData(dateKey);
+                if (!silent) {
+                    showStatus('Loaded ' + dateKey, 'info', 90);
+                } else if (panels &&
+                           (panels.left.visualizationMode === 'global' ||
+                            panels.right.visualizationMode === 'global')) {
+                    refreshActivePanels();
+                }
+                return dateData;
+            }).catch(function(error) {
+                delete dateLoadPromises[dateKey];
+                if (!silent) {
+                    showStatus(
+                        'Failed to load ' + dateKey + ': ' + error.message,
+                        'error',
+                    );
+                }
+                throw error;
+            });
+            return dateLoadPromises[dateKey];
+        }
+
+        function warmRemainingDates() {
+            var pendingDates = dates.filter(function(dateKey) {
+                return !loadedDateKeys[dateKey];
+            });
+            function loadNext(index) {
+                if (index >= pendingDates.length) {
+                    return;
+                }
+                ensureDateDataLoaded(pendingDates[index], { silent: true })
+                    .catch(function() {
+                        return null;
+                    })
+                    .finally(function() {
+                        window.setTimeout(function() {
+                            loadNext(index + 1);
+                        }, 0);
+                    });
+            }
+            loadNext(0);
+        }
 
         function readStoredTheme() {
             try {
@@ -1005,6 +2036,151 @@ def build_custom_js(
             };
         }
 
+        function buildHouseNoticeHtml(message) {
+            return (
+                '<div style="margin-top:8px;color:' + themeColor('legendSubtleText') + ';">' +
+                escapeHtml(message) +
+                '</div>'
+            );
+        }
+
+        function getHouseMarkerStyle(distanceMeters) {
+            var fillColor = houseColorForDistance(distanceMeters);
+            return {
+                color: fillColor,
+                fillColor: fillColor,
+                fillOpacity: distanceMeters === null ? 0.28 : 0.56,
+                weight: 0
+            };
+        }
+
+        function formatDistanceMeters(distanceMeters) {
+            if (distanceMeters === null || !isFinite(distanceMeters)) {
+                return 'No available bike';
+            }
+            if (distanceMeters < 1000) {
+                return Math.round(distanceMeters) + ' m';
+            }
+            return (distanceMeters / 1000).toFixed(2) + ' km';
+        }
+
+        function approximateDistanceMeters(lat1, lon1, lat2, lon2) {
+            var radians = Math.PI / 180;
+            var x = (lon2 - lon1) * radians * Math.cos(((lat1 + lat2) / 2) * radians);
+            var y = (lat2 - lat1) * radians;
+            return 6371000 * Math.sqrt((x * x) + (y * y));
+        }
+
+        function collectVisibleHousePoints(map, limit, callback) {
+            if (!houseData || !houseData.cells) {
+                return {
+                    houses: [],
+                    truncated: false
+                };
+            }
+            var bounds = map.getBounds();
+            var south = bounds.getSouth();
+            var north = bounds.getNorth();
+            var west = bounds.getWest();
+            var east = bounds.getEast();
+            var cellSize = Number(houseData.cellSize) || 0.0025;
+            var minCellX = Math.floor(west / cellSize);
+            var maxCellX = Math.floor(east / cellSize);
+            var minCellY = Math.floor(south / cellSize);
+            var maxCellY = Math.floor(north / cellSize);
+            var visible = [];
+            var maxItems = Number(limit);
+            var truncated = false;
+
+            for (var cellY = minCellY; cellY <= maxCellY; cellY += 1) {
+                for (var cellX = minCellX; cellX <= maxCellX; cellX += 1) {
+                    var cellKey = cellX + ':' + cellY;
+                    var coords = houseData.cells[cellKey];
+                    if (!coords) continue;
+                    // Triples: [lat_i, lon_i, address_count, ...]
+                    for (var i = 0; i < coords.length; i += 3) {
+                        var lat = coords[i] / 1000000;
+                        var lon = coords[i + 1] / 1000000;
+                        var addrCount = coords[i + 2] || 1;
+                        if (lat < south || lat > north || lon < west || lon > east) {
+                            continue;
+                        }
+                        var house = [lat, lon, addrCount];
+                        if (callback) {
+                            callback(house);
+                        }
+                        if (!isFinite(maxItems) || maxItems <= 0 || visible.length < maxItems) {
+                            visible.push(house);
+                        } else {
+                            truncated = true;
+                        }
+                    }
+                }
+            }
+            return {
+                houses: visible,
+                truncated: truncated
+            };
+        }
+
+        function getVisibleHousePoints(map, limit) {
+            return collectVisibleHousePoints(map, limit, null);
+        }
+
+        function getHouseSupplyPoints(dateData, hour) {
+            if (!dateData) {
+                return [];
+            }
+            if (!dateData.houseSupplyPoints) {
+                dateData.houseSupplyPoints = Object.create(null);
+            }
+            var hourKey = String(hour);
+            if (dateData.houseSupplyPoints[hourKey]) {
+                return dateData.houseSupplyPoints[hourKey];
+            }
+
+            var points = [];
+            var seen = Object.create(null);
+            var bikes = dateData.bikes[hourKey] || [];
+            for (var i = 0; i < bikes.length; i += 1) {
+                var bikeLat = bikes[i][0];
+                var bikeLon = bikes[i][1];
+                var bikeKey = bikeLat + '|' + bikeLon;
+                if (seen[bikeKey]) continue;
+                seen[bikeKey] = true;
+                points.push([bikeLat, bikeLon]);
+            }
+
+            var stations = dateData.stations || [];
+            for (var j = 0; j < stations.length; j += 1) {
+                var station = stations[j];
+                var availability = station.av[hour] !== undefined ? station.av[hour] : 0;
+                if (availability <= 0) continue;
+                var stationKey = station.ll[0] + '|' + station.ll[1];
+                if (seen[stationKey]) continue;
+                seen[stationKey] = true;
+                points.push([station.ll[0], station.ll[1]]);
+            }
+
+            dateData.houseSupplyPoints[hourKey] = points;
+            return points;
+        }
+
+        function getClosestSupplyDistance(lat, lon, supplyPoints) {
+            if (!supplyPoints.length) {
+                return null;
+            }
+            var best = Infinity;
+            for (var i = 0; i < supplyPoints.length; i += 1) {
+                var point = supplyPoints[i];
+                var distanceMeters = approximateDistanceMeters(lat, lon, point[0], point[1]);
+                if (distanceMeters < best) {
+                    best = distanceMeters;
+                }
+            }
+            return isFinite(best) ? best : null;
+        }
+
         applyBodyTheme(readStoredTheme() === 'dark' ? 'dark' : 'light');
         setBaseLayer(leftMap, 'left', getThemeName());
         setBaseLayer(rightMap, 'right', getThemeName());
@@ -1059,11 +2235,13 @@ def build_custom_js(
         }
 
         function getPolygonWeight(panel, pc4) {
+            if (isHouseMode(panel.visualizationMode)) return 0.8;
             if (selectedPC4 !== null && pc4 === selectedPC4) return 5;
             return isHotspotMode(panel.visualizationMode) ? 1.5 : 2.5;
         }
 
         function getHoverWeight(panel) {
+            if (isHouseMode(panel.visualizationMode)) return 1.1;
             return isHotspotMode(panel.visualizationMode) ? 3.0 : 5.0;
         }
 
@@ -1077,16 +2255,13 @@ def build_custom_js(
         }
 
         function closeAllPopups() {
+            if (!panels) return;
             closePanelPopup(panels.left);
             closePanelPopup(panels.right);
         }
 
-        function updateLegendTitles() {
-            legendLeftTitle.textContent = compareEnabled ? 'Left map' : 'Current map';
-            legendRightTitle.textContent = 'Right map';
-        }
-
         function updatePanelHeadings() {
+            if (!panels) return;
             panels.left.controls.headingLabel.textContent = compareEnabled
                 ? 'Left map controls'
                 : 'Map controls';
@@ -1114,7 +2289,7 @@ def build_custom_js(
         function buildUnifiedHotspotControl() {
             return (
                 '<div class="legend-hotspot-control">' +
-                '<label for="legend-unified-hotspot-size-slider">Hotspot size</label>' +
+                '<label for="legend-unified-hotspot-size-slider">Base hotspot size</label>' +
                 '<input type="range" id="legend-unified-hotspot-size-slider" min="60" max="300" value="' +
                 Math.round(panels.left.hotspotRadiusScale * 100) + '">' +
                 '<span class="hotspot-size-label" id="legend-unified-hotspot-size-label">' +
@@ -1143,6 +2318,7 @@ def build_custom_js(
         }
 
         function updateLegendLayout() {
+            if (!panels) return;
             var leftBaseLegend = panels.left.legendBaseHtml || '';
             var rightBaseLegend = panels.right.legendBaseHtml || '';
             var leftLegend = getPanelLegendMarkup(panels.left);
@@ -1151,7 +2327,6 @@ def build_custom_js(
                 panels.left.visualizationMode === panels.right.visualizationMode;
             document.body.classList.toggle('legend-unified', unified);
             if (unified) {
-                legendLeftTitle.textContent = 'Shared legend';
                 if (isHotspotMode(panels.left.visualizationMode)) {
                     panels.right.hotspotRadiusScale = panels.left.hotspotRadiusScale;
                 }
@@ -1161,17 +2336,7 @@ def build_custom_js(
                         panels.left.legendEl.innerHTML += buildUnifiedHotspotControl();
                     }
                 } else {
-                    panels.left.legendEl.innerHTML =
-                        '<div class="legend-unified-grid">' +
-                        '<div class="legend-unified-pane">' +
-                        '<div class="legend-unified-label">Left map</div>' +
-                        leftLegend +
-                        '</div>' +
-                        '<div class="legend-unified-pane">' +
-                        '<div class="legend-unified-label">Right map</div>' +
-                        rightBaseLegend +
-                        '</div>' +
-                        '</div>';
+                    panels.left.legendEl.innerHTML = leftLegend;
                     if (isHotspotMode(panels.left.visualizationMode)) {
                         panels.left.legendEl.innerHTML += buildUnifiedHotspotControl();
                     }
@@ -1179,7 +2344,6 @@ def build_custom_js(
                 panels.right.legendEl.innerHTML = '';
                 bindUnifiedHotspotControl();
             } else {
-                updateLegendTitles();
                 panels.left.legendEl.innerHTML = leftLegend;
                 panels.right.legendEl.innerHTML = rightLegend;
             }
@@ -1205,6 +2369,7 @@ def build_custom_js(
         function copyPanelState(sourcePanel, targetPanel) {
             targetPanel.currentDate = sourcePanel.currentDate;
             targetPanel.currentHour = sourcePanel.currentHour;
+            targetPanel.requestedHour = sourcePanel.requestedHour;
             targetPanel.visualizationMode = sourcePanel.visualizationMode;
             targetPanel.hotspotRadiusScale = sourcePanel.hotspotRadiusScale;
         }
@@ -1220,14 +2385,15 @@ def build_custom_js(
                 targetPanel.currentDate = sourcePanel.currentDate;
                 targetPanel.currentHour = normalizeHour(
                     getDateData(targetPanel.currentDate),
-                    targetPanel.currentHour
+                    targetPanel.requestedHour
                 );
                 shouldUpdate = true;
             }
             if (options.hour && syncSettings.time) {
+                targetPanel.requestedHour = sourcePanel.requestedHour;
                 targetPanel.currentHour = normalizeHour(
                     getDateData(targetPanel.currentDate),
-                    sourcePanel.currentHour
+                    targetPanel.requestedHour
                 );
                 shouldUpdate = true;
             }
@@ -1237,7 +2403,7 @@ def build_custom_js(
             }
             if (shouldUpdate) {
                 targetPanel.syncControlsFromState();
-                targetPanel.renderAll();
+                targetPanel.refreshFromState();
             }
             panelStateSyncInProgress = false;
         }
@@ -1325,6 +2491,7 @@ def build_custom_js(
         }
 
         function clearSelection() {
+            if (!panels) return;
             selectedPC4 = null;
             closeAllPopups();
             panels.left.renderPolygons();
@@ -1363,6 +2530,7 @@ def build_custom_js(
                 },
                 onEachFeature: function(feature, layer) {
                     layer.on('mouseover', function() {
+                        if (isHouseMode(panel.visualizationMode)) return;
                         var pc = parseInt(feature.properties.postcode, 10) ||
                                  feature.properties.postcode;
                         if (selectedPC4 !== pc) {
@@ -1371,6 +2539,7 @@ def build_custom_js(
                     });
 
                     layer.on('mouseout', function() {
+                        if (isHouseMode(panel.visualizationMode)) return;
                         var pc = parseInt(feature.properties.postcode, 10) ||
                                  feature.properties.postcode;
                         if (selectedPC4 !== pc) {
@@ -1379,6 +2548,7 @@ def build_custom_js(
                     });
 
                     layer.on('click', function(e) {
+                        if (isHouseMode(panel.visualizationMode)) return;
                         L.DomEvent.stopPropagation(e);
                         var pc = parseInt(feature.properties.postcode, 10) ||
                                  feature.properties.postcode;
@@ -1396,29 +2566,61 @@ def build_custom_js(
                 controls: controls,
                 legendEl: getPanelLegendElement(panelId),
                 geojsonLayer: null,
+                houseLayer: L.layerGroup().addTo(mapInstance),
                 hotspotLayer: L.layerGroup().addTo(mapInstance),
                 bikeLayer: L.layerGroup().addTo(mapInstance),
                 stationLayer: L.layerGroup().addTo(mapInstance),
+                houseRenderer: L.canvas({ padding: 0.2 }),
                 bikeMarkers: [],
                 stationMarkers: [],
-                currentDate: dates[0],
+                currentDate: null,
                 currentHour: 0,
+                requestedHour: 0,
                 visualizationMode: defaultVisualizationMode,
                 hotspotRadiusScale: 1.0,
                 activePopup: null,
                 legendHtml: '',
                 legendBaseHtml: '',
                 legendControlHtml: '',
+                houseNoticeHtml: '',
+                loadVersion: 0,
+                refreshFromState: function(syncOptions) {
+                    var panelRef = this;
+                    if (!this.currentDate) {
+                        this.syncControlsFromState();
+                        this.renderAll();
+                        return Promise.resolve(null);
+                    }
+                    var loadVersion = ++this.loadVersion;
+                    return ensureDateDataLoaded(this.currentDate).then(function(dateData) {
+                        if (panelRef.loadVersion !== loadVersion) {
+                            return dateData;
+                        }
+                        panelRef.currentHour = normalizeHour(dateData, panelRef.requestedHour);
+                        panelRef.syncControlsFromState();
+                        panelRef.renderAll();
+                        if (syncOptions) {
+                            syncPartnerPanel(panelRef, syncOptions);
+                        }
+                        return dateData;
+                    }).catch(function(error) {
+                        if (panelRef.loadVersion === loadVersion) {
+                            showStatus(
+                                'Failed to load ' + panelRef.currentDate + ': ' + error.message,
+                                'error'
+                            );
+                        }
+                        return null;
+                    });
+                },
                 setDate: function(dateStr) {
-                    if (!allData[dateStr]) return;
+                    if (dates.indexOf(dateStr) === -1) return;
                     this.currentDate = dateStr;
-                    this.currentHour = normalizeHour(allData[dateStr], this.currentHour);
                     closeAllPopups();
-                    this.syncControlsFromState();
-                    this.renderAll();
-                    syncPartnerPanel(this, { date: true, hour: true });
+                    this.refreshFromState({ date: true, hour: true });
                 },
                 setHour: function(hour) {
+                    this.requestedHour = hour;
                     this.currentHour = hour;
                     closeAllPopups();
                     this.syncControlsFromState();
@@ -1426,19 +2628,42 @@ def build_custom_js(
                     syncPartnerPanel(this, { hour: true });
                 },
                 setVisualization: function(mode) {
+                    var panelRef = this;
+                    var oldMode = this.visualizationMode;
                     this.visualizationMode = mode;
+                    if (isHouseMode(oldMode) || isHouseMode(mode)) {
+                        clearSelection();
+                    }
                     closeAllPopups();
                     this.syncControlsFromState();
-                    this.renderAll();
-                    syncPartnerPanel(this, { visualization: true });
+                    var renderPromise = isHouseMode(mode)
+                        ? ensureHouseDataLoaded(false)
+                        : Promise.resolve(null);
+                    renderPromise.then(function() {
+                        panelRef.renderAll();
+                        syncPartnerPanel(panelRef, { visualization: true });
+                    }).catch(function() {
+                        panelRef.renderAll();
+                    });
                 },
                 syncControlsFromState: function() {
                     var dateData = getDateData(this.currentDate);
-                    if (!dateData) return;
-                    this.controls.dateLabel.textContent = this.currentDate;
                     this.controls.dateSlider.max = Math.max(dates.length - 1, 0);
-                    this.controls.dateSlider.value = getDateIndex(this.currentDate);
+                    this.controls.dateSlider.disabled = dates.length === 0;
+                    this.controls.dateLabel.textContent = this.currentDate || 'No date';
+                    this.controls.dateSlider.value = this.currentDate
+                        ? getDateIndex(this.currentDate)
+                        : 0;
                     this.controls.visualization.value = this.visualizationMode;
+                    this.controls.visualization.disabled = !this.currentDate;
+                    this.controls.hourSlider.disabled = !dateData;
+                    if (!dateData) {
+                        this.controls.hourSlider.min = 0;
+                        this.controls.hourSlider.max = 0;
+                        this.controls.hourSlider.value = 0;
+                        this.controls.hourLabel.textContent = '--:--';
+                        return;
+                    }
                     this.controls.hourSlider.min = dateData.hours[0];
                     this.controls.hourSlider.max = dateData.maxHour;
                     this.controls.hourSlider.value = this.currentHour;
@@ -1455,7 +2680,9 @@ def build_custom_js(
                     );
                     var legendControlHtml = '';
                     if (isHotspotMode(this.visualizationMode)) {
-                        legendControlHtml = buildHotspotControlHtml(this, 'Hotspot size');
+                        legendControlHtml = buildHotspotControlHtml(this, 'Base hotspot size');
+                    } else if (isHouseMode(this.visualizationMode)) {
+                        legendControlHtml = this.houseNoticeHtml || '';
                     }
                     this.legendBaseHtml = legendBaseHtml;
                     this.legendControlHtml = legendControlHtml;
@@ -1516,10 +2743,14 @@ def build_custom_js(
                     var dockless = hotspotData.dockless || [];
                     var stations = hotspotData.stations || [];
                     var stationMax = hotspotData.stationMax || 0;
+                    var zoomLevel = this.map.getZoom();
 
                     for (var i = 0; i < dockless.length; i++) {
-                        L.circle(dockless[i], {
-                            radius: DOCKLESS_RADIUS_METERS * this.hotspotRadiusScale,
+                        L.circleMarker(dockless[i], {
+                            radius: hotspotDocklessRadius(
+                                zoomLevel,
+                                this.hotspotRadiusScale
+                            ),
                             stroke: false,
                             fillColor: themeColor('hotspotDockless'),
                             fillOpacity: 0.15,
@@ -1530,17 +2761,120 @@ def build_custom_js(
                     for (var j = 0; j < stations.length; j++) {
                         var station = stations[j];
                         var avail = station[2];
-                        L.circle([station[0], station[1]], {
+                        L.circleMarker([station[0], station[1]], {
                             radius: hotspotStationRadius(
                                 avail,
                                 stationMax,
-                                this.hotspotRadiusScale
+                                this.hotspotRadiusScale,
+                                zoomLevel
                             ),
                             stroke: false,
                             fillColor: hotspotFillColor(avail, stationMax),
                             fillOpacity: hotspotStationOpacity(avail, stationMax),
                             interactive: false
                         }).addTo(this.hotspotLayer);
+                    }
+                },
+                renderHouses: function() {
+                    this.houseLayer.clearLayers();
+                    this.houseNoticeHtml = '';
+                    if (!isHouseMode(this.visualizationMode)) return;
+                    if (!houseData) {
+                        this.houseNoticeHtml = buildHouseNoticeHtml(
+                            'House points are still loading.'
+                        );
+                        return;
+                    }
+                    var zoom = this.map.getZoom();
+                    if (zoom < HOUSE_MODE_MIN_ZOOM) {
+                        this.houseNoticeHtml = buildHouseNoticeHtml(
+                            'Zoom to level ' + HOUSE_MODE_MIN_ZOOM + ' or closer for house points.'
+                        );
+                        return;
+                    }
+
+                    var visibleHouseResult = getVisibleHousePoints(
+                        this.map,
+                        HOUSE_MODE_MAX_VISIBLE
+                    );
+                    var visibleHouses = visibleHouseResult.houses;
+                    if (!visibleHouses.length && !visibleHouseResult.truncated) {
+                        this.houseNoticeHtml = buildHouseNoticeHtml(
+                            'No house points are visible in the current map view.'
+                        );
+                        return;
+                    }
+
+                    var dateData = getDateData(this.currentDate);
+                    var supplyPoints = getHouseSupplyPoints(dateData, this.currentHour);
+                    if (!supplyPoints.length) {
+                        this.houseNoticeHtml = buildHouseNoticeHtml(
+                            'No available bikes were found for the selected hour.'
+                        );
+                    }
+
+                    var useDetail = zoom >= HOUSE_MODE_DETAIL_ZOOM &&
+                                    !visibleHouseResult.truncated;
+
+                    if (useDetail) {
+                        // Individual house markers (square icons)
+                        var markerSize = zoom >= 17 ? 12 : (zoom >= 16 ? 10 : 8);
+                        for (var i = 0; i < visibleHouses.length; i += 1) {
+                            var house = visibleHouses[i];
+                            var addrCount = house[2] || 1;
+                            var distanceMeters = getClosestSupplyDistance(
+                                house[0], house[1], supplyPoints
+                            );
+                            var color = houseColorForDistance(distanceMeters);
+                            var icon = createHouseIcon(color, markerSize);
+                            var marker = L.marker([house[0], house[1]], {
+                                icon: icon,
+                                interactive: true
+                            });
+                            var popupContent =
+                                '<div style="font-size:13px;line-height:1.5;">' +
+                                '<b>Residential address' + (addrCount > 1 ? 'es' : '') + '</b><br>' +
+                                'Addresses at this location: <b>' + addrCount + '</b><br>' +
+                                'Closest available bike: <b>' +
+                                escapeHtml(formatDistanceMeters(distanceMeters)) + '</b>' +
+                                '</div>';
+                            marker.bindPopup(popupContent);
+                            marker.bindTooltip(
+                                addrCount + ' addr \u00b7 ' +
+                                escapeHtml(formatDistanceMeters(distanceMeters))
+                            );
+                            marker.addTo(this.houseLayer);
+                        }
+                    } else {
+                        // Clustered view: aggregate all visible houses into screen-space bins
+                        var clusters = clusterHousePoints(this.map, supplyPoints);
+                        for (var j = 0; j < clusters.length; j++) {
+                            var cl = clusters[j];
+                            var clColor = houseColorForDistance(cl.avgDistance);
+                            var clSize = Math.min(
+                                36,
+                                Math.max(20, 16 + Math.log2(Math.max(cl.locationCount, 1)) * 3)
+                            );
+                            var clIcon = createHouseClusterIcon(clColor, Math.round(clSize), cl.locationCount);
+                            var clMarker = L.marker([cl.lat, cl.lon], {
+                                icon: clIcon,
+                                interactive: true
+                            });
+                            var clPopup =
+                                '<div style="font-size:13px;line-height:1.5;">' +
+                                '<b>House cluster</b><br>' +
+                                'Buildings: <b>' + cl.locationCount + '</b><br>' +
+                                'Total addresses: <b>' + cl.totalAddresses + '</b><br>' +
+                                'Avg distance to bike: <b>' +
+                                escapeHtml(formatDistanceMeters(cl.avgDistance)) + '</b>' +
+                                '</div>';
+                            clMarker.bindPopup(clPopup);
+                            clMarker.bindTooltip(
+                                cl.locationCount + ' buildings \u00b7 ' +
+                                escapeHtml(formatDistanceMeters(cl.avgDistance))
+                            );
+                            clMarker.addTo(this.houseLayer);
+                        }
                     }
                 },
                 renderBikes: function() {
@@ -1561,6 +2895,9 @@ def build_custom_js(
                             weight: getDocklessMarkerStyle(isSelected, muted).weight
                         });
                         marker._pc4 = bikes[i][2];
+                        marker.bindTooltip(
+                            'Dockless bike<br>Provider: ' + escapeHtml(getProviderLabel(bikes[i][3]))
+                        );
                         marker.addTo(this.bikeLayer);
                         this.bikeMarkers.push(marker);
                     }
@@ -1592,6 +2929,7 @@ def build_custom_js(
                         });
                         marker.bindTooltip(
                             escapeHtml(station.n) +
+                            '<br>Provider: ' + escapeHtml(getProviderLabel(station.pr)) +
                             '<br>Available: ' + avail + ' / ' + station.cap
                         );
                         marker._pc4 = station.pc;
@@ -1638,11 +2976,12 @@ def build_custom_js(
                     closePanelPopup(this);
                 },
                 renderAll: function() {
-                    this.renderLegend();
                     this.renderPolygons();
                     this.renderHotspotLayer();
+                    this.renderHouses();
                     this.renderBikes();
                     this.renderStations();
+                    this.renderLegend();
                     this.applySelection(selectedPC4);
                 }
             };
@@ -1669,12 +3008,20 @@ def build_custom_js(
             });
 
             panel.map.on('moveend', function() {
+                if (isHouseMode(panel.visualizationMode)) {
+                    panel.renderHouses();
+                    panel.renderLegend();
+                }
                 syncViewportFrom(panel);
             });
 
             panel.map.on('zoomend', function() {
+                panel.renderPolygons();
+                panel.renderHotspotLayer();
+                panel.renderHouses();
                 panel.renderBikes();
                 panel.renderStations();
+                panel.renderLegend();
                 panel.applySelection(selectedPC4);
             });
 
@@ -1688,12 +3035,8 @@ def build_custom_js(
             return panel;
         }
 
-        var panels = {
-            left: createPanel('left', leftMap),
-            right: createPanel('right', rightMap)
-        };
-
         function setCompareMode(enabled) {
+            if (!panels) return;
             compareEnabled = enabled;
             document.body.classList.toggle('compare-on', enabled);
             document.body.classList.toggle('compare-off', !enabled);
@@ -1705,7 +3048,7 @@ def build_custom_js(
                 copyPanelState(panels.left, panels.right);
                 rightPanelInitialized = true;
                 panels.right.syncControlsFromState();
-                panels.right.renderAll();
+                panels.right.refreshFromState();
             }
 
             window.setTimeout(function() {
@@ -1722,6 +3065,7 @@ def build_custom_js(
         }
 
         function syncRightPanelFromLeft(options) {
+            if (!panels) return;
             panelStateSyncInProgress = true;
             if (options.visualization) {
                 panels.right.visualizationMode = panels.left.visualizationMode;
@@ -1730,18 +3074,36 @@ def build_custom_js(
                 panels.right.currentDate = panels.left.currentDate;
                 panels.right.currentHour = normalizeHour(
                     getDateData(panels.right.currentDate),
-                    panels.right.currentHour
+                    panels.right.requestedHour
                 );
             }
             if (options.time) {
+                panels.right.requestedHour = panels.left.requestedHour;
                 panels.right.currentHour = normalizeHour(
                     getDateData(panels.right.currentDate),
-                    panels.left.currentHour
+                    panels.right.requestedHour
                 );
             }
             panels.right.syncControlsFromState();
-            panels.right.renderAll();
+            panels.right.refreshFromState();
             panelStateSyncInProgress = false;
+        }
+
+        function refreshPanelsForProviderChange() {
+            if (!panels) return;
+            panels.left.currentHour = normalizeHour(
+                getDateData(panels.left.currentDate),
+                panels.left.requestedHour
+            );
+            panels.right.currentHour = normalizeHour(
+                getDateData(panels.right.currentDate),
+                panels.right.requestedHour
+            );
+            panels.left.syncControlsFromState();
+            panels.right.syncControlsFromState();
+            panels.left.renderAll();
+            panels.right.renderAll();
+            updateLegendLayout();
         }
 
         function updateSyncSettings() {
@@ -1779,6 +3141,13 @@ def build_custom_js(
         syncVisualizationToggle.addEventListener('change', updateSyncSettings);
         syncDateToggle.addEventListener('change', updateSyncSettings);
         syncTimeToggle.addEventListener('change', updateSyncSettings);
+        if (providerFilterEl) {
+            providerFilterEl.addEventListener('change', function() {
+                activeProvider = this.value || allProvidersValue;
+                recomputeActiveData();
+                refreshPanelsForProviderChange();
+            });
+        }
 
         L.DomEvent.disableClickPropagation(document.getElementById('legend-box'));
         enableDragging(
@@ -1787,34 +3156,83 @@ def build_custom_js(
             window
         );
 
-        panels.left.currentDate = dates[0];
-        panels.right.currentDate = dates[0];
-        panels.left.currentHour = normalizeHour(getDateData(dates[0]), 0);
-        panels.right.currentHour = panels.left.currentHour;
-        updatePanelHeadings();
-        panels.left.syncControlsFromState();
-        panels.right.syncControlsFromState();
-        panels.left.renderAll();
-        panels.right.renderAll();
-        updateSyncSettings();
-        updateLegendLayout();
+        if (window.location.protocol === 'file:') {
+            showStatus(
+                'Runtime loading needs a local web server. Open this map via http://localhost/...',
+                'error',
+            );
+        }
+
+        try {
+            showStatus('Loading map assets...', 'info', 15);
+            var initResults = await Promise.all([
+                fetchJson(artifactsIndexPath),
+                fetchJson(pc4GeojsonPath)
+            ]);
+            showStatus('Preparing provider and area data...', 'info', 40);
+            buildArtifactCatalog(initResults[0]);
+            populateProviderFilterOptions();
+            pc4Geojson = initResults[1];
+            pc4Index = buildPc4Index(pc4Geojson);
+
+            panels = {
+                left: createPanel('left', leftMap),
+                right: createPanel('right', rightMap)
+            };
+
+            if (!dates.length) {
+                updatePanelHeadings();
+                panels.left.syncControlsFromState();
+                panels.right.syncControlsFromState();
+                panels.left.renderAll();
+                panels.right.renderAll();
+                showStatus('No processed docked data found under output/data.', 'error');
+                return;
+            }
+
+            panels.left.currentDate = dates[0];
+            panels.right.currentDate = dates[0];
+
+            showStatus('Loading first date...', 'info', 60);
+            var firstDateData = await ensureDateDataLoaded(dates[0]);
+            panels.left.requestedHour = 0;
+            panels.left.currentHour = normalizeHour(firstDateData, panels.left.requestedHour);
+            panels.right.requestedHour = panels.left.requestedHour;
+            panels.right.currentHour = panels.left.currentHour;
+            updatePanelHeadings();
+            panels.left.syncControlsFromState();
+            panels.right.syncControlsFromState();
+            panels.left.renderAll();
+            panels.right.renderAll();
+            updateSyncSettings();
+            updateLegendLayout();
+            showStatus('Map ready', 'info', 100);
+            clearStatusSoon(900);
+            warmRemainingDates();
+        } catch (error) {
+            showStatus('Failed to initialize map: ' + error.message, 'error');
+        }
     });
     </script>
     """
     return (
         js_template.replace("__LEFT_MAP__", map_js)
-        .replace("__ALL_DATA__", all_data_json)
-        .replace("__DATES__", dates_json)
-        .replace("__GLOBAL_MAX__", str(global_max))
-        .replace("__PC4_GEOJSON__", pc4_geojson_json)
         .replace("__DEFAULT_VISUALIZATION_MODE__", default_visualization_json)
         .replace("__DEFAULT_CENTER__", json.dumps(DEN_HAAG_CENTER))
         .replace("__DEFAULT_ZOOM__", str(DEFAULT_ZOOM))
+        .replace("__ALL_PROVIDERS_VALUE__", json.dumps(ALL_PROVIDERS_VALUE))
+        .replace("__MAP_PROVIDER_INFO__", json.dumps(MAP_PROVIDER_INFO))
+        .replace("__MAP_PROVIDER_ORDER__", json.dumps(list(MAP_PROVIDER_INFO)))
+        .replace("__DEFAULT_PROVIDER__", json.dumps(ALL_PROVIDERS_VALUE))
         .replace("__VISUALIZATION_JS__", visualization_js)
         .replace("__LEFT_MAP_ID__", map_id)
         .replace("__LIGHT_MAP_TILE_URL__", LIGHT_MAP_TILE_URL)
         .replace("__DARK_MAP_TILE_URL__", DARK_MAP_TILE_URL)
         .replace("__MAP_TILE_ATTRIBUTION__", MAP_TILE_ATTRIBUTION)
+        .replace("__ARTIFACTS_INDEX_PATH__", artifacts_index_path)
+        .replace("__PC4_GEOJSON_PATH__", pc4_geojson_path)
+        .replace("__HOUSE_DATA_PATH__", house_data_path)
+        .replace("__DEN_HAAG_BBOX__", json.dumps(DEN_HAAG_BBOX))
     )
 
 
@@ -1835,52 +3253,18 @@ def main():
 
     data_dir = args.data_dir
     if not os.path.exists(data_dir):
-        print(f"Processed data directory not found: {data_dir}")
-        print("Run build_data_tables.py first to generate output/data tables.")
-        return
+        print(f"Processed data directory not found yet: {data_dir}")
+        print(
+            "Generating the map shell anyway. It will load data at runtime if files appear."
+        )
 
-    print("Step 1: Loading PC4 polygon boundaries...")
+    print("Step 1: Ensuring PC4 polygon boundaries are cached...")
     pc4_gdf = download_pc4_polygons(DEN_HAAG_BBOX, PC4_CACHE)
 
-    print("\nStep 2: Discovering available dates from processed data...")
-    dates = discover_docked_dates(data_dir, provider=PROVIDER)
-    if not dates:
-        print("  No processed donkey_denHaag docked tables found!")
-        return
-    for year, month, day in dates:
-        print(f"  Found: {year}-{month:02d}-{day:02d}")
+    print("\nStep 2: Ensuring house points are cached...")
+    house_points = download_house_points(DEN_HAAG_BBOX, HOUSE_POINTS_CACHE)
 
-    print("\nStep 3: Processing data for each date...")
-    all_date_data = {}
-    for year, month, day in dates:
-        date_str = f"{year}-{month:02d}-{day:02d}"
-        data = process_date(data_dir, year, month, day, pc4_gdf)
-        if data:
-            all_date_data[date_str] = data
-
-    if not all_date_data:
-        print("  No valid date data processed!")
-        print(
-            "  Ensure station tables exist under output/data/stations. "
-            "Run build_data_tables.py if needed."
-        )
-        return
-
-    sorted_dates = sorted(all_date_data.keys())
-    print(f"\n  Processed {len(sorted_dates)} dates: {sorted_dates}")
-
-    global_max = 0
-    for date_data in all_date_data.values():
-        date_max = 0
-        for pc4_data in date_data["counts"].values():
-            for value in pc4_data["c"]:
-                if value > date_max:
-                    date_max = value
-        date_data["dateMax"] = date_max
-        global_max = max(global_max, date_max)
-    print(f"  Max bikes in any PC4/hour: {global_max}")
-
-    print("\nStep 4: Creating interactive map...")
+    print("\nStep 3: Creating runtime-loading map shell...")
     m = folium.Map(
         location=DEN_HAAG_CENTER,
         zoom_start=DEFAULT_ZOOM,
@@ -1889,16 +3273,10 @@ def main():
     map_js = m.get_name()
     map_id = map_js
 
-    pc4_borders = pc4_gdf[["postcode", "geometry"]].copy()
-    pc4_geojson = json.loads(pc4_borders.to_json())
-
-    all_data_json = json.dumps(all_date_data, separators=(",", ":"))
-    dates_json = json.dumps(sorted_dates, separators=(",", ":"))
-    pc4_geojson_json = json.dumps(pc4_geojson, separators=(",", ":"))
     default_visualization_json = json.dumps(DEFAULT_VISUALIZATION_MODE)
     visualization_options = build_visualization_options_html()
     visualization_js = build_visualization_js()
-    date_slider_max = max(len(sorted_dates) - 1, 0)
+    date_slider_max = 0
 
     m.get_root().header.add_child(folium.Element(build_page_styles(map_id)))
     m.get_root().html.add_child(
@@ -1909,12 +3287,11 @@ def main():
             build_custom_js(
                 map_js=map_js,
                 map_id=map_id,
-                all_data_json=all_data_json,
-                dates_json=dates_json,
-                global_max=global_max,
-                pc4_geojson_json=pc4_geojson_json,
                 default_visualization_json=default_visualization_json,
                 visualization_js=visualization_js,
+                artifacts_index_path="../index/artifacts.json",
+                pc4_geojson_path="../geodata/pc4_den_haag.geojson",
+                house_data_path="../geodata/houses_den_haag.json",
             )
         )
     )
@@ -1923,14 +3300,11 @@ def main():
     m.save(args.output)
     print(f"\nMap saved to: {args.output}")
     print("\nSummary:")
-    print(f"  PC4 areas: {len(pc4_geojson['features'])}")
-    print(f"  Dates available: {sorted_dates}")
-    for date in sorted_dates:
-        date_data = all_date_data[date]
-        print(
-            f"    {date}: hours {date_data['hours'][0]}-{date_data['maxHour']}, "
-            f"{len(date_data['stations'])} stations"
-        )
+    print(f"  PC4 areas cached: {len(pc4_gdf)}")
+    print(f"  Unique residential points cached: {house_points['count']}")
+    print(
+        "  Data is fetched at runtime from output/index, output/data, and output/geodata"
+    )
 
     csv_path, json_path, _ = rebuild_artifact_index()
     print(f"\nArtifact index updated: {csv_path} and {json_path}")

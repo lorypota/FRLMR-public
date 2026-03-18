@@ -2,10 +2,15 @@
 
 from textwrap import dedent
 
-from . import fixed, gradient, hotspot, proportional
+from . import fixed, gradient, hotspot, house_proximity, proportional
 from .common import DEFAULT_VISUALIZATION_MODE, build_common_js, build_options_html
 
-VISUALIZATION_MODES = proportional.MODES + [gradient.MODE, fixed.MODE, hotspot.MODE]
+VISUALIZATION_MODES = [
+    gradient.MODE,
+    fixed.MODE,
+    hotspot.MODE,
+    house_proximity.MODE,
+]
 
 
 def build_visualization_options_html() -> str:
@@ -22,9 +27,17 @@ def build_visualization_js() -> str:
             gradient.build_js(),
             fixed.build_js(),
             hotspot.build_js(),
+            house_proximity.build_js(),
             dedent(
                 """
                 function polygonStyleForCount(count, allData, globalMax, mode, dateKey, hour) {
+                    if (mode === 'house-proximity') {
+                        return {
+                            fillColor: themeColor('houseNone'),
+                            fillOpacity: getPolygonFillOpacity(mode),
+                            color: getPolygonStrokeColor(mode)
+                        };
+                    }
                     if (mode === 'gradient') {
                         return {
                             fillColor: gradientColorForCount(
@@ -73,6 +86,7 @@ def build_visualization_js() -> str:
                         return gradientLegendHtml(allData, globalMax, mode, dateKey, hour);
                     }
                     if (mode === 'hotspot') return hotspotLegendHtml();
+                    if (mode === 'house-proximity') return houseLegendHtml();
                     return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
                 }
                 """

@@ -1,4 +1,4 @@
-"""Circle-based hotspot preparation and JS helpers for Den Haag PC4 map."""
+"""Hotspot preparation and JS helpers for Den Haag PC4 map."""
 
 from __future__ import annotations
 
@@ -6,9 +6,17 @@ from textwrap import dedent
 
 MODE = {"value": "hotspot", "label": "Space-time hotspot"}
 
-DOCKLESS_RADIUS_METERS = 125
-STATION_BASE_RADIUS_METERS = 140
-STATION_MAX_RADIUS_METERS = 260
+DOCKLESS_BASE_RADIUS_PX = 11
+DOCKLESS_MIN_RADIUS_PX = 7
+DOCKLESS_MAX_RADIUS_PX = 26
+STATION_BASE_RADIUS_PX = 12
+STATION_MAX_RADIUS_PX = 26
+STATION_MIN_RADIUS_PX = 10
+STATION_ABSOLUTE_MAX_RADIUS_PX = 42
+HOTSPOT_ZOOM_BASELINE = 13
+HOTSPOT_ZOOM_SCALE_STEP = 1.18
+HOTSPOT_MIN_ZOOM_SCALE = 0.72
+HOTSPOT_MAX_ZOOM_SCALE = 1.9
 HOTSPOT_MARKER_ZOOM_THRESHOLD = 15
 
 
@@ -49,12 +57,20 @@ def build_hourly_hotspot_data(
 
 
 def build_js() -> str:
-    """JavaScript helpers for circle-based hotspot rendering."""
+    """JavaScript helpers for zoom-aware hotspot rendering."""
     return dedent(
         f"""
-        var DOCKLESS_RADIUS_METERS = {DOCKLESS_RADIUS_METERS};
-        var STATION_BASE_RADIUS_METERS = {STATION_BASE_RADIUS_METERS};
-        var STATION_MAX_RADIUS_METERS = {STATION_MAX_RADIUS_METERS};
+        var DOCKLESS_BASE_RADIUS_PX = {DOCKLESS_BASE_RADIUS_PX};
+        var DOCKLESS_MIN_RADIUS_PX = {DOCKLESS_MIN_RADIUS_PX};
+        var DOCKLESS_MAX_RADIUS_PX = {DOCKLESS_MAX_RADIUS_PX};
+        var STATION_BASE_RADIUS_PX = {STATION_BASE_RADIUS_PX};
+        var STATION_MAX_RADIUS_PX = {STATION_MAX_RADIUS_PX};
+        var STATION_MIN_RADIUS_PX = {STATION_MIN_RADIUS_PX};
+        var STATION_ABSOLUTE_MAX_RADIUS_PX = {STATION_ABSOLUTE_MAX_RADIUS_PX};
+        var HOTSPOT_ZOOM_BASELINE = {HOTSPOT_ZOOM_BASELINE};
+        var HOTSPOT_ZOOM_SCALE_STEP = {HOTSPOT_ZOOM_SCALE_STEP};
+        var HOTSPOT_MIN_ZOOM_SCALE = {HOTSPOT_MIN_ZOOM_SCALE};
+        var HOTSPOT_MAX_ZOOM_SCALE = {HOTSPOT_MAX_ZOOM_SCALE};
         var HOTSPOT_MARKER_ZOOM_THRESHOLD = {HOTSPOT_MARKER_ZOOM_THRESHOLD};
 
         function getHotspotHourData(allData, dateKey, hour) {{
@@ -69,12 +85,43 @@ def build_js() -> str:
             }};
         }}
 
-        function hotspotStationRadius(avail, stationMax, hotspotRadiusScale) {{
-            if (stationMax <= 0) return STATION_BASE_RADIUS_METERS;
+        function hotspotClamp(value, minValue, maxValue) {{
+            return Math.max(minValue, Math.min(maxValue, value));
+        }}
+
+        function hotspotZoomScale(zoom) {{
+            var zoomDelta = zoom - HOTSPOT_ZOOM_BASELINE;
+            return hotspotClamp(
+                Math.pow(HOTSPOT_ZOOM_SCALE_STEP, zoomDelta),
+                HOTSPOT_MIN_ZOOM_SCALE,
+                HOTSPOT_MAX_ZOOM_SCALE
+            );
+        }}
+
+        function hotspotDocklessRadius(zoom, hotspotRadiusScale) {{
+            return hotspotClamp(
+                DOCKLESS_BASE_RADIUS_PX * hotspotZoomScale(zoom) * hotspotRadiusScale,
+                DOCKLESS_MIN_RADIUS_PX,
+                DOCKLESS_MAX_RADIUS_PX
+            );
+        }}
+
+        function hotspotStationRadius(avail, stationMax, hotspotRadiusScale, zoom) {{
+            if (stationMax <= 0) {{
+                return hotspotClamp(
+                    STATION_BASE_RADIUS_PX * hotspotZoomScale(zoom) * hotspotRadiusScale,
+                    STATION_MIN_RADIUS_PX,
+                    STATION_ABSOLUTE_MAX_RADIUS_PX
+                );
+            }}
             var scaled = Math.sqrt(avail / Math.max(stationMax, 1));
-            return (STATION_BASE_RADIUS_METERS +
-                   scaled * (STATION_MAX_RADIUS_METERS - STATION_BASE_RADIUS_METERS)) *
-                   hotspotRadiusScale;
+            var baseRadius = STATION_BASE_RADIUS_PX +
+                scaled * (STATION_MAX_RADIUS_PX - STATION_BASE_RADIUS_PX);
+            return hotspotClamp(
+                baseRadius * hotspotZoomScale(zoom) * hotspotRadiusScale,
+                STATION_MIN_RADIUS_PX,
+                STATION_ABSOLUTE_MAX_RADIUS_PX
+            );
         }}
 
         function hotspotStationOpacity(avail, stationMax) {{
@@ -84,7 +131,7 @@ def build_js() -> str:
         }}
 
         function hotspotLegendHtml() {{
-            return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">Overlapping density circles</div>' +
+            return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">Zoom-aware density circles</div>' +
                    '<span style="color:' + themeColor('hotspotDockless') + ';">&#9632;</span> Dockless bikes: vivid magenta-violet circles<br>' +
                    '<span style="color:' + themeColor('hotspotMedium') + ';">&#9632;</span> Stations with availability: larger brighter circles<br>' +
                    '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> Brighter overlap = more supply in this area';

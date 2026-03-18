@@ -33,11 +33,15 @@ These are used by the runnable scripts above and do not need to be run directly.
 - `internal/data_utils.py`: shared data parsing and loading utilities.
 - `internal/processed_data_utils.py`: helpers for reading processed CSV tables.
 - `internal/paths.py`: shared output folder paths.
-- `internal/pc4_visualizations/`: modules per visualization type (`proportional`, `gradient`, `fixed`, `hotspot`).
+- `internal/pc4_visualizations/`: modules per visualization type (`gradient`, `fixed`, `hotspot`, `house_proximity`).
 
 ## How To Run
 
-The workflow is: **stage** raw data from the network share → **build** CSV tables (for now stored in repository since light) → **map** visualizations.
+The workflow is:
+
+1. **stage** raw data from the network share
+2. **build** CSV tables into `output/data/`
+3. open or refresh the Den Haag PC4 map over HTTP
 
 ### 1. Stage raw data (not uploaded to repository)
 
@@ -72,16 +76,17 @@ uv run preliminary_studies/empirical_analysis/build_data_tables.py `
   --providers donkey_denHaag ns_ov_fiets
 ```
 
-### 3. Generate maps
+### 3. Open the Den Haag PC4 map
 
-Map scripts read from `output/data/` (processed CSVs, not raw snapshots):
+Do not open `den_haag_pc4.html` via `file://`. Browser fetches for the runtime-loaded data need a local HTTP server.
+
+Run a local server from the repo root:
 
 ```bash
-uv run preliminary_studies/empirical_analysis/map_den_haag_stations.py
-uv run preliminary_studies/empirical_analysis/map_den_haag_pc4.py
-
-uv run preliminary_studies/empirical_analysis/map_amsterdam_pc4.py  #possibly outdated
+uv run python -m http.server 8000
 ```
+
+Then open: <http://localhost:8000/preliminary_studies/empirical_analysis/output/maps/den_haag_pc4.html>
 
 ## Output Structure
 
@@ -110,6 +115,7 @@ output/
   geodata/
     pc4_den_haag.geojson
     pc4_amsterdam.geojson
+    houses_den_haag.json
   index/
     artifacts.csv
     artifacts.json

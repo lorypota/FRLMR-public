@@ -13,7 +13,13 @@ HOTSPOT_MEDIUM = "#e31c79"
 HOTSPOT_HIGH = "#ff6f3c"
 HOTSPOT_PEAK = "#ffd166"
 
-DEFAULT_VISUALIZATION_MODE = "global"
+HOUSE_NEAR = "#1a9850"
+HOUSE_MID = "#91cf60"
+HOUSE_FAR = "#fdae61"
+HOUSE_VERY_FAR = "#d73027"
+HOUSE_NONE = "#7f8c8d"
+
+DEFAULT_VISUALIZATION_MODE = "gradient"
 
 
 def build_options_html(modes: list[dict[str, str]]) -> str:
@@ -45,6 +51,12 @@ def build_common_js() -> str:
                 hotspotLow: '{HOTSPOT_MEDIUM}',
                 hotspotMedium: '{HOTSPOT_HIGH}',
                 hotspotPeak: '{HOTSPOT_PEAK}',
+                houseNear: '{HOUSE_NEAR}',
+                houseMid: '{HOUSE_MID}',
+                houseFar: '{HOUSE_FAR}',
+                houseVeryFar: '{HOUSE_VERY_FAR}',
+                houseNone: '{HOUSE_NONE}',
+                housePolygonStroke: '#9aa7b4',
                 gradientBorder: '#999999',
                 legendSubtleText: '#555555'
             }},
@@ -64,6 +76,12 @@ def build_common_js() -> str:
                 hotspotLow: '#ff5db8',
                 hotspotMedium: '#ff9d57',
                 hotspotPeak: '#ffe08a',
+                houseNear: '#4fd889',
+                houseMid: '#a8e76d',
+                houseFar: '#ffc16b',
+                houseVeryFar: '#ff8a7d',
+                houseNone: '#8a99a8',
+                housePolygonStroke: '#6a7d90',
                 gradientBorder: '#c0ccd8',
                 legendSubtleText: '#c7d3df'
             }}
@@ -71,6 +89,10 @@ def build_common_js() -> str:
 
         function isHotspotMode(mode) {{
             return mode === 'hotspot';
+        }}
+
+        function isHouseMode(mode) {{
+            return mode === 'house-proximity';
         }}
 
         function isProportionalMode(mode) {{
@@ -113,6 +135,7 @@ def build_common_js() -> str:
 
         function getPolygonStrokeColor(mode) {{
             if (isHotspotMode(mode)) return themeColor('hotspotPolygonStroke');
+            if (isHouseMode(mode)) return themeColor('housePolygonStroke');
             return themeColor('polygonStroke');
         }}
 
@@ -120,6 +143,7 @@ def build_common_js() -> str:
             if (isHotspotMode(mode)) {{
                 return getThemeName() === 'dark' ? 0.08 : 0.04;
             }}
+            if (isHouseMode(mode)) return 0.0;
             return getThemeName() === 'dark' ? 0.72 : 0.6;
         }}
 
