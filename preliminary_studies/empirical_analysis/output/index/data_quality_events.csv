@@ -1,0 +1,5 @@
+provider,date,timestamp,tar_path,missing_member,consumer,action_taken,note
+ns_ov_fiets,2026-03-05,2026-03-05T13:41:00,L:\UserData\rotal\master_thesis\preliminary_studies\empirical_analysis\output\raw_staging\2026\03\05\13\ns_ov_fiets_fietsData_202603051341.tar.gz,station_status,docked_table,skipped_snapshot,
+ns_ov_fiets,2026-03-05,2026-03-05T20:03:00,L:\UserData\rotal\master_thesis\preliminary_studies\empirical_analysis\output\raw_staging\2026\03\05\20\ns_ov_fiets_fietsData_202603052003.tar.gz,station_status,docked_table,skipped_snapshot,
+ns_ov_fiets,2026-03-07,2026-03-07T22:30:00,L:\UserData\rotal\master_thesis\preliminary_studies\empirical_analysis\output\raw_staging\2026\03\07\22\ns_ov_fiets_fietsData_202603072230.tar.gz,station_status,docked_table,skipped_snapshot,
+ns_ov_fiets,2026-03-09,2026-03-09T19:19:00,L:\UserData\rotal\master_thesis\preliminary_studies\empirical_analysis\output\raw_staging\2026\03\09\19\ns_ov_fiets_fietsData_202603091919.tar.gz,station_status,docked_table,skipped_snapshot,
