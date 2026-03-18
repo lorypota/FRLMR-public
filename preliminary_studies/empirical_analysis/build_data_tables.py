@@ -18,6 +18,7 @@ from internal.data_utils import (
     DEFAULT_DATA_ROOT,
     DEN_HAAG_BBOX,
     PROVIDER,
+    append_data_quality_event,
     discover_available_dates,
     extract_file_from_tar,
     get_station_info,
@@ -25,6 +26,7 @@ from internal.data_utils import (
     list_tar_files,
     load_day_availability,
     load_day_free_bikes,
+    tar_member_exists,
 )
 from internal.paths import (
     ensure_output_dirs,
@@ -55,11 +57,41 @@ def build_station_table(
     if not files:
         return False
 
-    station_info = get_station_info(files[0])
-    if not station_info:
+    station_info = None
+    status = []
+    selected_file = None
+    for tar_path in files:
+        station_info = get_station_info(tar_path)
+        if station_info:
+            selected_file = tar_path
+            status = get_station_status(tar_path) or []
+            if selected_file != files[0]:
+                print(
+                    f"    [WARN] Using later snapshot for station metadata: "
+                    f"{selected_file.name}"
+                )
+            break
+        if tar_member_exists(tar_path, "station_information"):
+            print(
+                f"    [WARN] station_information unreadable in {tar_path.name}; "
+                "trying next snapshot"
+            )
+            continue
+        print(
+            f"    [WARN] station_information missing in {tar_path.name}; "
+            "trying next snapshot"
+        )
+        append_data_quality_event(
+            provider=provider,
+            tar_path=tar_path,
+            missing_member="station_information",
+            consumer="station_table",
+            action_taken="used_fallback_snapshot",
+        )
+
+    if not station_info or selected_file is None:
         return False
 
-    status = get_station_status(files[0]) or []
     status_map = {s["station_id"]: s for s in status}
 
     rows = []

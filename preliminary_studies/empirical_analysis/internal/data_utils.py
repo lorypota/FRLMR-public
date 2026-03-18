@@ -17,6 +17,7 @@ Data structure:
 """
 
 import ast
+import csv
 import os
 import tarfile
 from datetime import datetime
@@ -25,6 +26,7 @@ from pathlib import Path
 import pandas as pd
 
 from .paths import DEFAULT_DATA_ROOT as REPO_DEFAULT_DATA_ROOT
+from .paths import INDEX_DIR
 
 # =============================================================================
 # CONSTANTS
@@ -52,6 +54,17 @@ AMSTERDAM_BBOX = {
 AMSTERDAM_CENTER = (52.3527, 4.8928)
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_QUALITY_EVENTS_PATH = INDEX_DIR / "data_quality_events.csv"
+DATA_QUALITY_EVENT_FIELDS = [
+    "provider",
+    "date",
+    "timestamp",
+    "tar_path",
+    "missing_member",
+    "consumer",
+    "action_taken",
+    "note",
+]
 
 # =============================================================================
 # PARSING
@@ -98,10 +111,56 @@ def parse_gbfs_file(raw_bytes: bytes) -> dict | None:
 def extract_file_from_tar(tar_path: str | Path, member_name: str) -> dict | None:
     """Extract and parse a single named member from a tar.gz archive."""
     with tarfile.open(tar_path, "r:gz") as tf:
-        f = tf.extractfile(member_name)
+        try:
+            f = tf.extractfile(member_name)
+        except KeyError:
+            return None
         if f is None:
             return None
         return parse_gbfs_file(f.read())
+
+
+def tar_member_exists(tar_path: str | Path, member_name: str) -> bool:
+    """Return True when the tar archive contains the given member."""
+    with tarfile.open(tar_path, "r:gz") as tf:
+        try:
+            tf.getmember(member_name)
+        except KeyError:
+            return False
+    return True
+
+
+def append_data_quality_event(
+    *,
+    provider: str,
+    tar_path: str | Path,
+    missing_member: str,
+    consumer: str,
+    action_taken: str,
+    note: str = "",
+) -> None:
+    """Append one missing-member event to the empirical-analysis quality log."""
+    tar_path = Path(tar_path)
+    timestamp = parse_timestamp_from_filename(tar_path.name, provider=provider)
+    INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    write_header = not DATA_QUALITY_EVENTS_PATH.exists()
+
+    with DATA_QUALITY_EVENTS_PATH.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=DATA_QUALITY_EVENT_FIELDS)
+        if write_header:
+            writer.writeheader()
+        writer.writerow(
+            {
+                "provider": provider,
+                "date": timestamp.strftime("%Y-%m-%d"),
+                "timestamp": timestamp.isoformat(),
+                "tar_path": str(tar_path.resolve()),
+                "missing_member": missing_member,
+                "consumer": consumer,
+                "action_taken": action_taken,
+                "note": note,
+            }
+        )
 
 
 def extract_all_from_tar(tar_path: str | Path) -> dict[str, dict | None]:
@@ -291,12 +350,33 @@ def load_day_availability(
 
     bikes_records = []
     docks_records = []
+    missing_status_count = 0
+    unreadable_status_count = 0
     for i, tar_path in enumerate(tar_files):
         if i % 100 == 0:
             print(f"  Processing snapshot {i + 1}/{len(tar_files)}...")
         ts = parse_timestamp_from_filename(tar_path.name, provider=provider)
         statuses = get_station_status(tar_path)
         if statuses is None:
+            if tar_member_exists(tar_path, "station_status"):
+                unreadable_status_count += 1
+                print(
+                    f"    [WARN] station_status unreadable in {tar_path.name}; "
+                    "skipping snapshot"
+                )
+            else:
+                missing_status_count += 1
+                print(
+                    f"    [WARN] station_status missing in {tar_path.name}; "
+                    "skipping snapshot"
+                )
+                append_data_quality_event(
+                    provider=provider,
+                    tar_path=tar_path,
+                    missing_member="station_status",
+                    consumer="docked_table",
+                    action_taken="skipped_snapshot",
+                )
             continue
         bikes_row = {"timestamp": ts}
         docks_row = {"timestamp": ts}
@@ -306,8 +386,25 @@ def load_day_availability(
         bikes_records.append(bikes_row)
         docks_records.append(docks_row)
 
-    df = pd.DataFrame(bikes_records).set_index("timestamp").sort_index()
-    docks_df = pd.DataFrame(docks_records).set_index("timestamp").sort_index()
+    if bikes_records:
+        df = pd.DataFrame(bikes_records).set_index("timestamp").sort_index()
+    else:
+        df = pd.DataFrame(columns=["timestamp"]).set_index("timestamp")
+
+    if docks_records:
+        docks_df = pd.DataFrame(docks_records).set_index("timestamp").sort_index()
+    else:
+        docks_df = pd.DataFrame(columns=["timestamp"]).set_index("timestamp")
+
+    if missing_status_count:
+        print(
+            f"  Skipped {missing_status_count} snapshot(s) with missing station_status"
+        )
+    if unreadable_status_count:
+        print(
+            f"  Skipped {unreadable_status_count} snapshot(s) with unreadable "
+            "station_status"
+        )
 
     if preferred_cache_path:
         os.makedirs(os.path.dirname(preferred_cache_path), exist_ok=True)
