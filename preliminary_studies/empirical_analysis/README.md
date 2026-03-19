@@ -1,6 +1,6 @@
 # Empirical Analysis Folder
 
-This folder contains small scripts used to inspect GBFS snapshots and build map artifacts.
+This folder contains small scripts used to inspect GBFS snapshots (TNO internal data) and build map artifacts.
 
 The main current focus is **Den Haag** (although older exploration files of Amsterdam are not deleted), which has four shared-mobility operators of interest:
 
@@ -13,7 +13,7 @@ The main current focus is **Den Haag** (although older exploration files of Amst
 
 Additionally, **NS OV-fiets** (`ns_ov_fiets`) has 6 docked stations in Den Haag at train stations (HS, Centraal, Voorburg, Rijswijk, Mariahoeve, Laan van NOI).
 
-The GBFS network share (TNO internal folder) contains 13 providers total (see full list in the data exploration notes below), but only `donkey_denHaag` and `ns_ov_fiets` have data within Den Haag. Providers that cover other cities: CKL/Cykl, check*\*, dott*\*, goabout, donkey.
+The GBFS network share contains 13 providers total (see full list in the data exploration notes below), but only `donkey_denHaag` and `ns_ov_fiets` have data within Den Haag. Providers that cover other cities: CKL/Cykl, check*\*, dott*\*, goabout, donkey.
 
 The [Dashboard Deelmobiliteit](https://crow-smartmobility.nl/kenniscatalogus/dashboard-deelmobiliteit/) aggregates data from shared-mobility providers across NL using GBFS/MDS/TOMP standards. Access requires a government login via <info@deelfietsdashboard.nl>. HTM, Cargoroo, and Bondi data may be available there but is not on the TNO network share.
 
@@ -41,7 +41,7 @@ The workflow is:
 
 1. **stage** raw data from the network share
 2. **build** CSV tables into `output/data/`
-3. open or refresh the Den Haag PC4 map over HTTP
+3. open or refresh the Den Haag PC4 map over HTTP (directly go to this to just run with data already saved in repository)
 
 ### 1. Stage raw data (not uploaded to repository)
 
@@ -64,7 +64,7 @@ Use `--mode first-per-hour` for lighter transfers every hour instead of every mi
 | 1 week  | ~900 MB         | ~280 MB         | ~15 MB        |
 | 1 month | ~3.6 GB         | ~1.1 GB         | ~62 MB        |
 
-Data is available from 2021-04 through 2026-03. `donkey_denHaag` starts from 2021-10. File sizes grew over time as Donkey added more stations (15 KB/file in 2021 → 78 KB/file in 2026). NS OV-fiets stays ~14 KB/file throughout.
+Data is available from 2021-04 to present. `donkey_denHaag` starts from 2021-10. File sizes grew over time as Donkey added more stations (15 KB/file in 2021 → 78 KB/file in 2026). NS OV-fiets stays ~14 KB/file throughout.
 
 ### 2. Build CSV tables
 

@@ -765,6 +765,12 @@ def build_page_styles(left_map_id: str) -> str:
             color: #1d2b38;
         }}
 
+        .legend-credit {{
+            margin-top: 2px;
+            font-size: 11px;
+            color: #6a7a89;
+        }}
+
         .legend-toggle {{
             display: flex;
             align-items: center;
@@ -892,6 +898,10 @@ def build_page_styles(left_map_id: str) -> str:
         body.theme-dark .date-readout,
         body.theme-dark .hour-readout {{
             color: #edf4fb;
+        }}
+
+        body.theme-dark .legend-credit {{
+            color: #9fb1c3;
         }}
 
         body.theme-dark .panel-controls select {{
@@ -1033,6 +1043,7 @@ def build_page_html(
         <div id="legend-box">
             <div class="drag-handle legend-drag-handle" id="legend-drag-handle">
                 <span class="legend-title">Available Bikes</span>
+                <div class="legend-credit">By Lorenzo Rota</div>
             </div>
             <div class="legend-top">
                 <label class="legend-toggle" for="theme-toggle">

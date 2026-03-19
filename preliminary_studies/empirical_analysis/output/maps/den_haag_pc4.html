@@ -58,7 +58,7 @@ body.compare-on #panel-right {
     inset: 0;
 }
 
-#map_dc04c83d5e519b30274218b030b8543a,
+#map_3f01e802d395155d141669fe5c03f0a9,
 #compare-map-right {
     position: absolute !important;
     inset: 0;
@@ -292,6 +292,12 @@ body.compare-on #panel-right {
     color: #1d2b38;
 }
 
+.legend-credit {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #6a7a89;
+}
+
 .legend-toggle {
     display: flex;
     align-items: center;
@@ -421,6 +427,10 @@ body.theme-dark .hour-readout {
     color: #edf4fb;
 }
 
+body.theme-dark .legend-credit {
+    color: #9fb1c3;
+}
+
 body.theme-dark .panel-controls select {
     background: #13202c;
     color: #edf4fb;
@@ -536,7 +546,7 @@ body.theme-dark .leaflet-popup-content {
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_dc04c83d5e519b30274218b030b8543a {
+                #map_3f01e802d395155d141669fe5c03f0a9 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -659,6 +669,7 @@ body.theme-dark .leaflet-popup-content {
 <div id="legend-box">
     <div class="drag-handle legend-drag-handle" id="legend-drag-handle">
         <span class="legend-title">Available Bikes</span>
+        <div class="legend-credit">By Lorenzo Rota</div>
     </div>
     <div class="legend-top">
         <label class="legend-toggle" for="theme-toggle">
@@ -717,7 +728,7 @@ body.theme-dark .leaflet-popup-content {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
-        var leftMap = map_dc04c83d5e519b30274218b030b8543a;
+        var leftMap = map_3f01e802d395155d141669fe5c03f0a9;
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
@@ -1227,7 +1238,7 @@ function clusterHousePoints(map, supplyPoints) {
 
 function houseLegendHtml() {
     return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">' +
-           'Distance house to nearest sharing bike' +
+           'Distance house to nearest sharing bike:' +
            '</div>' +
            '<span style="color:' + themeColor('houseNear') + ';">&#9632;</span> 0 &ndash; 100 m<br>' +
            '<span style="color:' + themeColor('houseMid') + ';">&#9632;</span> 101 &ndash; 250 m<br>' +
@@ -1295,7 +1306,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
 }
 
-        var leftMapElement = document.getElementById('map_dc04c83d5e519b30274218b030b8543a');
+        var leftMapElement = document.getElementById('map_3f01e802d395155d141669fe5c03f0a9');
         var leftMapSlot = document.getElementById('left-map-slot');
         if (leftMapElement && leftMapSlot && leftMapElement.parentNode !== leftMapSlot) {
             leftMapSlot.appendChild(leftMapElement);
@@ -3366,14 +3377,14 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     </script>
     
     
-            <div class="folium-map" id="map_dc04c83d5e519b30274218b030b8543a" ></div>
+            <div class="folium-map" id="map_3f01e802d395155d141669fe5c03f0a9" ></div>
         
 </body>
 <script>
     
     
-            var map_dc04c83d5e519b30274218b030b8543a = L.map(
-                "map_dc04c83d5e519b30274218b030b8543a",
+            var map_3f01e802d395155d141669fe5c03f0a9 = L.map(
+                "map_3f01e802d395155d141669fe5c03f0a9",
                 {
                     center: [52.075, 4.3],
                     crs: L.CRS.EPSG3857,
