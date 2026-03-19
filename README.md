@@ -1,8 +1,8 @@
-# A Fairness-Oriented Reinforcement Learning Approach for the Operation and Control of Shared Micromobility Services
+# Fairness in Reinforcement Learning for Shared bikes Rebalancing
 
 ## Project Structure
 
-```
+```text
 FairMSS/
 ├── common/                        # Shared modules
 │   ├── config.py                  # Scenario definitions, constants, helpers
@@ -29,9 +29,10 @@ FairMSS/
 │   ├── q_tables/                  # Trained Q-tables
 │   └── results/                   # Evaluation outputs (.npy, .pkl)
 │
-├── preliminary_studies/           # Earlier experiments and prototypes
-│   ├── baseline/
-│   └── failure_rate_analysis/
+├── preliminary_studies/           # Supporting studies and analyses
+│   ├── baseline/                  # Reproduction of baseline (start of project)
+│   ├── empirical_analysis/        # Map visualizations of TNO data
+│   └── failure_rate_analysis/     # Analysis of failure rates (start of project)
 │
 ├── pyproject.toml
 └── README.md
@@ -40,7 +41,7 @@ FairMSS/
 ## Setup
 
 1. Clone the repository
-2. Install dependencies with: `uv sync`
+2. Install dependencies with: `uv sync` (also needed for preliminary_studies)
 
 ## Beta formulation
 
