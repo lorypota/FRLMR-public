@@ -22,7 +22,7 @@ The [Dashboard Deelmobiliteit](https://crow-smartmobility.nl/kenniscatalogus/das
 - `stage_gbfs_subset.py`: stage selected providers and snapshots from TNO server into a local folder.
 - `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
 - `map_den_haag_stations.py`: build a Den Haag station map.
-- `map_den_haag_pc4.py`: build Den Haag PC4 map with date/hour controls, multiple visualization modes, and an optional side-by-side compare view.
+- `map_den_haag_pc4.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
 - `map_amsterdam_pc4.py`: build Amsterdam PC4 map with date/hour controls.
 - `artifact_index.py`: rebuild output artifact index files manually if needed.
 
@@ -37,15 +37,15 @@ These are used by the runnable scripts above and do not need to be run directly.
 
 ## How To Run
 
-The workflow is:
+The workflow is (skip first two steps to just run visualization with already saved data):
 
 1. **stage** raw data from the network share
 2. **build** CSV tables into `output/data/`
-3. open or refresh the Den Haag PC4 map over HTTP (directly go to this to just run with data already saved in repository)
+3. open or refresh the Den Haag PC4 map over HTTP
 
-### 1. Stage raw data (not uploaded to repository)
+### 1. Stage raw data
 
-Copy selected providers from the TNO network share into `output/raw_staging/`. Uses `--start`/`--end` for date ranges and skips already-staged files:
+Copy selected providers from the TNO network share into `output/raw_staging/`. This staged data is not committed by default as it contains many .zip files that would take a lot of space in the repository. Uses `--start`/`--end` for date ranges and skips already-staged files:
 
 ```powershell
 uv run preliminary_studies/empirical_analysis/stage_gbfs_subset.py `
@@ -76,9 +76,11 @@ uv run preliminary_studies/empirical_analysis/build_data_tables.py `
   --providers donkey_denHaag ns_ov_fiets
 ```
 
-### 3. Open the Den Haag PC4 map
+### 3. Open the Den Haag map
 
 Do not open `den_haag_pc4.html` via `file://`. Browser fetches for the runtime-loaded data need a local HTTP server.
+
+The map starts on `PC4`. `PC6`, `CBS buurten`, and `CBS wijken` can be selected in the area-level control. The visualization control supports `gradient`, `fixed`, `hotspot`, and `house_proximity`.
 
 Run a local server from the repo root:
 
@@ -114,6 +116,11 @@ output/
     amsterdam_pc4.html
   geodata/
     pc4_den_haag.geojson
+    pc6_den_haag/
+      part_01.geojson
+      part_02.geojson
+    buurten_den_haag.geojson
+    wijken_den_haag.geojson
     pc4_amsterdam.geojson
     houses_den_haag.json
   index/

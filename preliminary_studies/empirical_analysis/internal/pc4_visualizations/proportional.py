@@ -17,7 +17,7 @@ def build_js() -> str:
         function getHourMax(allData, dateKey, hour) {{
             var dateData = allData[dateKey];
             if (!dateData) return 1;
-            var dateCounts = dateData.counts || {{}};
+            var dateCounts = getVisualizationCounts(dateData);
             var mx = 0;
             for (var pc in dateCounts) {{
                 var v = dateCounts[pc].c[hour];
@@ -30,7 +30,7 @@ def build_js() -> str:
             if (mode === 'global') return globalMax || 1;
             if (mode === 'per-date' || mode === 'gradient') {{
                 var dateData = allData[dateKey];
-                return (dateData && dateData.dateMax) ? dateData.dateMax : 1;
+                return getVisualizationDateMax(dateData);
             }}
             if (mode === 'per-hour') return getHourMax(allData, dateKey, hour);
             return 1;

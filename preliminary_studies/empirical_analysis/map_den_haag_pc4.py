@@ -1,11 +1,12 @@
 """
-Interactive PC4 Map with Time Slider
+Interactive Den Haag postcode map with time slider
 
 Usage:
     uv run preliminary_studies/empirical_analysis/map_den_haag_pc4.py
 
-Creates an interactive Folium map showing Den Haag's 4-digit postcode (PC4)
-areas and bike availability over time with multiple visualization modes.
+Creates an interactive Folium map showing Den Haag area polygons and bike
+availability over time with multiple visualization modes. The map supports PC4,
+PC6, CBS buurten, and CBS wijken.
 
 Output:
     output/maps/den_haag_pc4.html
@@ -17,6 +18,7 @@ import os
 import sys
 import urllib.parse
 import urllib.request
+from pathlib import Path
 from textwrap import dedent
 
 import folium
@@ -46,7 +48,6 @@ from internal.processed_data_utils import (
     load_station_day,
 )
 
-PC4_CACHE = str(GEODATA_DIR / "pc4_den_haag.geojson")
 HOUSE_POINTS_CACHE = str(GEODATA_DIR / "houses_den_haag.json")
 HOUSE_POINTS_CACHE_VERSION = 2
 
@@ -55,13 +56,48 @@ BAG_PAGE_SIZE = 1000
 HOUSE_CELL_SIZE_DEGREES = 0.0025
 HOUSE_DOWNLOAD_TILE_COUNT = 6
 HOUSE_BBOX_BUFFER = 0.005  # ~500m buffer to catch edge houses
+PDOK_API_PAGE_SIZE = 500
+PDOK_JAARCODE = 2024
 
-PDOK_URL = (
-    "https://api.pdok.nl/cbs/postcode4/ogc/v1/collections/postcode4/items"
-    "?f=json&limit=500"
-    "&bbox={lon_min},{lat_min},{lon_max},{lat_max}"
-    "&jaarcode=2024"
-)
+AREA_LEVEL_CONFIG = {
+    "pc4": {
+        "label": "PC4",
+        "endpoint_url": "https://api.pdok.nl/cbs/postcode4/ogc/v1/collections/postcode4/items",
+        "property": "postcode",
+        "cache_path": str(GEODATA_DIR / "pc4_den_haag.geojson"),
+        "query_params": {"jaarcode": PDOK_JAARCODE},
+    },
+    "pc6": {
+        "label": "PC6",
+        "endpoint_url": "https://api.pdok.nl/cbs/postcode6/ogc/v1/collections/postcode6/items",
+        "property": "postcode6",
+        "cache_path": str(GEODATA_DIR / "pc6_den_haag"),
+        "query_params": {"jaarcode": PDOK_JAARCODE},
+    },
+    "buurt": {
+        "label": "CBS buurten",
+        "endpoint_url": (
+            "https://api.pdok.nl/cbs/wijken-en-buurten-2024/"
+            "ogc/v1/collections/buurten/items"
+        ),
+        "property": "buurtcode",
+        "cache_path": str(GEODATA_DIR / "buurten_den_haag.geojson"),
+    },
+    "wijk": {
+        "label": "CBS wijken",
+        "endpoint_url": (
+            "https://api.pdok.nl/cbs/wijken-en-buurten-2024/"
+            "ogc/v1/collections/wijken/items"
+        ),
+        "property": "wijkcode",
+        "cache_path": str(GEODATA_DIR / "wijken_den_haag.geojson"),
+    },
+}
+AREA_LEVELS = tuple(AREA_LEVEL_CONFIG)
+DEFAULT_AREA_LEVEL = "pc4"
+POSTCODE_LEVEL_CONFIG = AREA_LEVEL_CONFIG
+POSTCODE_LEVELS = AREA_LEVELS
+DEFAULT_POSTCODE_LEVEL = DEFAULT_AREA_LEVEL
 
 LIGHT_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
 DARK_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -155,9 +191,7 @@ def download_house_points(bbox: dict[str, float], cache_path: str) -> dict:
                 pages_fetched += 1
                 for feature in features:
                     props = feature.get("properties") or {}
-                    if "woonfunctie" not in str(
-                        props.get("gebruiksdoel", "")
-                    ).lower():
+                    if "woonfunctie" not in str(props.get("gebruiksdoel", "")).lower():
                         continue
                     if "in gebruik" not in str(props.get("status", "")).lower():
                         continue
@@ -224,23 +258,137 @@ def download_house_points(bbox: dict[str, float], cache_path: str) -> dict:
     return payload
 
 
-def download_pc4_polygons(bbox: dict, cache_path: str) -> gpd.GeoDataFrame:
-    """Download PC4 polygons from PDOK CBS API, with local caching."""
-    if os.path.exists(cache_path):
-        print(f"  Loading cached PC4 polygons from {cache_path}")
-        return gpd.read_file(cache_path)
+def _build_area_api_url(
+    endpoint_url: str,
+    bbox: dict[str, float],
+    extra_params: dict[str, int | str] | None = None,
+) -> str:
+    """Build the first PDOK area-items URL for one boundary source."""
+    params = {
+        "f": "json",
+        "limit": PDOK_API_PAGE_SIZE,
+        "bbox": (
+            f"{bbox['lon_min']},{bbox['lat_min']},{bbox['lon_max']},{bbox['lat_max']}"
+        ),
+    }
+    if extra_params:
+        params.update(extra_params)
+    return f"{endpoint_url}?{urllib.parse.urlencode(params)}"
 
-    url = PDOK_URL.format(**bbox)
-    print("  Downloading PC4 polygons from PDOK...")
-    with urllib.request.urlopen(url) as resp:
-        geojson_data = json.loads(resp.read().decode("utf-8"))
 
-    gdf = gpd.GeoDataFrame.from_features(geojson_data["features"], crs="EPSG:4326")
-    print(f"  Downloaded {len(gdf)} PC4 areas")
+def _iter_geojson_cache_parts(cache_path: str) -> list[Path]:
+    """Return one or more GeoJSON cache files for a cache target."""
+    cache = Path(cache_path)
+    if cache.is_file():
+        return [cache]
+    if cache.is_dir():
+        return sorted(cache.glob("*.geojson"))
+    return []
 
-    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-    gdf.to_file(cache_path, driver="GeoJSON")
-    print(f"  Cached to {cache_path}")
+
+def _load_geojson_cache(cache_path: str, area_label: str) -> gpd.GeoDataFrame | None:
+    """Load cached GeoJSON from a single file or a directory of split parts."""
+    parts = _iter_geojson_cache_parts(cache_path)
+    if not parts:
+        return None
+
+    if len(parts) == 1:
+        print(f"  Loading cached {area_label} polygons from {parts[0]}")
+        return gpd.read_file(parts[0])
+
+    print(
+        f"  Loading cached {area_label} polygons from {len(parts)} files in {cache_path}"
+    )
+    frames = [gpd.read_file(part) for part in parts]
+    merged = gpd.GeoDataFrame(
+        pd.concat(frames, ignore_index=True),
+        geometry="geometry",
+        crs=frames[0].crs,
+    )
+    return merged
+
+
+def _write_geojson_cache(gdf: gpd.GeoDataFrame, cache_path: str) -> None:
+    """Write GeoJSON cache as one file or split parts, based on cache_path."""
+    cache = Path(cache_path)
+    if cache.suffix.lower() == ".geojson":
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        gdf.to_file(cache, driver="GeoJSON")
+        print(f"  Cached to {cache}")
+        return
+
+    cache.mkdir(parents=True, exist_ok=True)
+    for old_part in cache.glob("*.geojson"):
+        old_part.unlink()
+
+    n_rows = len(gdf)
+    part_count = 2
+    chunk_size = max(1, (n_rows + part_count - 1) // part_count)
+    for part_index, start in enumerate(range(0, n_rows, chunk_size), start=1):
+        stop = min(start + chunk_size, n_rows)
+        part_path = cache / f"part_{part_index:02d}.geojson"
+        gdf.iloc[start:stop].to_file(part_path, driver="GeoJSON")
+
+    print(f"  Cached to {cache} ({len(list(cache.glob('*.geojson')))} parts)")
+
+
+def _build_runtime_geojson_resource(cache_path: str) -> str | list[str]:
+    """Return one runtime path or a list of split-part paths from maps/ to geodata/."""
+    parts = _iter_geojson_cache_parts(cache_path)
+    if not parts:
+        rel_path = os.path.relpath(cache_path, MAPS_DIR).replace("\\", "/")
+        return rel_path
+    rel_paths = [os.path.relpath(part, MAPS_DIR).replace("\\", "/") for part in parts]
+    if len(rel_paths) == 1:
+        return rel_paths[0]
+    return rel_paths
+
+
+def download_postcode_polygons(
+    *,
+    bbox: dict[str, float],
+    cache_path: str,
+    endpoint_url: str,
+    area_property: str,
+    area_label: str,
+    query_params: dict[str, int | str] | None = None,
+) -> gpd.GeoDataFrame:
+    """Download postcode polygons from PDOK CBS API, with local caching."""
+    cached_gdf = _load_geojson_cache(cache_path, area_label)
+    if cached_gdf is not None:
+        return cached_gdf
+
+    print(f"  Downloading {area_label} polygons from PDOK...")
+    features = []
+    page_count = 0
+    next_url = _build_area_api_url(endpoint_url, bbox, query_params)
+    while next_url:
+        with urllib.request.urlopen(next_url, timeout=60) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+
+        page_features = payload.get("features", [])
+        if not page_features:
+            break
+        features.extend(page_features)
+        page_count += 1
+        if page_count == 1 or page_count % 5 == 0:
+            print(
+                f"    Pages fetched: {page_count} | "
+                f"{area_label} areas so far: {len(features)}"
+            )
+
+        next_url = None
+        for link in payload.get("links", []):
+            if link.get("rel") == "next" and link.get("href"):
+                next_url = link["href"]
+                break
+
+    gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:4326")
+    if area_property not in gdf.columns:
+        raise KeyError(f"{area_label} response missing '{area_property}' column")
+    print(f"  Downloaded {len(gdf)} {area_label} areas")
+
+    _write_geojson_cache(gdf, cache_path)
     return gdf
 
 
@@ -806,20 +954,20 @@ def build_page_styles(left_map_id: str) -> str:
             margin-bottom: 10px;
         }}
 
-        .legend-provider-filter {{
+        .legend-select-filter {{
             display: flex;
             flex-direction: column;
             gap: 6px;
             margin-bottom: 10px;
         }}
 
-        .legend-provider-filter label {{
+        .legend-select-filter label {{
             font-size: 13px;
             font-weight: 600;
             color: #304050;
         }}
 
-        .legend-provider-filter select {{
+        .legend-select-filter select {{
             font-size: 13px;
             padding: 4px 8px;
             border: 1px solid #c6cdd4;
@@ -893,7 +1041,7 @@ def build_page_styles(left_map_id: str) -> str:
 
         body.theme-dark .control-inline label,
         body.theme-dark .legend-title,
-        body.theme-dark .legend-provider-filter label,
+        body.theme-dark .legend-select-filter label,
         body.theme-dark .legend-hotspot-control label,
         body.theme-dark .date-readout,
         body.theme-dark .hour-readout {{
@@ -910,7 +1058,7 @@ def build_page_styles(left_map_id: str) -> str:
             border-color: #38506a;
         }}
 
-        body.theme-dark .legend-provider-filter select {{
+        body.theme-dark .legend-select-filter select {{
             background: #13202c;
             color: #edf4fb;
             border-color: #38506a;
@@ -918,7 +1066,7 @@ def build_page_styles(left_map_id: str) -> str:
 
         body.theme-dark .panel-controls select,
         body.theme-dark .panel-controls input[type="range"],
-        body.theme-dark .legend-provider-filter select,
+        body.theme-dark .legend-select-filter select,
         body.theme-dark .legend-hotspot-control input[type="range"] {{
             accent-color: #66b7ff;
         }}
@@ -1074,9 +1222,18 @@ def build_page_html(
                 </label>
             </div>
             <div class="legend-static">
-                <div class="legend-provider-filter">
+                <div class="legend-select-filter">
                     <label for="provider-filter">Provider</label>
                     <select id="provider-filter"></select>
+                </div>
+                <div class="legend-select-filter">
+                    <label for="postcode-level-toggle">Area level</label>
+                    <select id="postcode-level-toggle">
+                        <option value="pc4">PC4</option>
+                        <option value="pc6">PC6</option>
+                        <option value="buurt">CBS buurten</option>
+                        <option value="wijk">CBS wijken</option>
+                    </select>
                 </div>
                 <span class="legend-symbol-dockless">&#9679;</span> Dockless bike<br>
                 Station bikes stored:<br>
@@ -1107,7 +1264,10 @@ def build_custom_js(
     default_visualization_json: str,
     visualization_js: str,
     artifacts_index_path: str,
-    pc4_geojson_path: str,
+    postcode_geojson_paths_json: str,
+    postcode_configs_json: str,
+    postcode_levels_json: str,
+    default_postcode_level_json: str,
     house_data_path: str,
 ) -> str:
     """Build the client-side compare-mode behavior."""
@@ -1121,8 +1281,10 @@ def build_custom_js(
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
-        var pc4Geojson = null;
-        var pc4Index = [];
+        var globalMaxByLevel = Object.create(null);
+        var areaGeojsonByLevel = Object.create(null);
+        var areaIndexByLevel = Object.create(null);
+        var postcodeLevelLoadPromises = Object.create(null);
         var dateArtifacts = Object.create(null);
         var stationArtifacts = Object.create(null);
         var dateLoadPromises = Object.create(null);
@@ -1134,7 +1296,10 @@ def build_custom_js(
         var defaultCenter = __DEFAULT_CENTER__;
         var defaultZoom = __DEFAULT_ZOOM__;
         var artifactsIndexPath = '__ARTIFACTS_INDEX_PATH__';
-        var pc4GeojsonPath = '__PC4_GEOJSON_PATH__';
+        var postcodeGeojsonPaths = __POSTCODE_GEOJSON_PATHS__;
+        var postcodeConfigs = __POSTCODE_CONFIGS__;
+        var postcodeLevels = __POSTCODE_LEVELS__;
+        var postcodeLevel = __DEFAULT_POSTCODE_LEVEL__;
         var houseDataPath = '__HOUSE_DATA_PATH__';
         var denHaagBBox = __DEN_HAAG_BBOX__;
         var allProvidersValue = __ALL_PROVIDERS_VALUE__;
@@ -1143,7 +1308,7 @@ def build_custom_js(
         var availableProviderKeys = [];
         var activeProvider = __DEFAULT_PROVIDER__;
         var compareEnabled = false;
-        var selectedPC4 = null;
+        var selectedAreaCode = null;
         var viewportSyncInProgress = false;
         var panelStateSyncInProgress = false;
         var rightPanelInitialized = false;
@@ -1175,7 +1340,8 @@ def build_custom_js(
         var syncDateToggle = document.getElementById('sync-date-toggle');
         var syncTimeToggle = document.getElementById('sync-time-toggle');
         var providerFilterEl = document.getElementById('provider-filter');
-        var themeStorageKey = 'fairmss-den-haag-pc4-theme';
+        var postcodeLevelEl = document.getElementById('postcode-level-toggle');
+        var themeStorageKey = 'fairmss-den-haag-postcode-theme';
         var baseLayers = { left: null, right: null };
         var tileConfig = {
             light: {
@@ -1195,6 +1361,64 @@ def build_custom_js(
         };
         var POINT_MARKER_RADIUS = 5;
         var POINT_MARKER_RADIUS_SELECTED = 8;
+
+        function normalizeAreaCode(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).trim();
+        }
+
+        function getPostcodeConfig(level) {
+            return postcodeConfigs[level] || postcodeConfigs[__DEFAULT_POSTCODE_LEVEL__];
+        }
+
+        function getActivePostcodeConfig() {
+            return getPostcodeConfig(postcodeLevel);
+        }
+
+        function getAreaLabel(level) {
+            return getPostcodeConfig(level || postcodeLevel).label;
+        }
+
+        function getAreaProperty(level) {
+            return getPostcodeConfig(level || postcodeLevel).property;
+        }
+
+        function getAreaGeojson(level) {
+            return areaGeojsonByLevel[level || postcodeLevel] || null;
+        }
+
+        function getAreaIndex(level) {
+            return areaIndexByLevel[level || postcodeLevel] || [];
+        }
+
+        function getAreaCounts(dateData, level) {
+            if (!dateData || !dateData.counts) return {};
+            return dateData.counts[level || postcodeLevel] || {};
+        }
+
+        function getStationAreaCode(station, level) {
+            return normalizeAreaCode(
+                station && station.pc ? station.pc[level || postcodeLevel] : ''
+            );
+        }
+
+        function getBikeAreaFieldIndex(level) {
+            if (level === 'pc4') return 2;
+            if (level === 'pc6') return 4;
+            if (level === 'buurt') return 5;
+            if (level === 'wijk') return 6;
+            return 2;
+        }
+
+        function getBikeAreaCode(bike, level) {
+            if (!bike) return '';
+            return normalizeAreaCode(bike[getBikeAreaFieldIndex(level || postcodeLevel)]);
+        }
+
+        function setBikeAreaCode(bike, level, areaCode) {
+            if (!bike) return;
+            bike[getBikeAreaFieldIndex(level)] = normalizeAreaCode(areaCode);
+        }
 
         function setStatusProgress(percent) {
             if (!statusProgressBarEl) return;
@@ -1238,6 +1462,29 @@ def build_custom_js(
                 }
                 return response.json();
             });
+        }
+
+        function mergeFeatureCollections(parts) {
+            var merged = {
+                type: 'FeatureCollection',
+                features: []
+            };
+            for (var i = 0; i < parts.length; i++) {
+                var part = parts[i] || {};
+                var features = Array.isArray(part.features) ? part.features : [];
+                merged.features = merged.features.concat(features);
+                if (!merged.crs && part.crs) {
+                    merged.crs = part.crs;
+                }
+            }
+            return merged;
+        }
+
+        function fetchGeojsonResource(resource) {
+            if (Array.isArray(resource)) {
+                return Promise.all(resource.map(fetchJson)).then(mergeFeatureCollections);
+            }
+            return fetchJson(resource);
         }
 
         function fetchText(path) {
@@ -1366,11 +1613,12 @@ def build_custom_js(
             return true;
         }
 
-        function buildPc4Index(geojson) {
+        function buildAreaIndex(geojson, level) {
+            var areaProperty = getAreaProperty(level);
             var features = geojson && geojson.features ? geojson.features : [];
             return features.map(function(feature) {
-                var rawPostcode = feature.properties && feature.properties.postcode;
-                var postcode = parseInt(rawPostcode, 10) || rawPostcode;
+                var rawAreaCode = feature.properties && feature.properties[areaProperty];
+                var areaCode = normalizeAreaCode(rawAreaCode);
                 var polygons = [];
                 if (feature.geometry && feature.geometry.type === 'Polygon') {
                     polygons = [feature.geometry.coordinates];
@@ -1395,28 +1643,51 @@ def build_custom_js(
                     }
                 }
                 return {
-                    key: String(postcode),
-                    postcode: postcode,
+                    key: areaCode,
+                    areaCode: areaCode,
                     polygons: polygons,
                     bbox: bbox
                 };
+            }).filter(function(entry) {
+                return !!entry.key;
             });
         }
 
-        function findPc4ForPoint(lat, lon) {
-            for (var i = 0; i < pc4Index.length; i += 1) {
-                var entry = pc4Index[i];
+        function findAreaCodeForPoint(lat, lon, level) {
+            var areaIndex = getAreaIndex(level);
+            for (var i = 0; i < areaIndex.length; i += 1) {
+                var entry = areaIndex[i];
                 if (lon < entry.bbox.minLon || lon > entry.bbox.maxLon ||
                     lat < entry.bbox.minLat || lat > entry.bbox.maxLat) {
                     continue;
                 }
                 for (var p = 0; p < entry.polygons.length; p += 1) {
                     if (pointInPolygon(lon, lat, entry.polygons[p])) {
-                        return entry.postcode;
+                        return entry.areaCode;
                     }
                 }
             }
-            return 0;
+            return '';
+        }
+
+        function buildEmptyCountsByLevel(maxHour) {
+            var countsByLevel = Object.create(null);
+            for (var l = 0; l < postcodeLevels.length; l += 1) {
+                var level = postcodeLevels[l];
+                countsByLevel[level] = Object.create(null);
+            }
+            return countsByLevel;
+        }
+
+        function ensureAreaCountEntry(levelCounts, areaCode, maxHour) {
+            if (!levelCounts[areaCode]) {
+                levelCounts[areaCode] = {
+                    c: zeroArray(maxHour + 1),
+                    s: zeroArray(maxHour + 1),
+                    f: zeroArray(maxHour + 1)
+                };
+            }
+            return levelCounts[areaCode];
         }
 
         function getProviderLabel(providerKey) {
@@ -1544,7 +1815,7 @@ def build_custom_js(
                 return Promise.resolve({
                     sourceDate: null,
                     stations: [],
-                    stationToPc4: Object.create(null)
+                    stationToAreaByLevel: Object.create(null)
                 });
             }
             if (stationMetadataPromises[artifact.path]) {
@@ -1556,7 +1827,7 @@ def build_custom_js(
                     return {
                         sourceDate: artifact.date,
                         stations: [],
-                        stationToPc4: Object.create(null)
+                        stationToAreaByLevel: Object.create(null)
                     };
                 }
                 var header = parseCsvLine(lines[0]);
@@ -1570,7 +1841,10 @@ def build_custom_js(
                     throw new Error('Station metadata missing required columns in ' + artifact.path);
                 }
                 var stations = [];
-                var stationToPc4 = Object.create(null);
+                var stationToAreaByLevel = Object.create(null);
+                for (var l = 0; l < postcodeLevels.length; l += 1) {
+                    stationToAreaByLevel[postcodeLevels[l]] = Object.create(null);
+                }
                 for (var i = 1; i < lines.length; i += 1) {
                     var fields = parseCsvLine(lines[i]);
                     var lat = parseFloat(fields[idxLat]);
@@ -1579,31 +1853,38 @@ def build_custom_js(
                     if (!withinDenHaagBBox(lat, lon)) continue;
                     var stationId = String(fields[idxStationId] || '').trim();
                     if (!stationId) continue;
-                    var pc4 = findPc4ForPoint(lat, lon);
+                    var areaCodes = Object.create(null);
+                    for (var j = 0; j < postcodeLevels.length; j += 1) {
+                        var level = postcodeLevels[j];
+                        var areaCode = findAreaCodeForPoint(lat, lon, level);
+                        areaCodes[level] = areaCode;
+                        if (areaCode) {
+                            stationToAreaByLevel[level][stationId] = areaCode;
+                        }
+                    }
                     stations.push({
                         id: stationId,
                         name: fields[idxName] || stationId,
                         lat: lat,
                         lon: lon,
                         capacity: parseInt(fields[idxCapacity], 10) || 0,
-                        pc4: pc4
+                        pc4: areaCodes.pc4 || '',
+                        pc6: areaCodes.pc6 || '',
+                        buurt: areaCodes.buurt || '',
+                        wijk: areaCodes.wijk || ''
                     });
-                    if (pc4) {
-                        stationToPc4[stationId] = pc4;
-                    }
                 }
                 return {
                     sourceDate: artifact.date,
                     stations: stations,
-                    stationToPc4: stationToPc4
+                    stationToAreaByLevel: stationToAreaByLevel
                 };
             });
             return stationMetadataPromises[artifact.path];
         }
 
-        function computeDateMax(dateData) {
+        function computeDateMax(counts) {
             var dateMax = 0;
-            var counts = dateData && dateData.counts ? dateData.counts : {};
             for (var pc in counts) {
                 if (!Object.prototype.hasOwnProperty.call(counts, pc)) continue;
                 var values = counts[pc].c || [];
@@ -1614,6 +1895,15 @@ def build_custom_js(
                 }
             }
             return dateMax;
+        }
+
+        function computeDateMaxByLevel(dateData) {
+            var maxByLevel = Object.create(null);
+            for (var i = 0; i < postcodeLevels.length; i += 1) {
+                var level = postcodeLevels[i];
+                maxByLevel[level] = computeDateMax(getAreaCounts(dateData, level));
+            }
+            return maxByLevel;
         }
 
         function buildHotspotData(stations, bikesByHour, hours) {
@@ -1675,17 +1965,10 @@ def build_custom_js(
             }
 
             var maxHour = hours[hours.length - 1];
-            var counts = Object.create(null);
-            for (var p = 0; p < pc4Index.length; p += 1) {
-                counts[pc4Index[p].key] = {
-                    c: zeroArray(maxHour + 1),
-                    s: zeroArray(maxHour + 1),
-                    f: zeroArray(maxHour + 1)
-                };
-            }
+            var counts = buildEmptyCountsByLevel(maxHour);
 
             var stationsJs = [];
-            var stationToPc4 = stationMeta.stationToPc4 || Object.create(null);
+            var stationToAreaByLevel = stationMeta.stationToAreaByLevel || Object.create(null);
             var stations = stationMeta.stations || [];
             for (var s = 0; s < stations.length; s += 1) {
                 var station = stations[s];
@@ -1699,10 +1982,21 @@ def build_custom_js(
                         var rawValue = row && row[colIndex] !== undefined ? row[colIndex] : '0';
                         var value = parseInt(rawValue, 10) || 0;
                         hourlyAvail[hourKey] = value;
-                        var pc4 = stationToPc4[stationId];
-                        if (pc4 && counts[String(pc4)]) {
-                            counts[String(pc4)].s[hourKey] += value;
-                            counts[String(pc4)].c[hourKey] += value;
+                        for (var l = 0; l < postcodeLevels.length; l += 1) {
+                            var level = postcodeLevels[l];
+                            var areaCode = normalizeAreaCode(
+                                stationToAreaByLevel[level] &&
+                                stationToAreaByLevel[level][stationId]
+                            );
+                            if (areaCode && counts[level]) {
+                                var stationCountEntry = ensureAreaCountEntry(
+                                    counts[level],
+                                    areaCode,
+                                    maxHour
+                                );
+                                stationCountEntry.s[hourKey] += value;
+                                stationCountEntry.c[hourKey] += value;
+                            }
                         }
                     }
                 }
@@ -1710,7 +2004,12 @@ def build_custom_js(
                     ll: [round6(station.lat), round6(station.lon)],
                     n: station.name,
                     cap: station.capacity,
-                    pc: station.pc4 || 0,
+                    pc: {
+                        pc4: normalizeAreaCode(station.pc4),
+                        pc6: normalizeAreaCode(station.pc6),
+                        buurt: normalizeAreaCode(station.buurt),
+                        wijk: normalizeAreaCode(station.wijk)
+                    },
                     av: hourlyAvail,
                     pr: providerKey
                 });
@@ -1746,18 +2045,36 @@ def build_custom_js(
                         var lonVal = parseFloat(bikeFields[idxLon]);
                         if (!isFinite(latVal) || !isFinite(lonVal)) continue;
                         if (!withinDenHaagBBox(latVal, lonVal)) continue;
-                        var bikePc4 = findPc4ForPoint(latVal, lonVal);
-                        if (!bikePc4) continue;
+                        var bikePc4 = findAreaCodeForPoint(latVal, lonVal, 'pc4');
+                        var bikePc6 = findAreaCodeForPoint(latVal, lonVal, 'pc6');
+                        if (!bikePc4 && !bikePc6) continue;
                         seenByHour[hourVal][bikeId] = true;
                         bikesByHour[String(hourVal)].push([
                             round6(latVal),
                             round6(lonVal),
                             bikePc4,
-                            providerKey
+                            providerKey,
+                            bikePc6,
+                            '',
+                            ''
                         ]);
-                        if (counts[String(bikePc4)]) {
-                            counts[String(bikePc4)].f[hourVal] += 1;
-                            counts[String(bikePc4)].c[hourVal] += 1;
+                        if (bikePc4 && counts.pc4) {
+                            var bikePc4Entry = ensureAreaCountEntry(
+                                counts.pc4,
+                                bikePc4,
+                                maxHour
+                            );
+                            bikePc4Entry.f[hourVal] += 1;
+                            bikePc4Entry.c[hourVal] += 1;
+                        }
+                        if (bikePc6 && counts.pc6) {
+                            var bikePc6Entry = ensureAreaCountEntry(
+                                counts.pc6,
+                                bikePc6,
+                                maxHour
+                            );
+                            bikePc6Entry.f[hourVal] += 1;
+                            bikePc6Entry.c[hourVal] += 1;
                         }
                     }
                 }
@@ -1769,9 +2086,14 @@ def build_custom_js(
                 counts: counts,
                 bikes: bikesByHour,
                 stations: stationsJs,
-                hotspot: buildHotspotData(stationsJs, bikesByHour, hours)
+                hotspot: buildHotspotData(stationsJs, bikesByHour, hours),
+                areaLevelsReady: Object.create(null)
             };
-            dateData.dateMax = computeDateMax(dateData);
+            for (var l2 = 0; l2 < postcodeLevels.length; l2 += 1) {
+                var readyLevel = postcodeLevels[l2];
+                dateData.areaLevelsReady[readyLevel] = getAreaIndex(readyLevel).length > 0;
+            }
+            dateData.dateMaxByLevel = computeDateMaxByLevel(dateData);
             return dateData;
         }
 
@@ -1806,14 +2128,7 @@ def build_custom_js(
             }).sort(function(a, b) {
                 return a - b;
             });
-            var counts = Object.create(null);
-            for (var p = 0; p < pc4Index.length; p += 1) {
-                counts[pc4Index[p].key] = {
-                    c: zeroArray(maxHour + 1),
-                    s: zeroArray(maxHour + 1),
-                    f: zeroArray(maxHour + 1)
-                };
-            }
+            var counts = buildEmptyCountsByLevel(maxHour);
 
             var stations = [];
             var bikesByHour = Object.create(null);
@@ -1823,16 +2138,23 @@ def build_custom_js(
 
             for (var s = 0; s < sourceItems.length; s += 1) {
                 var item = sourceItems[s];
-                var itemCounts = item.counts || {};
-                for (var pcKey in itemCounts) {
-                    if (!Object.prototype.hasOwnProperty.call(itemCounts, pcKey)) continue;
-                    if (!counts[pcKey]) continue;
-                    var targetCount = counts[pcKey];
-                    var sourceCount = itemCounts[pcKey];
-                    for (var idx = 0; idx < sourceCount.c.length; idx += 1) {
-                        targetCount.c[idx] += sourceCount.c[idx] || 0;
-                        targetCount.s[idx] += sourceCount.s[idx] || 0;
-                        targetCount.f[idx] += sourceCount.f[idx] || 0;
+                for (var l = 0; l < postcodeLevels.length; l += 1) {
+                    var level = postcodeLevels[l];
+                    var itemCounts = getAreaCounts(item, level);
+                    var targetLevelCounts = counts[level] || {};
+                    for (var pcKey in itemCounts) {
+                        if (!Object.prototype.hasOwnProperty.call(itemCounts, pcKey)) continue;
+                        var targetCount = ensureAreaCountEntry(
+                            targetLevelCounts,
+                            pcKey,
+                            maxHour
+                        );
+                        var sourceCount = itemCounts[pcKey];
+                        for (var idx = 0; idx < sourceCount.c.length; idx += 1) {
+                            targetCount.c[idx] += sourceCount.c[idx] || 0;
+                            targetCount.s[idx] += sourceCount.s[idx] || 0;
+                            targetCount.f[idx] += sourceCount.f[idx] || 0;
+                        }
                     }
                 }
 
@@ -1857,22 +2179,39 @@ def build_custom_js(
                 counts: counts,
                 bikes: bikesByHour,
                 stations: stations,
-                hotspot: buildHotspotData(stations, bikesByHour, hours)
+                hotspot: buildHotspotData(stations, bikesByHour, hours),
+                areaLevelsReady: Object.create(null)
             };
-            dateData.dateMax = computeDateMax(dateData);
+            for (var l2 = 0; l2 < postcodeLevels.length; l2 += 1) {
+                var readyLevel = postcodeLevels[l2];
+                dateData.areaLevelsReady[readyLevel] = sourceItems.every(function(item) {
+                    return !!(item.areaLevelsReady && item.areaLevelsReady[readyLevel]);
+                });
+            }
+            dateData.dateMaxByLevel = computeDateMaxByLevel(dateData);
             allData[dateKey] = dateData;
             return dateData;
         }
 
         function recomputeActiveData() {
             allData = Object.create(null);
-            globalMax = 0;
+            globalMaxByLevel = Object.create(null);
+            for (var l = 0; l < postcodeLevels.length; l += 1) {
+                globalMaxByLevel[postcodeLevels[l]] = 0;
+            }
             for (var i = 0; i < dates.length; i += 1) {
                 var dateData = composeDateData(dates[i]);
                 if (dateData) {
-                    globalMax = Math.max(globalMax, dateData.dateMax || 0);
+                    for (var j = 0; j < postcodeLevels.length; j += 1) {
+                        var level = postcodeLevels[j];
+                        globalMaxByLevel[level] = Math.max(
+                            globalMaxByLevel[level],
+                            (dateData.dateMaxByLevel && dateData.dateMaxByLevel[level]) || 0
+                        );
+                    }
                 }
             }
+            globalMax = globalMaxByLevel[postcodeLevel] || 0;
         }
 
         function refreshActivePanels() {
@@ -1880,6 +2219,144 @@ def build_custom_js(
             panels.left.renderAll();
             panels.right.renderAll();
             updateLegendLayout();
+        }
+
+        function rebuildPanelAreaLayer(panel) {
+            if (!panel) return;
+            if (panel.geojsonLayer) {
+                panel.map.removeLayer(panel.geojsonLayer);
+            }
+            panel.geojsonLayer = buildPolygonLayer(panel);
+        }
+
+        function ensureDateDataHasLevel(dateData, level) {
+            if (!dateData) return;
+            if (!dateData.areaLevelsReady) {
+                dateData.areaLevelsReady = Object.create(null);
+            }
+            if (dateData.areaLevelsReady[level]) {
+                return;
+            }
+
+            var counts = Object.create(null);
+            var hours = dateData.hours || [];
+            var maxHour = dateData.maxHour || 0;
+            var stations = dateData.stations || [];
+            for (var i = 0; i < stations.length; i += 1) {
+                var station = stations[i];
+                if (!station.pc) {
+                    station.pc = { pc4: '', pc6: '', buurt: '', wijk: '' };
+                }
+                var areaCode = getStationAreaCode(station, level);
+                if (!areaCode) {
+                    areaCode = findAreaCodeForPoint(station.ll[0], station.ll[1], level);
+                    station.pc[level] = areaCode;
+                }
+                if (!areaCode) continue;
+                var stationEntry = ensureAreaCountEntry(counts, areaCode, maxHour);
+                for (var h = 0; h < hours.length; h += 1) {
+                    var hourKey = hours[h];
+                    var value = station.av[hourKey] || 0;
+                    if (value <= 0) continue;
+                    stationEntry.s[hourKey] += value;
+                    stationEntry.c[hourKey] += value;
+                }
+            }
+
+            var bikesByHour = dateData.bikes || {};
+            for (var j = 0; j < hours.length; j += 1) {
+                var bikeHour = hours[j];
+                var bikes = bikesByHour[String(bikeHour)] || [];
+                for (var b = 0; b < bikes.length; b += 1) {
+                    var bike = bikes[b];
+                    var bikeAreaCode = getBikeAreaCode(bike, level);
+                    if (!bikeAreaCode) {
+                        bikeAreaCode = findAreaCodeForPoint(bike[0], bike[1], level);
+                        setBikeAreaCode(bike, level, bikeAreaCode);
+                    }
+                    if (!bikeAreaCode) continue;
+                    var bikeEntry = ensureAreaCountEntry(counts, bikeAreaCode, maxHour);
+                    bikeEntry.f[bikeHour] += 1;
+                    bikeEntry.c[bikeHour] += 1;
+                }
+            }
+
+            dateData.counts[level] = counts;
+            if (!dateData.dateMaxByLevel) {
+                dateData.dateMaxByLevel = Object.create(null);
+            }
+            dateData.dateMaxByLevel[level] = computeDateMax(counts);
+            dateData.areaLevelsReady[level] = true;
+        }
+
+        function ensurePostcodeLevelReady(level, silent) {
+            if (getAreaGeojson(level) && getAreaIndex(level).length) {
+                return Promise.resolve();
+            }
+            if (postcodeLevelLoadPromises[level]) {
+                return postcodeLevelLoadPromises[level];
+            }
+            if (!silent) {
+                showStatus('Loading ' + getAreaLabel(level) + ' boundaries...', 'info', 30);
+            }
+            postcodeLevelLoadPromises[level] = fetchGeojsonResource(postcodeGeojsonPaths[level])
+                .then(function(geojson) {
+                    areaGeojsonByLevel[level] = geojson;
+                    areaIndexByLevel[level] = buildAreaIndex(geojson, level);
+
+                    for (var providerKey in providerDateData) {
+                        if (!Object.prototype.hasOwnProperty.call(providerDateData, providerKey)) {
+                            continue;
+                        }
+                        var providerDates = providerDateData[providerKey] || {};
+                        for (var dateKey in providerDates) {
+                            if (!Object.prototype.hasOwnProperty.call(providerDates, dateKey)) {
+                                continue;
+                            }
+                            ensureDateDataHasLevel(providerDates[dateKey], level);
+                        }
+                    }
+                    recomputeActiveData();
+                    if (!silent) {
+                        showStatus('Loaded ' + getAreaLabel(level) + ' boundaries', 'info', 90);
+                        clearStatusSoon(500);
+                    }
+                })
+                .catch(function(error) {
+                    delete postcodeLevelLoadPromises[level];
+                    if (!silent) {
+                        showStatus(
+                            'Failed to load ' + getAreaLabel(level) + ': ' + error.message,
+                            'error'
+                        );
+                    }
+                    throw error;
+                });
+            return postcodeLevelLoadPromises[level];
+        }
+
+        function setPostcodeLevel(nextLevel) {
+            var level = Object.prototype.hasOwnProperty.call(postcodeConfigs, nextLevel)
+                ? nextLevel
+                : __DEFAULT_POSTCODE_LEVEL__;
+            if (postcodeLevelEl) {
+                postcodeLevelEl.value = level;
+                postcodeLevelEl.disabled = true;
+            }
+            return ensurePostcodeLevelReady(level, false).then(function() {
+                postcodeLevel = level;
+                globalMax = globalMaxByLevel[postcodeLevel] || 0;
+                clearSelection();
+                if (!panels) return;
+                rebuildPanelAreaLayer(panels.left);
+                rebuildPanelAreaLayer(panels.right);
+                refreshActivePanels();
+            }).finally(function() {
+                if (postcodeLevelEl) {
+                    postcodeLevelEl.disabled = false;
+                    postcodeLevelEl.value = postcodeLevel;
+                }
+            });
         }
 
         function ensureDateDataLoaded(dateKey, options) {
@@ -2245,9 +2722,9 @@ def build_custom_js(
                    panel.map.getZoom() >= HOTSPOT_MARKER_ZOOM_THRESHOLD;
         }
 
-        function getPolygonWeight(panel, pc4) {
+        function getPolygonWeight(panel, areaCode) {
             if (isHouseMode(panel.visualizationMode)) return 0.8;
-            if (selectedPC4 !== null && pc4 === selectedPC4) return 5;
+            if (selectedAreaCode !== null && areaCode === selectedAreaCode) return 5;
             return isHotspotMode(panel.visualizationMode) ? 1.5 : 2.5;
         }
 
@@ -2476,10 +2953,10 @@ def build_custom_js(
             });
         }
 
-        function getPc4Stats(panel, pc4) {
+        function getAreaStats(panel, areaCode) {
             var dateData = getDateData(panel.currentDate);
-            var dateCounts = dateData ? dateData.counts : {};
-            var pcData = dateCounts[String(pc4)] || { c: [], s: [], f: [] };
+            var dateCounts = getAreaCounts(dateData);
+            var pcData = dateCounts[String(areaCode)] || { c: [], s: [], f: [] };
             return {
                 total: pcData.c[panel.currentHour] || 0,
                 docked: pcData.s[panel.currentHour] || 0,
@@ -2487,13 +2964,13 @@ def build_custom_js(
             };
         }
 
-        function openPanelPopup(panel, pc4, latlng) {
-            var stats = getPc4Stats(panel, pc4);
+        function openPanelPopup(panel, areaCode, latlng) {
+            var stats = getAreaStats(panel, areaCode);
             closePanelPopup(panel);
             panel.activePopup = L.popup()
                 .setLatLng(latlng)
                 .setContent(
-                    '<b>PC4 ' + escapeHtml(pc4) + '</b><br>' +
+                    '<b>' + escapeHtml(getAreaLabel()) + ' ' + escapeHtml(areaCode) + '</b><br>' +
                     'Available bikes: <b>' + stats.total + '</b><br>' +
                     '&nbsp;&nbsp;Docked: ' + stats.docked + '<br>' +
                     '&nbsp;&nbsp;Dockless: ' + stats.dockless
@@ -2503,7 +2980,7 @@ def build_custom_js(
 
         function clearSelection() {
             if (!panels) return;
-            selectedPC4 = null;
+            selectedAreaCode = null;
             closeAllPopups();
             panels.left.renderPolygons();
             panels.right.renderPolygons();
@@ -2511,30 +2988,31 @@ def build_custom_js(
             panels.right.applySelection(null);
         }
 
-        function setSelectedPC4(pc4, sourcePanel, latlng) {
-            if (selectedPC4 === pc4) {
+        function setSelectedAreaCode(areaCode, sourcePanel, latlng) {
+            if (selectedAreaCode === areaCode) {
                 clearSelection();
                 return;
             }
-            selectedPC4 = pc4;
+            selectedAreaCode = areaCode;
             closeAllPopups();
             panels.left.renderPolygons();
             panels.right.renderPolygons();
-            panels.left.applySelection(pc4);
-            panels.right.applySelection(pc4);
+            panels.left.applySelection(areaCode);
+            panels.right.applySelection(areaCode);
             if (sourcePanel && latlng) {
-                openPanelPopup(sourcePanel, pc4, latlng);
+                openPanelPopup(sourcePanel, areaCode, latlng);
             }
         }
 
         function buildPolygonLayer(panel) {
-            return L.geoJSON(pc4Geojson, {
+            return L.geoJSON(getAreaGeojson() || { type: 'FeatureCollection', features: [] }, {
                 style: function(feature) {
-                    var pc = parseInt(feature.properties.postcode, 10) ||
-                             feature.properties.postcode;
+                    var areaCode = normalizeAreaCode(
+                        feature.properties && feature.properties[getAreaProperty()]
+                    );
                     return {
                         color: getPolygonStrokeColor(panel.visualizationMode),
-                        weight: getPolygonWeight(panel, pc),
+                        weight: getPolygonWeight(panel, areaCode),
                         fillColor: themeColor('scaleBlue'),
                         fillOpacity: getPolygonFillOpacity(panel.visualizationMode)
                     };
@@ -2542,28 +3020,31 @@ def build_custom_js(
                 onEachFeature: function(feature, layer) {
                     layer.on('mouseover', function() {
                         if (isHouseMode(panel.visualizationMode)) return;
-                        var pc = parseInt(feature.properties.postcode, 10) ||
-                                 feature.properties.postcode;
-                        if (selectedPC4 !== pc) {
+                        var areaCode = normalizeAreaCode(
+                            feature.properties && feature.properties[getAreaProperty()]
+                        );
+                        if (selectedAreaCode !== areaCode) {
                             layer.setStyle({ weight: getHoverWeight(panel) });
                         }
                     });
 
                     layer.on('mouseout', function() {
                         if (isHouseMode(panel.visualizationMode)) return;
-                        var pc = parseInt(feature.properties.postcode, 10) ||
-                                 feature.properties.postcode;
-                        if (selectedPC4 !== pc) {
-                            layer.setStyle({ weight: getPolygonWeight(panel, pc) });
+                        var areaCode = normalizeAreaCode(
+                            feature.properties && feature.properties[getAreaProperty()]
+                        );
+                        if (selectedAreaCode !== areaCode) {
+                            layer.setStyle({ weight: getPolygonWeight(panel, areaCode) });
                         }
                     });
 
                     layer.on('click', function(e) {
                         if (isHouseMode(panel.visualizationMode)) return;
                         L.DomEvent.stopPropagation(e);
-                        var pc = parseInt(feature.properties.postcode, 10) ||
-                                 feature.properties.postcode;
-                        setSelectedPC4(pc, panel, e.latlng);
+                        var areaCode = normalizeAreaCode(
+                            feature.properties && feature.properties[getAreaProperty()]
+                        );
+                        setSelectedAreaCode(areaCode, panel, e.latlng);
                     });
                 }
             }).addTo(panel.map);
@@ -2721,12 +3202,12 @@ def build_custom_js(
                 renderPolygons: function() {
                     var panelRef = this;
                     var dateData = getDateData(this.currentDate);
-                    var dateCounts = dateData ? dateData.counts : {};
+                    var dateCounts = getAreaCounts(dateData);
                     this.geojsonLayer.eachLayer(function(layer) {
-                        var pc = layer.feature.properties.postcode;
-                        var pcKey = String(pc);
-                        var pcValue = parseInt(pc, 10) || pc;
-                        var pcData = dateCounts[pcKey];
+                        var areaCode = normalizeAreaCode(
+                            layer.feature.properties[getAreaProperty()]
+                        );
+                        var pcData = dateCounts[areaCode];
                         var count = (pcData && pcData.c[panelRef.currentHour] !== undefined)
                             ? pcData.c[panelRef.currentHour]
                             : 0;
@@ -2738,7 +3219,7 @@ def build_custom_js(
                             panelRef.currentDate,
                             panelRef.currentHour
                         );
-                        style.weight = getPolygonWeight(panelRef, pcValue);
+                        style.weight = getPolygonWeight(panelRef, areaCode);
                         layer.setStyle(style);
                     });
                 },
@@ -2897,7 +3378,10 @@ def build_custom_js(
                     var bikes = (dateData && dateData.bikes[String(this.currentHour)]) || [];
                     var muted = isHotspotMode(this.visualizationMode);
                     for (var i = 0; i < bikes.length; i++) {
-                        var isSelected = (selectedPC4 !== null && bikes[i][2] === selectedPC4);
+                        var bikeAreaCode = getBikeAreaCode(bikes[i]);
+                        var isSelected = (
+                            selectedAreaCode !== null && bikeAreaCode === selectedAreaCode
+                        );
                         var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {
                             radius: isSelected ? POINT_MARKER_RADIUS_SELECTED : POINT_MARKER_RADIUS,
                             color: getDocklessMarkerStyle(isSelected, muted).color,
@@ -2905,7 +3389,7 @@ def build_custom_js(
                             fillOpacity: getDocklessMarkerStyle(isSelected, muted).fillOpacity,
                             weight: getDocklessMarkerStyle(isSelected, muted).weight
                         });
-                        marker._pc4 = bikes[i][2];
+                        marker._areaCode = bikeAreaCode;
                         marker.bindTooltip(
                             'Dockless bike<br>Provider: ' + escapeHtml(getProviderLabel(bikes[i][3]))
                         );
@@ -2927,8 +3411,9 @@ def build_custom_js(
                         var avail = (station.av[this.currentHour] !== undefined)
                             ? station.av[this.currentHour]
                             : 0;
+                        var stationAreaCode = getStationAreaCode(station);
                         var isSelected = (
-                            selectedPC4 !== null && station.pc === selectedPC4
+                            selectedAreaCode !== null && stationAreaCode === selectedAreaCode
                         );
                         var style = getStationMarkerStyle(isSelected, muted, avail);
                         var marker = L.circleMarker(station.ll, {
@@ -2943,17 +3428,17 @@ def build_custom_js(
                             '<br>Provider: ' + escapeHtml(getProviderLabel(station.pr)) +
                             '<br>Available: ' + avail + ' / ' + station.cap
                         );
-                        marker._pc4 = station.pc;
+                        marker._areaCode = stationAreaCode;
                         marker._avail = avail;
                         marker.addTo(this.stationLayer);
                         this.stationMarkers.push(marker);
                     }
                 },
-                applySelection: function(pc4) {
+                applySelection: function(areaCode) {
                     var muted = isHotspotMode(this.visualizationMode);
                     for (var i = 0; i < this.bikeMarkers.length; i++) {
                         var bikeMarker = this.bikeMarkers[i];
-                        if (pc4 !== null && bikeMarker._pc4 === pc4) {
+                        if (areaCode !== null && bikeMarker._areaCode === areaCode) {
                             bikeMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
                             bikeMarker.setStyle(getDocklessMarkerStyle(true, muted));
                         } else {
@@ -2964,7 +3449,7 @@ def build_custom_js(
                     for (var j = 0; j < this.stationMarkers.length; j++) {
                         var stationMarker = this.stationMarkers[j];
                         var stationStyle;
-                        if (pc4 !== null && stationMarker._pc4 === pc4) {
+                        if (areaCode !== null && stationMarker._areaCode === areaCode) {
                             stationMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
                             stationStyle = getStationMarkerStyle(
                                 true,
@@ -2993,7 +3478,7 @@ def build_custom_js(
                     this.renderBikes();
                     this.renderStations();
                     this.renderLegend();
-                    this.applySelection(selectedPC4);
+                    this.applySelection(selectedAreaCode);
                 }
             };
 
@@ -3033,7 +3518,7 @@ def build_custom_js(
                 panel.renderBikes();
                 panel.renderStations();
                 panel.renderLegend();
-                panel.applySelection(selectedPC4);
+                panel.applySelection(selectedAreaCode);
             });
 
             L.DomEvent.disableClickPropagation(panel.controls.container);
@@ -3159,6 +3644,12 @@ def build_custom_js(
                 refreshPanelsForProviderChange();
             });
         }
+        if (postcodeLevelEl) {
+            postcodeLevelEl.value = postcodeLevel;
+            postcodeLevelEl.addEventListener('change', function() {
+                setPostcodeLevel(this.value || __DEFAULT_POSTCODE_LEVEL__);
+            });
+        }
 
         L.DomEvent.disableClickPropagation(document.getElementById('legend-box'));
         enableDragging(
@@ -3178,13 +3669,11 @@ def build_custom_js(
             showStatus('Loading map assets...', 'info', 15);
             var initResults = await Promise.all([
                 fetchJson(artifactsIndexPath),
-                fetchJson(pc4GeojsonPath)
+                ensurePostcodeLevelReady(postcodeLevel, true)
             ]);
             showStatus('Preparing provider and area data...', 'info', 40);
             buildArtifactCatalog(initResults[0]);
             populateProviderFilterOptions();
-            pc4Geojson = initResults[1];
-            pc4Index = buildPc4Index(pc4Geojson);
 
             panels = {
                 left: createPanel('left', leftMap),
@@ -3241,7 +3730,10 @@ def build_custom_js(
         .replace("__DARK_MAP_TILE_URL__", DARK_MAP_TILE_URL)
         .replace("__MAP_TILE_ATTRIBUTION__", MAP_TILE_ATTRIBUTION)
         .replace("__ARTIFACTS_INDEX_PATH__", artifacts_index_path)
-        .replace("__PC4_GEOJSON_PATH__", pc4_geojson_path)
+        .replace("__POSTCODE_GEOJSON_PATHS__", postcode_geojson_paths_json)
+        .replace("__POSTCODE_CONFIGS__", postcode_configs_json)
+        .replace("__POSTCODE_LEVELS__", postcode_levels_json)
+        .replace("__DEFAULT_POSTCODE_LEVEL__", default_postcode_level_json)
         .replace("__HOUSE_DATA_PATH__", house_data_path)
         .replace("__DEN_HAAG_BBOX__", json.dumps(DEN_HAAG_BBOX))
     )
@@ -3269,8 +3761,17 @@ def main():
             "Generating the map shell anyway. It will load data at runtime if files appear."
         )
 
-    print("Step 1: Ensuring PC4 polygon boundaries are cached...")
-    pc4_gdf = download_pc4_polygons(DEN_HAAG_BBOX, PC4_CACHE)
+    print("Step 1: Ensuring postcode polygon boundaries are cached...")
+    postcode_gdfs = {}
+    for level, cfg in POSTCODE_LEVEL_CONFIG.items():
+        postcode_gdfs[level] = download_postcode_polygons(
+            bbox=DEN_HAAG_BBOX,
+            cache_path=cfg["cache_path"],
+            endpoint_url=cfg["endpoint_url"],
+            area_property=cfg["property"],
+            area_label=cfg["label"],
+            query_params=cfg.get("query_params"),
+        )
 
     print("\nStep 2: Ensuring house points are cached...")
     house_points = download_house_points(DEN_HAAG_BBOX, HOUSE_POINTS_CACHE)
@@ -3301,7 +3802,23 @@ def main():
                 default_visualization_json=default_visualization_json,
                 visualization_js=visualization_js,
                 artifacts_index_path="../index/artifacts.json",
-                pc4_geojson_path="../geodata/pc4_den_haag.geojson",
+                postcode_geojson_paths_json=json.dumps(
+                    {
+                        level: _build_runtime_geojson_resource(cfg["cache_path"])
+                        for level, cfg in POSTCODE_LEVEL_CONFIG.items()
+                    }
+                ),
+                postcode_configs_json=json.dumps(
+                    {
+                        level: {
+                            "label": cfg["label"],
+                            "property": cfg["property"],
+                        }
+                        for level, cfg in POSTCODE_LEVEL_CONFIG.items()
+                    }
+                ),
+                postcode_levels_json=json.dumps(list(POSTCODE_LEVELS)),
+                default_postcode_level_json=json.dumps(DEFAULT_POSTCODE_LEVEL),
                 house_data_path="../geodata/houses_den_haag.json",
             )
         )
@@ -3311,7 +3828,11 @@ def main():
     m.save(args.output)
     print(f"\nMap saved to: {args.output}")
     print("\nSummary:")
-    print(f"  PC4 areas cached: {len(pc4_gdf)}")
+    for level in POSTCODE_LEVELS:
+        print(
+            f"  {POSTCODE_LEVEL_CONFIG[level]['label']} areas cached: "
+            f"{len(postcode_gdfs[level])}"
+        )
     print(f"  Unique residential points cached: {house_points['count']}")
     print(
         "  Data is fetched at runtime from output/index, output/data, and output/geodata"

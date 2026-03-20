@@ -686,11 +686,38 @@
   {
     "artifact_type": "geodata",
     "provider": "",
+    "city": "",
+    "date": "",
+    "path": "geodata/pc6_den_haag/part_01.geojson",
+    "size_bytes": 52076346,
+    "modified_at_utc": "2026-03-20T11:17:08Z"
+  },
+  {
+    "artifact_type": "geodata",
+    "provider": "",
+    "city": "",
+    "date": "",
+    "path": "geodata/pc6_den_haag/part_02.geojson",
+    "size_bytes": 51541044,
+    "modified_at_utc": "2026-03-20T11:17:09Z"
+  },
+  {
+    "artifact_type": "geodata",
+    "provider": "",
     "city": "amsterdam",
     "date": "",
     "path": "geodata/pc4_amsterdam.geojson",
     "size_bytes": 1608432,
     "modified_at_utc": "2026-03-05T10:54:05Z"
+  },
+  {
+    "artifact_type": "geodata",
+    "provider": "",
+    "city": "den_haag",
+    "date": "",
+    "path": "geodata/buurten_den_haag.geojson",
+    "size_bytes": 4087097,
+    "modified_at_utc": "2026-03-20T10:51:21Z"
   },
   {
     "artifact_type": "geodata",
@@ -711,6 +738,15 @@
     "modified_at_utc": "2026-03-05T09:32:32Z"
   },
   {
+    "artifact_type": "geodata",
+    "provider": "",
+    "city": "den_haag",
+    "date": "",
+    "path": "geodata/wijken_den_haag.geojson",
+    "size_bytes": 2277465,
+    "modified_at_utc": "2026-03-20T10:51:22Z"
+  },
+  {
     "artifact_type": "map",
     "provider": "",
     "city": "amsterdam",
@@ -725,8 +761,8 @@
     "city": "den_haag",
     "date": "",
     "path": "maps/den_haag_pc4.html",
-    "size_bytes": 128503,
-    "modified_at_utc": "2026-03-19T09:11:05Z"
+    "size_bytes": 143405,
+    "modified_at_utc": "2026-03-20T10:51:22Z"
   },
   {
     "artifact_type": "map",

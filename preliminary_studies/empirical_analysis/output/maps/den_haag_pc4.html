@@ -58,7 +58,7 @@ body.compare-on #panel-right {
     inset: 0;
 }
 
-#map_3f01e802d395155d141669fe5c03f0a9,
+#map_14a44786da46e159cfbd8551b075ea2b,
 #compare-map-right {
     position: absolute !important;
     inset: 0;
@@ -333,20 +333,20 @@ body.compare-on .compare-sync-options {
     margin-bottom: 10px;
 }
 
-.legend-provider-filter {
+.legend-select-filter {
     display: flex;
     flex-direction: column;
     gap: 6px;
     margin-bottom: 10px;
 }
 
-.legend-provider-filter label {
+.legend-select-filter label {
     font-size: 13px;
     font-weight: 600;
     color: #304050;
 }
 
-.legend-provider-filter select {
+.legend-select-filter select {
     font-size: 13px;
     padding: 4px 8px;
     border: 1px solid #c6cdd4;
@@ -420,7 +420,7 @@ body.theme-dark .legend-toggle {
 
 body.theme-dark .control-inline label,
 body.theme-dark .legend-title,
-body.theme-dark .legend-provider-filter label,
+body.theme-dark .legend-select-filter label,
 body.theme-dark .legend-hotspot-control label,
 body.theme-dark .date-readout,
 body.theme-dark .hour-readout {
@@ -437,7 +437,7 @@ body.theme-dark .panel-controls select {
     border-color: #38506a;
 }
 
-body.theme-dark .legend-provider-filter select {
+body.theme-dark .legend-select-filter select {
     background: #13202c;
     color: #edf4fb;
     border-color: #38506a;
@@ -445,7 +445,7 @@ body.theme-dark .legend-provider-filter select {
 
 body.theme-dark .panel-controls select,
 body.theme-dark .panel-controls input[type="range"],
-body.theme-dark .legend-provider-filter select,
+body.theme-dark .legend-select-filter select,
 body.theme-dark .legend-hotspot-control input[type="range"] {
     accent-color: #66b7ff;
 }
@@ -546,7 +546,7 @@ body.theme-dark .leaflet-popup-content {
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_3f01e802d395155d141669fe5c03f0a9 {
+                #map_14a44786da46e159cfbd8551b075ea2b {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -700,9 +700,18 @@ body.theme-dark .leaflet-popup-content {
         </label>
     </div>
     <div class="legend-static">
-        <div class="legend-provider-filter">
+        <div class="legend-select-filter">
             <label for="provider-filter">Provider</label>
             <select id="provider-filter"></select>
+        </div>
+        <div class="legend-select-filter">
+            <label for="postcode-level-toggle">Area level</label>
+            <select id="postcode-level-toggle">
+                <option value="pc4">PC4</option>
+                <option value="pc6">PC6</option>
+                <option value="buurt">CBS buurten</option>
+                <option value="wijk">CBS wijken</option>
+            </select>
         </div>
         <span class="legend-symbol-dockless">&#9679;</span> Dockless bike<br>
         Station bikes stored:<br>
@@ -728,12 +737,14 @@ body.theme-dark .leaflet-popup-content {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
-        var leftMap = map_3f01e802d395155d141669fe5c03f0a9;
+        var leftMap = map_14a44786da46e159cfbd8551b075ea2b;
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
-        var pc4Geojson = null;
-        var pc4Index = [];
+        var globalMaxByLevel = Object.create(null);
+        var areaGeojsonByLevel = Object.create(null);
+        var areaIndexByLevel = Object.create(null);
+        var postcodeLevelLoadPromises = Object.create(null);
         var dateArtifacts = Object.create(null);
         var stationArtifacts = Object.create(null);
         var dateLoadPromises = Object.create(null);
@@ -745,7 +756,10 @@ body.theme-dark .leaflet-popup-content {
         var defaultCenter = [52.075, 4.3];
         var defaultZoom = 13;
         var artifactsIndexPath = '../index/artifacts.json';
-        var pc4GeojsonPath = '../geodata/pc4_den_haag.geojson';
+        var postcodeGeojsonPaths = {"pc4": "../geodata/pc4_den_haag.geojson", "pc6": "../geodata/pc6_den_haag.geojson", "buurt": "../geodata/buurten_den_haag.geojson", "wijk": "../geodata/wijken_den_haag.geojson"};
+        var postcodeConfigs = {"pc4": {"label": "PC4", "property": "postcode"}, "pc6": {"label": "PC6", "property": "postcode6"}, "buurt": {"label": "CBS buurten", "property": "buurtcode"}, "wijk": {"label": "CBS wijken", "property": "wijkcode"}};
+        var postcodeLevels = ["pc4", "pc6", "buurt", "wijk"];
+        var postcodeLevel = "pc4";
         var houseDataPath = '../geodata/houses_den_haag.json';
         var denHaagBBox = {"lat_min": 52.03, "lat_max": 52.12, "lon_min": 4.22, "lon_max": 4.38};
         var allProvidersValue = "__all__";
@@ -754,7 +768,7 @@ body.theme-dark .leaflet-popup-content {
         var availableProviderKeys = [];
         var activeProvider = "__all__";
         var compareEnabled = false;
-        var selectedPC4 = null;
+        var selectedAreaCode = null;
         var viewportSyncInProgress = false;
         var panelStateSyncInProgress = false;
         var rightPanelInitialized = false;
@@ -912,10 +926,27 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
+function getVisualizationCounts(dateData) {
+    if (!dateData || !dateData.counts) return {};
+    var nestedCounts = dateData.counts[postcodeLevel];
+    if (nestedCounts && !nestedCounts.c) {
+        return nestedCounts;
+    }
+    return dateData.counts || {};
+}
+
+function getVisualizationDateMax(dateData) {
+    if (!dateData) return 1;
+    if (dateData.dateMaxByLevel && dateData.dateMaxByLevel[postcodeLevel] !== undefined) {
+        return dateData.dateMaxByLevel[postcodeLevel] || 1;
+    }
+    return dateData.dateMax || 1;
+}
+
 function getHourMax(allData, dateKey, hour) {
     var dateData = allData[dateKey];
     if (!dateData) return 1;
-    var dateCounts = dateData.counts || {};
+    var dateCounts = getVisualizationCounts(dateData);
     var mx = 0;
     for (var pc in dateCounts) {
         var v = dateCounts[pc].c[hour];
@@ -928,7 +959,7 @@ function getEffectiveMax(allData, globalMax, mode, dateKey, hour) {
     if (mode === 'global') return globalMax || 1;
     if (mode === 'per-date' || mode === 'gradient') {
         var dateData = allData[dateKey];
-        return (dateData && dateData.dateMax) ? dateData.dateMax : 1;
+        return getVisualizationDateMax(dateData);
     }
     if (mode === 'per-hour') return getHourMax(allData, dateKey, hour);
     return 1;
@@ -972,11 +1003,11 @@ function percentileValue(values, percentile) {
 
 function getGradientScaleMax(allData, globalMax, dateKey, hour) {
     var dateData = allData[dateKey];
-    if (!dateData || !dateData.counts) {
+    if (!dateData) {
         return globalMax || 1;
     }
     var values = [];
-    var dateCounts = dateData.counts;
+    var dateCounts = getVisualizationCounts(dateData);
     for (var pc in dateCounts) {
         if (!Object.prototype.hasOwnProperty.call(dateCounts, pc)) continue;
         var count = dateCounts[pc].c[hour];
@@ -1306,7 +1337,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
 }
 
-        var leftMapElement = document.getElementById('map_3f01e802d395155d141669fe5c03f0a9');
+        var leftMapElement = document.getElementById('map_14a44786da46e159cfbd8551b075ea2b');
         var leftMapSlot = document.getElementById('left-map-slot');
         if (leftMapElement && leftMapSlot && leftMapElement.parentNode !== leftMapSlot) {
             leftMapSlot.appendChild(leftMapElement);
@@ -1325,7 +1356,8 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
         var syncDateToggle = document.getElementById('sync-date-toggle');
         var syncTimeToggle = document.getElementById('sync-time-toggle');
         var providerFilterEl = document.getElementById('provider-filter');
-        var themeStorageKey = 'fairmss-den-haag-pc4-theme';
+        var postcodeLevelEl = document.getElementById('postcode-level-toggle');
+        var themeStorageKey = 'fairmss-den-haag-postcode-theme';
         var baseLayers = { left: null, right: null };
         var tileConfig = {
             light: {
@@ -1345,6 +1377,64 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
         };
         var POINT_MARKER_RADIUS = 5;
         var POINT_MARKER_RADIUS_SELECTED = 8;
+
+        function normalizeAreaCode(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).trim();
+        }
+
+        function getPostcodeConfig(level) {
+            return postcodeConfigs[level] || postcodeConfigs["pc4"];
+        }
+
+        function getActivePostcodeConfig() {
+            return getPostcodeConfig(postcodeLevel);
+        }
+
+        function getAreaLabel(level) {
+            return getPostcodeConfig(level || postcodeLevel).label;
+        }
+
+        function getAreaProperty(level) {
+            return getPostcodeConfig(level || postcodeLevel).property;
+        }
+
+        function getAreaGeojson(level) {
+            return areaGeojsonByLevel[level || postcodeLevel] || null;
+        }
+
+        function getAreaIndex(level) {
+            return areaIndexByLevel[level || postcodeLevel] || [];
+        }
+
+        function getAreaCounts(dateData, level) {
+            if (!dateData || !dateData.counts) return {};
+            return dateData.counts[level || postcodeLevel] || {};
+        }
+
+        function getStationAreaCode(station, level) {
+            return normalizeAreaCode(
+                station && station.pc ? station.pc[level || postcodeLevel] : ''
+            );
+        }
+
+        function getBikeAreaFieldIndex(level) {
+            if (level === 'pc4') return 2;
+            if (level === 'pc6') return 4;
+            if (level === 'buurt') return 5;
+            if (level === 'wijk') return 6;
+            return 2;
+        }
+
+        function getBikeAreaCode(bike, level) {
+            if (!bike) return '';
+            return normalizeAreaCode(bike[getBikeAreaFieldIndex(level || postcodeLevel)]);
+        }
+
+        function setBikeAreaCode(bike, level, areaCode) {
+            if (!bike) return;
+            bike[getBikeAreaFieldIndex(level)] = normalizeAreaCode(areaCode);
+        }
 
         function setStatusProgress(percent) {
             if (!statusProgressBarEl) return;
@@ -1516,11 +1606,12 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             return true;
         }
 
-        function buildPc4Index(geojson) {
+        function buildAreaIndex(geojson, level) {
+            var areaProperty = getAreaProperty(level);
             var features = geojson && geojson.features ? geojson.features : [];
             return features.map(function(feature) {
-                var rawPostcode = feature.properties && feature.properties.postcode;
-                var postcode = parseInt(rawPostcode, 10) || rawPostcode;
+                var rawAreaCode = feature.properties && feature.properties[areaProperty];
+                var areaCode = normalizeAreaCode(rawAreaCode);
                 var polygons = [];
                 if (feature.geometry && feature.geometry.type === 'Polygon') {
                     polygons = [feature.geometry.coordinates];
@@ -1545,28 +1636,51 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     }
                 }
                 return {
-                    key: String(postcode),
-                    postcode: postcode,
+                    key: areaCode,
+                    areaCode: areaCode,
                     polygons: polygons,
                     bbox: bbox
                 };
+            }).filter(function(entry) {
+                return !!entry.key;
             });
         }
 
-        function findPc4ForPoint(lat, lon) {
-            for (var i = 0; i < pc4Index.length; i += 1) {
-                var entry = pc4Index[i];
+        function findAreaCodeForPoint(lat, lon, level) {
+            var areaIndex = getAreaIndex(level);
+            for (var i = 0; i < areaIndex.length; i += 1) {
+                var entry = areaIndex[i];
                 if (lon < entry.bbox.minLon || lon > entry.bbox.maxLon ||
                     lat < entry.bbox.minLat || lat > entry.bbox.maxLat) {
                     continue;
                 }
                 for (var p = 0; p < entry.polygons.length; p += 1) {
                     if (pointInPolygon(lon, lat, entry.polygons[p])) {
-                        return entry.postcode;
+                        return entry.areaCode;
                     }
                 }
             }
-            return 0;
+            return '';
+        }
+
+        function buildEmptyCountsByLevel(maxHour) {
+            var countsByLevel = Object.create(null);
+            for (var l = 0; l < postcodeLevels.length; l += 1) {
+                var level = postcodeLevels[l];
+                countsByLevel[level] = Object.create(null);
+            }
+            return countsByLevel;
+        }
+
+        function ensureAreaCountEntry(levelCounts, areaCode, maxHour) {
+            if (!levelCounts[areaCode]) {
+                levelCounts[areaCode] = {
+                    c: zeroArray(maxHour + 1),
+                    s: zeroArray(maxHour + 1),
+                    f: zeroArray(maxHour + 1)
+                };
+            }
+            return levelCounts[areaCode];
         }
 
         function getProviderLabel(providerKey) {
@@ -1694,7 +1808,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 return Promise.resolve({
                     sourceDate: null,
                     stations: [],
-                    stationToPc4: Object.create(null)
+                    stationToAreaByLevel: Object.create(null)
                 });
             }
             if (stationMetadataPromises[artifact.path]) {
@@ -1706,7 +1820,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     return {
                         sourceDate: artifact.date,
                         stations: [],
-                        stationToPc4: Object.create(null)
+                        stationToAreaByLevel: Object.create(null)
                     };
                 }
                 var header = parseCsvLine(lines[0]);
@@ -1720,7 +1834,10 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     throw new Error('Station metadata missing required columns in ' + artifact.path);
                 }
                 var stations = [];
-                var stationToPc4 = Object.create(null);
+                var stationToAreaByLevel = Object.create(null);
+                for (var l = 0; l < postcodeLevels.length; l += 1) {
+                    stationToAreaByLevel[postcodeLevels[l]] = Object.create(null);
+                }
                 for (var i = 1; i < lines.length; i += 1) {
                     var fields = parseCsvLine(lines[i]);
                     var lat = parseFloat(fields[idxLat]);
@@ -1729,31 +1846,38 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     if (!withinDenHaagBBox(lat, lon)) continue;
                     var stationId = String(fields[idxStationId] || '').trim();
                     if (!stationId) continue;
-                    var pc4 = findPc4ForPoint(lat, lon);
+                    var areaCodes = Object.create(null);
+                    for (var j = 0; j < postcodeLevels.length; j += 1) {
+                        var level = postcodeLevels[j];
+                        var areaCode = findAreaCodeForPoint(lat, lon, level);
+                        areaCodes[level] = areaCode;
+                        if (areaCode) {
+                            stationToAreaByLevel[level][stationId] = areaCode;
+                        }
+                    }
                     stations.push({
                         id: stationId,
                         name: fields[idxName] || stationId,
                         lat: lat,
                         lon: lon,
                         capacity: parseInt(fields[idxCapacity], 10) || 0,
-                        pc4: pc4
+                        pc4: areaCodes.pc4 || '',
+                        pc6: areaCodes.pc6 || '',
+                        buurt: areaCodes.buurt || '',
+                        wijk: areaCodes.wijk || ''
                     });
-                    if (pc4) {
-                        stationToPc4[stationId] = pc4;
-                    }
                 }
                 return {
                     sourceDate: artifact.date,
                     stations: stations,
-                    stationToPc4: stationToPc4
+                    stationToAreaByLevel: stationToAreaByLevel
                 };
             });
             return stationMetadataPromises[artifact.path];
         }
 
-        function computeDateMax(dateData) {
+        function computeDateMax(counts) {
             var dateMax = 0;
-            var counts = dateData && dateData.counts ? dateData.counts : {};
             for (var pc in counts) {
                 if (!Object.prototype.hasOwnProperty.call(counts, pc)) continue;
                 var values = counts[pc].c || [];
@@ -1764,6 +1888,15 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 }
             }
             return dateMax;
+        }
+
+        function computeDateMaxByLevel(dateData) {
+            var maxByLevel = Object.create(null);
+            for (var i = 0; i < postcodeLevels.length; i += 1) {
+                var level = postcodeLevels[i];
+                maxByLevel[level] = computeDateMax(getAreaCounts(dateData, level));
+            }
+            return maxByLevel;
         }
 
         function buildHotspotData(stations, bikesByHour, hours) {
@@ -1825,17 +1958,10 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             }
 
             var maxHour = hours[hours.length - 1];
-            var counts = Object.create(null);
-            for (var p = 0; p < pc4Index.length; p += 1) {
-                counts[pc4Index[p].key] = {
-                    c: zeroArray(maxHour + 1),
-                    s: zeroArray(maxHour + 1),
-                    f: zeroArray(maxHour + 1)
-                };
-            }
+            var counts = buildEmptyCountsByLevel(maxHour);
 
             var stationsJs = [];
-            var stationToPc4 = stationMeta.stationToPc4 || Object.create(null);
+            var stationToAreaByLevel = stationMeta.stationToAreaByLevel || Object.create(null);
             var stations = stationMeta.stations || [];
             for (var s = 0; s < stations.length; s += 1) {
                 var station = stations[s];
@@ -1849,10 +1975,21 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         var rawValue = row && row[colIndex] !== undefined ? row[colIndex] : '0';
                         var value = parseInt(rawValue, 10) || 0;
                         hourlyAvail[hourKey] = value;
-                        var pc4 = stationToPc4[stationId];
-                        if (pc4 && counts[String(pc4)]) {
-                            counts[String(pc4)].s[hourKey] += value;
-                            counts[String(pc4)].c[hourKey] += value;
+                        for (var l = 0; l < postcodeLevels.length; l += 1) {
+                            var level = postcodeLevels[l];
+                            var areaCode = normalizeAreaCode(
+                                stationToAreaByLevel[level] &&
+                                stationToAreaByLevel[level][stationId]
+                            );
+                            if (areaCode && counts[level]) {
+                                var stationCountEntry = ensureAreaCountEntry(
+                                    counts[level],
+                                    areaCode,
+                                    maxHour
+                                );
+                                stationCountEntry.s[hourKey] += value;
+                                stationCountEntry.c[hourKey] += value;
+                            }
                         }
                     }
                 }
@@ -1860,7 +1997,12 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     ll: [round6(station.lat), round6(station.lon)],
                     n: station.name,
                     cap: station.capacity,
-                    pc: station.pc4 || 0,
+                    pc: {
+                        pc4: normalizeAreaCode(station.pc4),
+                        pc6: normalizeAreaCode(station.pc6),
+                        buurt: normalizeAreaCode(station.buurt),
+                        wijk: normalizeAreaCode(station.wijk)
+                    },
                     av: hourlyAvail,
                     pr: providerKey
                 });
@@ -1896,18 +2038,36 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         var lonVal = parseFloat(bikeFields[idxLon]);
                         if (!isFinite(latVal) || !isFinite(lonVal)) continue;
                         if (!withinDenHaagBBox(latVal, lonVal)) continue;
-                        var bikePc4 = findPc4ForPoint(latVal, lonVal);
-                        if (!bikePc4) continue;
+                        var bikePc4 = findAreaCodeForPoint(latVal, lonVal, 'pc4');
+                        var bikePc6 = findAreaCodeForPoint(latVal, lonVal, 'pc6');
+                        if (!bikePc4 && !bikePc6) continue;
                         seenByHour[hourVal][bikeId] = true;
                         bikesByHour[String(hourVal)].push([
                             round6(latVal),
                             round6(lonVal),
                             bikePc4,
-                            providerKey
+                            providerKey,
+                            bikePc6,
+                            '',
+                            ''
                         ]);
-                        if (counts[String(bikePc4)]) {
-                            counts[String(bikePc4)].f[hourVal] += 1;
-                            counts[String(bikePc4)].c[hourVal] += 1;
+                        if (bikePc4 && counts.pc4) {
+                            var bikePc4Entry = ensureAreaCountEntry(
+                                counts.pc4,
+                                bikePc4,
+                                maxHour
+                            );
+                            bikePc4Entry.f[hourVal] += 1;
+                            bikePc4Entry.c[hourVal] += 1;
+                        }
+                        if (bikePc6 && counts.pc6) {
+                            var bikePc6Entry = ensureAreaCountEntry(
+                                counts.pc6,
+                                bikePc6,
+                                maxHour
+                            );
+                            bikePc6Entry.f[hourVal] += 1;
+                            bikePc6Entry.c[hourVal] += 1;
                         }
                     }
                 }
@@ -1919,9 +2079,14 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 counts: counts,
                 bikes: bikesByHour,
                 stations: stationsJs,
-                hotspot: buildHotspotData(stationsJs, bikesByHour, hours)
+                hotspot: buildHotspotData(stationsJs, bikesByHour, hours),
+                areaLevelsReady: Object.create(null)
             };
-            dateData.dateMax = computeDateMax(dateData);
+            for (var l2 = 0; l2 < postcodeLevels.length; l2 += 1) {
+                var readyLevel = postcodeLevels[l2];
+                dateData.areaLevelsReady[readyLevel] = getAreaIndex(readyLevel).length > 0;
+            }
+            dateData.dateMaxByLevel = computeDateMaxByLevel(dateData);
             return dateData;
         }
 
@@ -1956,14 +2121,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             }).sort(function(a, b) {
                 return a - b;
             });
-            var counts = Object.create(null);
-            for (var p = 0; p < pc4Index.length; p += 1) {
-                counts[pc4Index[p].key] = {
-                    c: zeroArray(maxHour + 1),
-                    s: zeroArray(maxHour + 1),
-                    f: zeroArray(maxHour + 1)
-                };
-            }
+            var counts = buildEmptyCountsByLevel(maxHour);
 
             var stations = [];
             var bikesByHour = Object.create(null);
@@ -1973,16 +2131,23 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
 
             for (var s = 0; s < sourceItems.length; s += 1) {
                 var item = sourceItems[s];
-                var itemCounts = item.counts || {};
-                for (var pcKey in itemCounts) {
-                    if (!Object.prototype.hasOwnProperty.call(itemCounts, pcKey)) continue;
-                    if (!counts[pcKey]) continue;
-                    var targetCount = counts[pcKey];
-                    var sourceCount = itemCounts[pcKey];
-                    for (var idx = 0; idx < sourceCount.c.length; idx += 1) {
-                        targetCount.c[idx] += sourceCount.c[idx] || 0;
-                        targetCount.s[idx] += sourceCount.s[idx] || 0;
-                        targetCount.f[idx] += sourceCount.f[idx] || 0;
+                for (var l = 0; l < postcodeLevels.length; l += 1) {
+                    var level = postcodeLevels[l];
+                    var itemCounts = getAreaCounts(item, level);
+                    var targetLevelCounts = counts[level] || {};
+                    for (var pcKey in itemCounts) {
+                        if (!Object.prototype.hasOwnProperty.call(itemCounts, pcKey)) continue;
+                        var targetCount = ensureAreaCountEntry(
+                            targetLevelCounts,
+                            pcKey,
+                            maxHour
+                        );
+                        var sourceCount = itemCounts[pcKey];
+                        for (var idx = 0; idx < sourceCount.c.length; idx += 1) {
+                            targetCount.c[idx] += sourceCount.c[idx] || 0;
+                            targetCount.s[idx] += sourceCount.s[idx] || 0;
+                            targetCount.f[idx] += sourceCount.f[idx] || 0;
+                        }
                     }
                 }
 
@@ -2007,22 +2172,39 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 counts: counts,
                 bikes: bikesByHour,
                 stations: stations,
-                hotspot: buildHotspotData(stations, bikesByHour, hours)
+                hotspot: buildHotspotData(stations, bikesByHour, hours),
+                areaLevelsReady: Object.create(null)
             };
-            dateData.dateMax = computeDateMax(dateData);
+            for (var l2 = 0; l2 < postcodeLevels.length; l2 += 1) {
+                var readyLevel = postcodeLevels[l2];
+                dateData.areaLevelsReady[readyLevel] = sourceItems.every(function(item) {
+                    return !!(item.areaLevelsReady && item.areaLevelsReady[readyLevel]);
+                });
+            }
+            dateData.dateMaxByLevel = computeDateMaxByLevel(dateData);
             allData[dateKey] = dateData;
             return dateData;
         }
 
         function recomputeActiveData() {
             allData = Object.create(null);
-            globalMax = 0;
+            globalMaxByLevel = Object.create(null);
+            for (var l = 0; l < postcodeLevels.length; l += 1) {
+                globalMaxByLevel[postcodeLevels[l]] = 0;
+            }
             for (var i = 0; i < dates.length; i += 1) {
                 var dateData = composeDateData(dates[i]);
                 if (dateData) {
-                    globalMax = Math.max(globalMax, dateData.dateMax || 0);
+                    for (var j = 0; j < postcodeLevels.length; j += 1) {
+                        var level = postcodeLevels[j];
+                        globalMaxByLevel[level] = Math.max(
+                            globalMaxByLevel[level],
+                            (dateData.dateMaxByLevel && dateData.dateMaxByLevel[level]) || 0
+                        );
+                    }
                 }
             }
+            globalMax = globalMaxByLevel[postcodeLevel] || 0;
         }
 
         function refreshActivePanels() {
@@ -2030,6 +2212,144 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             panels.left.renderAll();
             panels.right.renderAll();
             updateLegendLayout();
+        }
+
+        function rebuildPanelAreaLayer(panel) {
+            if (!panel) return;
+            if (panel.geojsonLayer) {
+                panel.map.removeLayer(panel.geojsonLayer);
+            }
+            panel.geojsonLayer = buildPolygonLayer(panel);
+        }
+
+        function ensureDateDataHasLevel(dateData, level) {
+            if (!dateData) return;
+            if (!dateData.areaLevelsReady) {
+                dateData.areaLevelsReady = Object.create(null);
+            }
+            if (dateData.areaLevelsReady[level]) {
+                return;
+            }
+
+            var counts = Object.create(null);
+            var hours = dateData.hours || [];
+            var maxHour = dateData.maxHour || 0;
+            var stations = dateData.stations || [];
+            for (var i = 0; i < stations.length; i += 1) {
+                var station = stations[i];
+                if (!station.pc) {
+                    station.pc = { pc4: '', pc6: '', buurt: '', wijk: '' };
+                }
+                var areaCode = getStationAreaCode(station, level);
+                if (!areaCode) {
+                    areaCode = findAreaCodeForPoint(station.ll[0], station.ll[1], level);
+                    station.pc[level] = areaCode;
+                }
+                if (!areaCode) continue;
+                var stationEntry = ensureAreaCountEntry(counts, areaCode, maxHour);
+                for (var h = 0; h < hours.length; h += 1) {
+                    var hourKey = hours[h];
+                    var value = station.av[hourKey] || 0;
+                    if (value <= 0) continue;
+                    stationEntry.s[hourKey] += value;
+                    stationEntry.c[hourKey] += value;
+                }
+            }
+
+            var bikesByHour = dateData.bikes || {};
+            for (var j = 0; j < hours.length; j += 1) {
+                var bikeHour = hours[j];
+                var bikes = bikesByHour[String(bikeHour)] || [];
+                for (var b = 0; b < bikes.length; b += 1) {
+                    var bike = bikes[b];
+                    var bikeAreaCode = getBikeAreaCode(bike, level);
+                    if (!bikeAreaCode) {
+                        bikeAreaCode = findAreaCodeForPoint(bike[0], bike[1], level);
+                        setBikeAreaCode(bike, level, bikeAreaCode);
+                    }
+                    if (!bikeAreaCode) continue;
+                    var bikeEntry = ensureAreaCountEntry(counts, bikeAreaCode, maxHour);
+                    bikeEntry.f[bikeHour] += 1;
+                    bikeEntry.c[bikeHour] += 1;
+                }
+            }
+
+            dateData.counts[level] = counts;
+            if (!dateData.dateMaxByLevel) {
+                dateData.dateMaxByLevel = Object.create(null);
+            }
+            dateData.dateMaxByLevel[level] = computeDateMax(counts);
+            dateData.areaLevelsReady[level] = true;
+        }
+
+        function ensurePostcodeLevelReady(level, silent) {
+            if (getAreaGeojson(level) && getAreaIndex(level).length) {
+                return Promise.resolve();
+            }
+            if (postcodeLevelLoadPromises[level]) {
+                return postcodeLevelLoadPromises[level];
+            }
+            if (!silent) {
+                showStatus('Loading ' + getAreaLabel(level) + ' boundaries...', 'info', 30);
+            }
+            postcodeLevelLoadPromises[level] = fetchJson(postcodeGeojsonPaths[level])
+                .then(function(geojson) {
+                    areaGeojsonByLevel[level] = geojson;
+                    areaIndexByLevel[level] = buildAreaIndex(geojson, level);
+
+                    for (var providerKey in providerDateData) {
+                        if (!Object.prototype.hasOwnProperty.call(providerDateData, providerKey)) {
+                            continue;
+                        }
+                        var providerDates = providerDateData[providerKey] || {};
+                        for (var dateKey in providerDates) {
+                            if (!Object.prototype.hasOwnProperty.call(providerDates, dateKey)) {
+                                continue;
+                            }
+                            ensureDateDataHasLevel(providerDates[dateKey], level);
+                        }
+                    }
+                    recomputeActiveData();
+                    if (!silent) {
+                        showStatus('Loaded ' + getAreaLabel(level) + ' boundaries', 'info', 90);
+                        clearStatusSoon(500);
+                    }
+                })
+                .catch(function(error) {
+                    delete postcodeLevelLoadPromises[level];
+                    if (!silent) {
+                        showStatus(
+                            'Failed to load ' + getAreaLabel(level) + ': ' + error.message,
+                            'error'
+                        );
+                    }
+                    throw error;
+                });
+            return postcodeLevelLoadPromises[level];
+        }
+
+        function setPostcodeLevel(nextLevel) {
+            var level = Object.prototype.hasOwnProperty.call(postcodeConfigs, nextLevel)
+                ? nextLevel
+                : "pc4";
+            if (postcodeLevelEl) {
+                postcodeLevelEl.value = level;
+                postcodeLevelEl.disabled = true;
+            }
+            return ensurePostcodeLevelReady(level, false).then(function() {
+                postcodeLevel = level;
+                globalMax = globalMaxByLevel[postcodeLevel] || 0;
+                clearSelection();
+                if (!panels) return;
+                rebuildPanelAreaLayer(panels.left);
+                rebuildPanelAreaLayer(panels.right);
+                refreshActivePanels();
+            }).finally(function() {
+                if (postcodeLevelEl) {
+                    postcodeLevelEl.disabled = false;
+                    postcodeLevelEl.value = postcodeLevel;
+                }
+            });
         }
 
         function ensureDateDataLoaded(dateKey, options) {
@@ -2395,9 +2715,9 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                    panel.map.getZoom() >= HOTSPOT_MARKER_ZOOM_THRESHOLD;
         }
 
-        function getPolygonWeight(panel, pc4) {
+        function getPolygonWeight(panel, areaCode) {
             if (isHouseMode(panel.visualizationMode)) return 0.8;
-            if (selectedPC4 !== null && pc4 === selectedPC4) return 5;
+            if (selectedAreaCode !== null && areaCode === selectedAreaCode) return 5;
             return isHotspotMode(panel.visualizationMode) ? 1.5 : 2.5;
         }
 
@@ -2626,10 +2946,10 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             });
         }
 
-        function getPc4Stats(panel, pc4) {
+        function getAreaStats(panel, areaCode) {
             var dateData = getDateData(panel.currentDate);
-            var dateCounts = dateData ? dateData.counts : {};
-            var pcData = dateCounts[String(pc4)] || { c: [], s: [], f: [] };
+            var dateCounts = getAreaCounts(dateData);
+            var pcData = dateCounts[String(areaCode)] || { c: [], s: [], f: [] };
             return {
                 total: pcData.c[panel.currentHour] || 0,
                 docked: pcData.s[panel.currentHour] || 0,
@@ -2637,13 +2957,13 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             };
         }
 
-        function openPanelPopup(panel, pc4, latlng) {
-            var stats = getPc4Stats(panel, pc4);
+        function openPanelPopup(panel, areaCode, latlng) {
+            var stats = getAreaStats(panel, areaCode);
             closePanelPopup(panel);
             panel.activePopup = L.popup()
                 .setLatLng(latlng)
                 .setContent(
-                    '<b>PC4 ' + escapeHtml(pc4) + '</b><br>' +
+                    '<b>' + escapeHtml(getAreaLabel()) + ' ' + escapeHtml(areaCode) + '</b><br>' +
                     'Available bikes: <b>' + stats.total + '</b><br>' +
                     '&nbsp;&nbsp;Docked: ' + stats.docked + '<br>' +
                     '&nbsp;&nbsp;Dockless: ' + stats.dockless
@@ -2653,7 +2973,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
 
         function clearSelection() {
             if (!panels) return;
-            selectedPC4 = null;
+            selectedAreaCode = null;
             closeAllPopups();
             panels.left.renderPolygons();
             panels.right.renderPolygons();
@@ -2661,30 +2981,31 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             panels.right.applySelection(null);
         }
 
-        function setSelectedPC4(pc4, sourcePanel, latlng) {
-            if (selectedPC4 === pc4) {
+        function setSelectedAreaCode(areaCode, sourcePanel, latlng) {
+            if (selectedAreaCode === areaCode) {
                 clearSelection();
                 return;
             }
-            selectedPC4 = pc4;
+            selectedAreaCode = areaCode;
             closeAllPopups();
             panels.left.renderPolygons();
             panels.right.renderPolygons();
-            panels.left.applySelection(pc4);
-            panels.right.applySelection(pc4);
+            panels.left.applySelection(areaCode);
+            panels.right.applySelection(areaCode);
             if (sourcePanel && latlng) {
-                openPanelPopup(sourcePanel, pc4, latlng);
+                openPanelPopup(sourcePanel, areaCode, latlng);
             }
         }
 
         function buildPolygonLayer(panel) {
-            return L.geoJSON(pc4Geojson, {
+            return L.geoJSON(getAreaGeojson() || { type: 'FeatureCollection', features: [] }, {
                 style: function(feature) {
-                    var pc = parseInt(feature.properties.postcode, 10) ||
-                             feature.properties.postcode;
+                    var areaCode = normalizeAreaCode(
+                        feature.properties && feature.properties[getAreaProperty()]
+                    );
                     return {
                         color: getPolygonStrokeColor(panel.visualizationMode),
-                        weight: getPolygonWeight(panel, pc),
+                        weight: getPolygonWeight(panel, areaCode),
                         fillColor: themeColor('scaleBlue'),
                         fillOpacity: getPolygonFillOpacity(panel.visualizationMode)
                     };
@@ -2692,28 +3013,31 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 onEachFeature: function(feature, layer) {
                     layer.on('mouseover', function() {
                         if (isHouseMode(panel.visualizationMode)) return;
-                        var pc = parseInt(feature.properties.postcode, 10) ||
-                                 feature.properties.postcode;
-                        if (selectedPC4 !== pc) {
+                        var areaCode = normalizeAreaCode(
+                            feature.properties && feature.properties[getAreaProperty()]
+                        );
+                        if (selectedAreaCode !== areaCode) {
                             layer.setStyle({ weight: getHoverWeight(panel) });
                         }
                     });
 
                     layer.on('mouseout', function() {
                         if (isHouseMode(panel.visualizationMode)) return;
-                        var pc = parseInt(feature.properties.postcode, 10) ||
-                                 feature.properties.postcode;
-                        if (selectedPC4 !== pc) {
-                            layer.setStyle({ weight: getPolygonWeight(panel, pc) });
+                        var areaCode = normalizeAreaCode(
+                            feature.properties && feature.properties[getAreaProperty()]
+                        );
+                        if (selectedAreaCode !== areaCode) {
+                            layer.setStyle({ weight: getPolygonWeight(panel, areaCode) });
                         }
                     });
 
                     layer.on('click', function(e) {
                         if (isHouseMode(panel.visualizationMode)) return;
                         L.DomEvent.stopPropagation(e);
-                        var pc = parseInt(feature.properties.postcode, 10) ||
-                                 feature.properties.postcode;
-                        setSelectedPC4(pc, panel, e.latlng);
+                        var areaCode = normalizeAreaCode(
+                            feature.properties && feature.properties[getAreaProperty()]
+                        );
+                        setSelectedAreaCode(areaCode, panel, e.latlng);
                     });
                 }
             }).addTo(panel.map);
@@ -2871,12 +3195,12 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 renderPolygons: function() {
                     var panelRef = this;
                     var dateData = getDateData(this.currentDate);
-                    var dateCounts = dateData ? dateData.counts : {};
+                    var dateCounts = getAreaCounts(dateData);
                     this.geojsonLayer.eachLayer(function(layer) {
-                        var pc = layer.feature.properties.postcode;
-                        var pcKey = String(pc);
-                        var pcValue = parseInt(pc, 10) || pc;
-                        var pcData = dateCounts[pcKey];
+                        var areaCode = normalizeAreaCode(
+                            layer.feature.properties[getAreaProperty()]
+                        );
+                        var pcData = dateCounts[areaCode];
                         var count = (pcData && pcData.c[panelRef.currentHour] !== undefined)
                             ? pcData.c[panelRef.currentHour]
                             : 0;
@@ -2888,7 +3212,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                             panelRef.currentDate,
                             panelRef.currentHour
                         );
-                        style.weight = getPolygonWeight(panelRef, pcValue);
+                        style.weight = getPolygonWeight(panelRef, areaCode);
                         layer.setStyle(style);
                     });
                 },
@@ -3047,7 +3371,10 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     var bikes = (dateData && dateData.bikes[String(this.currentHour)]) || [];
                     var muted = isHotspotMode(this.visualizationMode);
                     for (var i = 0; i < bikes.length; i++) {
-                        var isSelected = (selectedPC4 !== null && bikes[i][2] === selectedPC4);
+                        var bikeAreaCode = getBikeAreaCode(bikes[i]);
+                        var isSelected = (
+                            selectedAreaCode !== null && bikeAreaCode === selectedAreaCode
+                        );
                         var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {
                             radius: isSelected ? POINT_MARKER_RADIUS_SELECTED : POINT_MARKER_RADIUS,
                             color: getDocklessMarkerStyle(isSelected, muted).color,
@@ -3055,7 +3382,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                             fillOpacity: getDocklessMarkerStyle(isSelected, muted).fillOpacity,
                             weight: getDocklessMarkerStyle(isSelected, muted).weight
                         });
-                        marker._pc4 = bikes[i][2];
+                        marker._areaCode = bikeAreaCode;
                         marker.bindTooltip(
                             'Dockless bike<br>Provider: ' + escapeHtml(getProviderLabel(bikes[i][3]))
                         );
@@ -3077,8 +3404,9 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         var avail = (station.av[this.currentHour] !== undefined)
                             ? station.av[this.currentHour]
                             : 0;
+                        var stationAreaCode = getStationAreaCode(station);
                         var isSelected = (
-                            selectedPC4 !== null && station.pc === selectedPC4
+                            selectedAreaCode !== null && stationAreaCode === selectedAreaCode
                         );
                         var style = getStationMarkerStyle(isSelected, muted, avail);
                         var marker = L.circleMarker(station.ll, {
@@ -3093,17 +3421,17 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                             '<br>Provider: ' + escapeHtml(getProviderLabel(station.pr)) +
                             '<br>Available: ' + avail + ' / ' + station.cap
                         );
-                        marker._pc4 = station.pc;
+                        marker._areaCode = stationAreaCode;
                         marker._avail = avail;
                         marker.addTo(this.stationLayer);
                         this.stationMarkers.push(marker);
                     }
                 },
-                applySelection: function(pc4) {
+                applySelection: function(areaCode) {
                     var muted = isHotspotMode(this.visualizationMode);
                     for (var i = 0; i < this.bikeMarkers.length; i++) {
                         var bikeMarker = this.bikeMarkers[i];
-                        if (pc4 !== null && bikeMarker._pc4 === pc4) {
+                        if (areaCode !== null && bikeMarker._areaCode === areaCode) {
                             bikeMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
                             bikeMarker.setStyle(getDocklessMarkerStyle(true, muted));
                         } else {
@@ -3114,7 +3442,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     for (var j = 0; j < this.stationMarkers.length; j++) {
                         var stationMarker = this.stationMarkers[j];
                         var stationStyle;
-                        if (pc4 !== null && stationMarker._pc4 === pc4) {
+                        if (areaCode !== null && stationMarker._areaCode === areaCode) {
                             stationMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
                             stationStyle = getStationMarkerStyle(
                                 true,
@@ -3143,7 +3471,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     this.renderBikes();
                     this.renderStations();
                     this.renderLegend();
-                    this.applySelection(selectedPC4);
+                    this.applySelection(selectedAreaCode);
                 }
             };
 
@@ -3183,7 +3511,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 panel.renderBikes();
                 panel.renderStations();
                 panel.renderLegend();
-                panel.applySelection(selectedPC4);
+                panel.applySelection(selectedAreaCode);
             });
 
             L.DomEvent.disableClickPropagation(panel.controls.container);
@@ -3309,6 +3637,12 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 refreshPanelsForProviderChange();
             });
         }
+        if (postcodeLevelEl) {
+            postcodeLevelEl.value = postcodeLevel;
+            postcodeLevelEl.addEventListener('change', function() {
+                setPostcodeLevel(this.value || "pc4");
+            });
+        }
 
         L.DomEvent.disableClickPropagation(document.getElementById('legend-box'));
         enableDragging(
@@ -3328,13 +3662,11 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             showStatus('Loading map assets...', 'info', 15);
             var initResults = await Promise.all([
                 fetchJson(artifactsIndexPath),
-                fetchJson(pc4GeojsonPath)
+                ensurePostcodeLevelReady(postcodeLevel, true)
             ]);
             showStatus('Preparing provider and area data...', 'info', 40);
             buildArtifactCatalog(initResults[0]);
             populateProviderFilterOptions();
-            pc4Geojson = initResults[1];
-            pc4Index = buildPc4Index(pc4Geojson);
 
             panels = {
                 left: createPanel('left', leftMap),
@@ -3377,14 +3709,14 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     </script>
     
     
-            <div class="folium-map" id="map_3f01e802d395155d141669fe5c03f0a9" ></div>
+            <div class="folium-map" id="map_14a44786da46e159cfbd8551b075ea2b" ></div>
         
 </body>
 <script>
     
     
-            var map_3f01e802d395155d141669fe5c03f0a9 = L.map(
-                "map_3f01e802d395155d141669fe5c03f0a9",
+            var map_14a44786da46e159cfbd8551b075ea2b = L.map(
+                "map_14a44786da46e159cfbd8551b075ea2b",
                 {
                     center: [52.075, 4.3],
                     crs: L.CRS.EPSG3857,

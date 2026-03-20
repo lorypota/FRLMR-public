@@ -24,11 +24,11 @@ def build_js() -> str:
 
         function getGradientScaleMax(allData, globalMax, dateKey, hour) {{
             var dateData = allData[dateKey];
-            if (!dateData || !dateData.counts) {{
+            if (!dateData) {{
                 return globalMax || 1;
             }}
             var values = [];
-            var dateCounts = dateData.counts;
+            var dateCounts = getVisualizationCounts(dateData);
             for (var pc in dateCounts) {{
                 if (!Object.prototype.hasOwnProperty.call(dateCounts, pc)) continue;
                 var count = dateCounts[pc].c[hour];

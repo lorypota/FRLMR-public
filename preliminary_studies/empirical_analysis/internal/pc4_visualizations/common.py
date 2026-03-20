@@ -180,5 +180,22 @@ def build_common_js() -> str:
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
         }}
+
+        function getVisualizationCounts(dateData) {{
+            if (!dateData || !dateData.counts) return {{}};
+            var nestedCounts = dateData.counts[postcodeLevel];
+            if (nestedCounts && !nestedCounts.c) {{
+                return nestedCounts;
+            }}
+            return dateData.counts || {{}};
+        }}
+
+        function getVisualizationDateMax(dateData) {{
+            if (!dateData) return 1;
+            if (dateData.dateMaxByLevel && dateData.dateMaxByLevel[postcodeLevel] !== undefined) {{
+                return dateData.dateMaxByLevel[postcodeLevel] || 1;
+            }}
+            return dateData.dateMax || 1;
+        }}
         """
     ).strip()
