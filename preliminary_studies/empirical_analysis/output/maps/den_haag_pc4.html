@@ -58,7 +58,7 @@ body.compare-on #panel-right {
     inset: 0;
 }
 
-#map_14a44786da46e159cfbd8551b075ea2b,
+#map_797b8d6ed9c126edb22a7f974de5eb18,
 #compare-map-right {
     position: absolute !important;
     inset: 0;
@@ -546,7 +546,7 @@ body.theme-dark .leaflet-popup-content {
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_14a44786da46e159cfbd8551b075ea2b {
+                #map_797b8d6ed9c126edb22a7f974de5eb18 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -737,7 +737,7 @@ body.theme-dark .leaflet-popup-content {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
-        var leftMap = map_14a44786da46e159cfbd8551b075ea2b;
+        var leftMap = map_797b8d6ed9c126edb22a7f974de5eb18;
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
@@ -756,7 +756,7 @@ body.theme-dark .leaflet-popup-content {
         var defaultCenter = [52.075, 4.3];
         var defaultZoom = 13;
         var artifactsIndexPath = '../index/artifacts.json';
-        var postcodeGeojsonPaths = {"pc4": "../geodata/pc4_den_haag.geojson", "pc6": "../geodata/pc6_den_haag.geojson", "buurt": "../geodata/buurten_den_haag.geojson", "wijk": "../geodata/wijken_den_haag.geojson"};
+        var postcodeGeojsonPaths = {"pc4": "../geodata/pc4_den_haag.geojson", "pc6": ["../geodata/pc6_den_haag/part_01.geojson", "../geodata/pc6_den_haag/part_02.geojson"], "buurt": "../geodata/buurten_den_haag.geojson", "wijk": "../geodata/wijken_den_haag.geojson"};
         var postcodeConfigs = {"pc4": {"label": "PC4", "property": "postcode"}, "pc6": {"label": "PC6", "property": "postcode6"}, "buurt": {"label": "CBS buurten", "property": "buurtcode"}, "wijk": {"label": "CBS wijken", "property": "wijkcode"}};
         var postcodeLevels = ["pc4", "pc6", "buurt", "wijk"];
         var postcodeLevel = "pc4";
@@ -1337,7 +1337,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
 }
 
-        var leftMapElement = document.getElementById('map_14a44786da46e159cfbd8551b075ea2b');
+        var leftMapElement = document.getElementById('map_797b8d6ed9c126edb22a7f974de5eb18');
         var leftMapSlot = document.getElementById('left-map-slot');
         if (leftMapElement && leftMapSlot && leftMapElement.parentNode !== leftMapSlot) {
             leftMapSlot.appendChild(leftMapElement);
@@ -1478,6 +1478,29 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 }
                 return response.json();
             });
+        }
+
+        function mergeFeatureCollections(parts) {
+            var merged = {
+                type: 'FeatureCollection',
+                features: []
+            };
+            for (var i = 0; i < parts.length; i++) {
+                var part = parts[i] || {};
+                var features = Array.isArray(part.features) ? part.features : [];
+                merged.features = merged.features.concat(features);
+                if (!merged.crs && part.crs) {
+                    merged.crs = part.crs;
+                }
+            }
+            return merged;
+        }
+
+        function fetchGeojsonResource(resource) {
+            if (Array.isArray(resource)) {
+                return Promise.all(resource.map(fetchJson)).then(mergeFeatureCollections);
+            }
+            return fetchJson(resource);
         }
 
         function fetchText(path) {
@@ -2292,7 +2315,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             if (!silent) {
                 showStatus('Loading ' + getAreaLabel(level) + ' boundaries...', 'info', 30);
             }
-            postcodeLevelLoadPromises[level] = fetchJson(postcodeGeojsonPaths[level])
+            postcodeLevelLoadPromises[level] = fetchGeojsonResource(postcodeGeojsonPaths[level])
                 .then(function(geojson) {
                     areaGeojsonByLevel[level] = geojson;
                     areaIndexByLevel[level] = buildAreaIndex(geojson, level);
@@ -2405,6 +2428,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 var dateData = getDateData(dateKey);
                 if (!silent) {
                     showStatus('Loaded ' + dateKey, 'info', 90);
+                    clearStatusSoon(500);
                 } else if (panels &&
                            (panels.left.visualizationMode === 'global' ||
                             panels.right.visualizationMode === 'global')) {
@@ -3709,14 +3733,14 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     </script>
     
     
-            <div class="folium-map" id="map_14a44786da46e159cfbd8551b075ea2b" ></div>
+            <div class="folium-map" id="map_797b8d6ed9c126edb22a7f974de5eb18" ></div>
         
 </body>
 <script>
     
     
-            var map_14a44786da46e159cfbd8551b075ea2b = L.map(
-                "map_14a44786da46e159cfbd8551b075ea2b",
+            var map_797b8d6ed9c126edb22a7f974de5eb18 = L.map(
+                "map_797b8d6ed9c126edb22a7f974de5eb18",
                 {
                     center: [52.075, 4.3],
                     crs: L.CRS.EPSG3857,

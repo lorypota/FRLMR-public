@@ -83,7 +83,7 @@ geodata,,den_haag,,geodata/houses_den_haag.json,3423766,2026-03-18T13:18:28Z
 geodata,,den_haag,,geodata/pc4_den_haag.geojson,1994929,2026-03-05T09:32:32Z
 geodata,,den_haag,,geodata/wijken_den_haag.geojson,2277465,2026-03-20T10:51:22Z
 map,,amsterdam,,maps/amsterdam_pc4.html,1081992,2026-03-16T10:23:20Z
-map,,den_haag,,maps/den_haag_pc4.html,143405,2026-03-20T10:51:22Z
+map,,den_haag,,maps/den_haag_pc4.html,144330,2026-03-20T11:31:41Z
 map,,den_haag,,maps/den_haag_stations.html,663682,2026-03-16T15:19:14Z
 other,,,,index/data_quality_events.csv,1020,2026-03-18T15:19:36Z
 other,,,2026-02-01,raw_staging/2026/02/01/00/donkey_denHaag_fietsData_202602010000.tar.gz,67283,2026-01-31T23:00:38Z

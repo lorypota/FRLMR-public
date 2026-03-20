@@ -2412,6 +2412,7 @@ def build_custom_js(
                 var dateData = getDateData(dateKey);
                 if (!silent) {
                     showStatus('Loaded ' + dateKey, 'info', 90);
+                    clearStatusSoon(500);
                 } else if (panels &&
                            (panels.left.visualizationMode === 'global' ||
                             panels.right.visualizationMode === 'global')) {
