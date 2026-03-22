@@ -18,6 +18,7 @@ Data structure:
 
 import ast
 import csv
+import json
 import os
 import tarfile
 from datetime import datetime
@@ -74,8 +75,9 @@ DATA_QUALITY_EVENT_FIELDS = [
 def parse_gbfs_file(raw_bytes: bytes) -> dict | None:
     """Parse a GBFS data file from raw bytes.
 
-    The Donkey data files use Python dict syntax (True/False/None, single quotes)
-    rather than JSON, so we use ast.literal_eval().
+    The archived GBFS payloads are not fully consistent. Some snapshots use
+    Python dict syntax (True/False/None, single quotes), while others use
+    standard JSON (true/false/null, double quotes).
 
     Tries UTF-8 first, falls back to Latin-1 for files with accented characters
     (e.g. station names like 'Jozef Israëlslaan').
@@ -87,14 +89,26 @@ def parse_gbfs_file(raw_bytes: bytes) -> dict | None:
     """
     for encoding in ("utf-8", "latin-1"):
         try:
-            text = raw_bytes.decode(encoding)
+            text = raw_bytes.decode(encoding).lstrip("\ufeff").rstrip("\x00").strip()
         except UnicodeDecodeError:
             continue
+        if not text:
+            return None
+
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
         try:
             return ast.literal_eval(text)
         except (SyntaxError, ValueError):
             # Try to recover truncated files by appending closing chars
             for suffix in ("'}", "'}}", "'}}}", "}", "}}", "}}}"):
+                try:
+                    return json.loads(text + suffix)
+                except json.JSONDecodeError:
+                    pass
                 try:
                     return ast.literal_eval(text + suffix)
                 except (SyntaxError, ValueError):
@@ -260,7 +274,16 @@ def get_free_bike_status(tar_path: str | Path) -> list[dict] | None:
     data = extract_file_from_tar(tar_path, "free_bike_status")
     if data is None:
         return None
-    return data["data"]["bikes"]
+    payload = data.get("data", {})
+    if not isinstance(payload, dict):
+        return None
+    bikes = payload.get("bikes")
+    if isinstance(bikes, list):
+        return bikes
+    vehicles = payload.get("vehicles")
+    if isinstance(vehicles, list):
+        return vehicles
+    return None
 
 
 # =============================================================================
@@ -562,16 +585,19 @@ def load_day_free_bikes(
         if bikes is None:
             continue
         for b in filter_by_bbox(bikes, bbox):
+            bike_id = b.get("bike_id", b.get("vehicle_id"))
+            if bike_id is None:
+                continue
             records.append(
                 {
                     "timestamp": ts,
-                    "bike_id": b["bike_id"],
+                    "bike_id": bike_id,
                     "lat": b["lat"],
                     "lon": b["lon"],
                     "is_reserved": b.get("is_reserved", False),
                     "is_disabled": b.get("is_disabled", False),
                     "last_reported": b.get("last_reported"),
-                    "station_id": b.get("station_id", ""),
+                    "station_id": b.get("station_id", b.get("home_station_id", "")),
                     "vehicle_type_id": b.get("vehicle_type_id", ""),
                 }
             )

@@ -3,8 +3,9 @@
 Usage:
     uv run preliminary_studies/empirical_analysis/stage_gbfs_subset.py `
         --source-root "\\tsn.tno.nl\RA-Data\SV\sv-057767\Feeds\OpenOV\GBFS" `
-        --start 2026-03-01 --end 2026-03-01 `
-        --providers donkey_denHaag ns_ov_fiets
+        --start 2021-10-01 --end 2026-03-20 `
+        --providers donkey_denHaag ns_ov_fiets `
+        --mode first-per-hour
 
 Copies raw tar.gz files from a slow network share into a local folder,
 preserving the original YYYY/MM/DD/HH layout so the result can be passed
