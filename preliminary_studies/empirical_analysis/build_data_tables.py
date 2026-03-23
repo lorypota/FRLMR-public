@@ -72,6 +72,15 @@ def build_station_table(
                 )
             break
         if tar_member_exists(tar_path, "station_information"):
+            append_data_quality_event(
+                provider=provider,
+                tar_path=tar_path,
+                member_name="station_information",
+                issue_type="unreadable_member",
+                consumer="station_table",
+                action_taken="used_fallback_snapshot",
+                note="parse failure while building station metadata",
+            )
             print(
                 f"    [WARN] station_information unreadable in {tar_path.name}; "
                 "trying next snapshot"
@@ -84,7 +93,8 @@ def build_station_table(
         append_data_quality_event(
             provider=provider,
             tar_path=tar_path,
-            missing_member="station_information",
+            member_name="station_information",
+            issue_type="missing_member",
             consumer="station_table",
             action_taken="used_fallback_snapshot",
         )

@@ -20,6 +20,7 @@ import ast
 import csv
 import json
 import os
+import re
 import tarfile
 from datetime import datetime
 from pathlib import Path
@@ -61,11 +62,16 @@ DATA_QUALITY_EVENT_FIELDS = [
     "date",
     "timestamp",
     "tar_path",
+    "member_name",
+    "issue_type",
     "missing_member",
     "consumer",
     "action_taken",
     "note",
 ]
+RAW_TAR_PATH_PATTERN = re.compile(
+    r"(?P<year>\d{4})[\\/](?P<month>\d{2})[\\/](?P<day>\d{2})[\\/](?P<hour>\d{2})[\\/](?P<filename>[^\\/]+\.tar\.gz)$"
+)
 
 # =============================================================================
 # PARSING
@@ -144,37 +150,74 @@ def tar_member_exists(tar_path: str | Path, member_name: str) -> bool:
     return True
 
 
+def format_data_quality_tar_path(tar_path: str | Path) -> str:
+    """Return a machine-independent tar path rooted at the YYYY/MM/DD/HH tree."""
+    path_str = str(Path(tar_path))
+    match = RAW_TAR_PATH_PATTERN.search(path_str)
+    if match:
+        return (
+            f"\\{match.group('year')}\\{match.group('month')}\\"
+            f"{match.group('day')}\\{match.group('hour')}\\{match.group('filename')}"
+        )
+    return Path(tar_path).name
+
+
 def append_data_quality_event(
     *,
     provider: str,
     tar_path: str | Path,
-    missing_member: str,
+    member_name: str,
+    issue_type: str,
     consumer: str,
     action_taken: str,
     note: str = "",
 ) -> None:
-    """Append one missing-member event to the empirical-analysis quality log."""
+    """Append one raw-data quality event to the empirical-analysis quality log."""
     tar_path = Path(tar_path)
     timestamp = parse_timestamp_from_filename(tar_path.name, provider=provider)
     INDEX_DIR.mkdir(parents=True, exist_ok=True)
+    event = {
+        "provider": provider,
+        "date": timestamp.strftime("%Y-%m-%d"),
+        "timestamp": timestamp.isoformat(),
+        "tar_path": format_data_quality_tar_path(tar_path),
+        "member_name": member_name,
+        "issue_type": issue_type,
+        # Keep legacy column populated for compatibility with older readers.
+        "missing_member": member_name if issue_type == "missing_member" else "",
+        "consumer": consumer,
+        "action_taken": action_taken,
+        "note": note,
+    }
+
+    if DATA_QUALITY_EVENTS_PATH.exists():
+        with DATA_QUALITY_EVENTS_PATH.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            existing_fields = reader.fieldnames or []
+            existing_rows = list(reader)
+        if existing_fields != DATA_QUALITY_EVENT_FIELDS:
+            migrated_rows = []
+            for row in existing_rows:
+                migrated = {field: row.get(field, "") for field in DATA_QUALITY_EVENT_FIELDS}
+                if not migrated["member_name"]:
+                    migrated["member_name"] = row.get("missing_member", "")
+                if not migrated["issue_type"]:
+                    migrated["issue_type"] = (
+                        "missing_member" if row.get("missing_member", "") else ""
+                    )
+                migrated_rows.append(migrated)
+            with DATA_QUALITY_EVENTS_PATH.open("w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=DATA_QUALITY_EVENT_FIELDS)
+                writer.writeheader()
+                writer.writerows(migrated_rows)
+
     write_header = not DATA_QUALITY_EVENTS_PATH.exists()
 
     with DATA_QUALITY_EVENTS_PATH.open("a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=DATA_QUALITY_EVENT_FIELDS)
         if write_header:
             writer.writeheader()
-        writer.writerow(
-            {
-                "provider": provider,
-                "date": timestamp.strftime("%Y-%m-%d"),
-                "timestamp": timestamp.isoformat(),
-                "tar_path": str(tar_path.resolve()),
-                "missing_member": missing_member,
-                "consumer": consumer,
-                "action_taken": action_taken,
-                "note": note,
-            }
-        )
+        writer.writerow(event)
 
 
 def extract_all_from_tar(tar_path: str | Path) -> dict[str, dict | None]:
@@ -397,6 +440,15 @@ def load_day_availability(
         if statuses is None:
             if tar_member_exists(tar_path, "station_status"):
                 unreadable_status_count += 1
+                append_data_quality_event(
+                    provider=provider,
+                    tar_path=tar_path,
+                    member_name="station_status",
+                    issue_type="unreadable_member",
+                    consumer="docked_table",
+                    action_taken="skipped_snapshot",
+                    note="parse failure while building docked table",
+                )
                 print(
                     f"    [WARN] station_status unreadable in {tar_path.name}; "
                     "skipping snapshot"
@@ -410,7 +462,8 @@ def load_day_availability(
                 append_data_quality_event(
                     provider=provider,
                     tar_path=tar_path,
-                    missing_member="station_status",
+                    member_name="station_status",
+                    issue_type="missing_member",
                     consumer="docked_table",
                     action_taken="skipped_snapshot",
                 )
