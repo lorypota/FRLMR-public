@@ -357,13 +357,27 @@ def load_day_availability(
         ]
         if os.path.exists(preferred_cache_path):
             print(f"  Loading saved docked-bike table: {preferred_cache_path}")
-            return pd.read_csv(
-                preferred_cache_path, index_col="timestamp", parse_dates=True
-            )
+            try:
+                return pd.read_csv(
+                    preferred_cache_path, index_col="timestamp", parse_dates=True
+                )
+            except pd.errors.EmptyDataError:
+                print(
+                    f"  [WARN] Saved docked-bike table is empty, rebuilding: "
+                    f"{preferred_cache_path}"
+                )
         for legacy_path in legacy_paths:
             if legacy_path != preferred_cache_path and os.path.exists(legacy_path):
                 print(f"  Loading legacy docked-bike table: {legacy_path}")
-                return pd.read_csv(legacy_path, index_col="timestamp", parse_dates=True)
+                try:
+                    return pd.read_csv(
+                        legacy_path, index_col="timestamp", parse_dates=True
+                    )
+                except pd.errors.EmptyDataError:
+                    print(
+                        f"  [WARN] Legacy docked-bike table is empty, rebuilding: "
+                        f"{legacy_path}"
+                    )
     else:
         preferred_cache_path = None
         docks_cache_path = None
@@ -565,11 +579,23 @@ def load_day_free_bikes(
         ]
         if os.path.exists(preferred_cache_path):
             print(f"  Loading saved dockless-bike table: {preferred_cache_path}")
-            return pd.read_csv(preferred_cache_path, parse_dates=["timestamp"])
+            try:
+                return pd.read_csv(preferred_cache_path, parse_dates=["timestamp"])
+            except pd.errors.EmptyDataError:
+                print(
+                    f"  [WARN] Saved dockless-bike table is empty, rebuilding: "
+                    f"{preferred_cache_path}"
+                )
         for legacy_path in legacy_paths:
             if legacy_path != preferred_cache_path and os.path.exists(legacy_path):
                 print(f"  Loading legacy dockless-bike table: {legacy_path}")
-                return pd.read_csv(legacy_path, parse_dates=["timestamp"])
+                try:
+                    return pd.read_csv(legacy_path, parse_dates=["timestamp"])
+                except pd.errors.EmptyDataError:
+                    print(
+                        f"  [WARN] Legacy dockless-bike table is empty, rebuilding: "
+                        f"{legacy_path}"
+                    )
     else:
         preferred_cache_path = None
 
@@ -602,7 +628,22 @@ def load_day_free_bikes(
                 }
             )
 
-    df = pd.DataFrame(records)
+    if records:
+        df = pd.DataFrame(records)
+    else:
+        df = pd.DataFrame(
+            columns=[
+                "timestamp",
+                "bike_id",
+                "lat",
+                "lon",
+                "is_reserved",
+                "is_disabled",
+                "last_reported",
+                "station_id",
+                "vehicle_type_id",
+            ]
+        )
 
     if preferred_cache_path:
         os.makedirs(os.path.dirname(preferred_cache_path), exist_ok=True)
