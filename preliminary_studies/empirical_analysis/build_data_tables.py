@@ -26,6 +26,7 @@ from internal.data_utils import (
     list_tar_files,
     load_day_availability,
     load_day_free_bikes,
+    tar_archive_is_readable,
     tar_member_exists,
 )
 from internal.paths import (
@@ -61,6 +62,21 @@ def build_station_table(
     status = []
     selected_file = None
     for tar_path in files:
+        if not tar_archive_is_readable(tar_path):
+            append_data_quality_event(
+                provider=provider,
+                tar_path=tar_path,
+                member_name="",
+                issue_type="unreadable_archive",
+                consumer="station_table",
+                action_taken="used_fallback_snapshot",
+                note="tar archive could not be opened",
+            )
+            print(
+                f"    [WARN] archive unreadable in {tar_path.name}; "
+                "trying next snapshot"
+            )
+            continue
         station_info = get_station_info(tar_path)
         if station_info:
             selected_file = tar_path

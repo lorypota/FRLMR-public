@@ -130,23 +130,38 @@ def parse_gbfs_file(raw_bytes: bytes) -> dict | None:
 
 def extract_file_from_tar(tar_path: str | Path, member_name: str) -> dict | None:
     """Extract and parse a single named member from a tar.gz archive."""
-    with tarfile.open(tar_path, "r:gz") as tf:
-        try:
-            f = tf.extractfile(member_name)
-        except KeyError:
-            return None
-        if f is None:
-            return None
-        return parse_gbfs_file(f.read())
+    try:
+        with tarfile.open(tar_path, "r:gz") as tf:
+            try:
+                f = tf.extractfile(member_name)
+            except KeyError:
+                return None
+            if f is None:
+                return None
+            return parse_gbfs_file(f.read())
+    except (tarfile.TarError, OSError):
+        return None
+
+
+def tar_archive_is_readable(tar_path: str | Path) -> bool:
+    """Return True when the tar.gz archive can be opened successfully."""
+    try:
+        with tarfile.open(tar_path, "r:gz"):
+            return True
+    except (tarfile.TarError, OSError):
+        return False
 
 
 def tar_member_exists(tar_path: str | Path, member_name: str) -> bool:
     """Return True when the tar archive contains the given member."""
-    with tarfile.open(tar_path, "r:gz") as tf:
-        try:
-            tf.getmember(member_name)
-        except KeyError:
-            return False
+    try:
+        with tarfile.open(tar_path, "r:gz") as tf:
+            try:
+                tf.getmember(member_name)
+            except KeyError:
+                return False
+    except (tarfile.TarError, OSError):
+        return False
     return True
 
 
@@ -448,6 +463,22 @@ def load_day_availability(
         ts = parse_timestamp_from_filename(tar_path.name, provider=provider)
         statuses = get_station_status(tar_path)
         if statuses is None:
+            if not tar_archive_is_readable(tar_path):
+                unreadable_status_count += 1
+                append_data_quality_event(
+                    provider=provider,
+                    tar_path=tar_path,
+                    member_name="",
+                    issue_type="unreadable_archive",
+                    consumer="docked_table",
+                    action_taken="skipped_snapshot",
+                    note="tar archive could not be opened",
+                )
+                print(
+                    f"    [WARN] archive unreadable in {tar_path.name}; "
+                    "skipping snapshot"
+                )
+                continue
             if tar_member_exists(tar_path, "station_status"):
                 unreadable_status_count += 1
                 append_data_quality_event(
@@ -672,6 +703,20 @@ def load_day_free_bikes(
         ts = parse_timestamp_from_filename(tar_path.name, provider=provider)
         bikes = get_free_bike_status(tar_path)
         if bikes is None:
+            if not tar_archive_is_readable(tar_path):
+                print(
+                    f"    [WARN] archive unreadable in {tar_path.name}; "
+                    "skipping snapshot"
+                )
+                append_data_quality_event(
+                    provider=provider,
+                    tar_path=tar_path,
+                    member_name="",
+                    issue_type="unreadable_archive",
+                    consumer="dockless_table",
+                    action_taken="skipped_snapshot",
+                    note="tar archive could not be opened",
+                )
             continue
         for b in filter_by_bbox(bikes, bbox):
             bike_id = b.get("bike_id", b.get("vehicle_id"))
