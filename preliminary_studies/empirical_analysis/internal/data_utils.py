@@ -324,7 +324,27 @@ def get_station_status(tar_path: str | Path) -> list[dict] | None:
     data = extract_file_from_tar(tar_path, "station_status")
     if data is None:
         return None
-    return data["data"]["stations"]
+    payload = data.get("data", {})
+    if not isinstance(payload, dict):
+        return None
+    stations = payload.get("stations")
+    if not isinstance(stations, list):
+        return None
+    if stations and isinstance(stations[0], dict) and "station_id" in stations[0]:
+        return stations
+    nested_stations = []
+    for entry in stations:
+        if not isinstance(entry, dict):
+            return None
+        inner = entry.get("stations")
+        if not isinstance(inner, list):
+            return None
+        if not all(isinstance(s, dict) for s in inner):
+            return None
+        nested_stations.extend(inner)
+    if nested_stations:
+        return nested_stations
+    return None
 
 
 def get_free_bike_status(tar_path: str | Path) -> list[dict] | None:
