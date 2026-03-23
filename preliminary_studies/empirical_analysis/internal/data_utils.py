@@ -320,6 +320,9 @@ def get_free_bike_status(tar_path: str | Path) -> list[dict] | None:
     payload = data.get("data", {})
     if not isinstance(payload, dict):
         return None
+    nested_payload = payload.get("data")
+    if isinstance(nested_payload, dict):
+        payload = nested_payload
     bikes = payload.get("bikes")
     if isinstance(bikes, list):
         return bikes
@@ -338,12 +341,19 @@ def filter_by_bbox(items: list[dict], bbox: dict | None = None) -> list[dict]:
     """Filter any list of dicts with 'lat'/'lon' keys by bounding box."""
     if bbox is None:
         bbox = DEN_HAAG_BBOX
-    return [
-        s
-        for s in items
-        if bbox["lat_min"] <= s["lat"] <= bbox["lat_max"]
-        and bbox["lon_min"] <= s["lon"] <= bbox["lon_max"]
-    ]
+    filtered = []
+    for s in items:
+        try:
+            lat = float(s["lat"])
+            lon = float(s["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if bbox["lat_min"] <= lat <= bbox["lat_max"] and bbox["lon_min"] <= lon <= bbox["lon_max"]:
+            item = dict(s)
+            item["lat"] = lat
+            item["lon"] = lon
+            filtered.append(item)
+    return filtered
 
 
 def filter_den_haag_stations(
