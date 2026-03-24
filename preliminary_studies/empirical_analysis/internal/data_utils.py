@@ -72,6 +72,8 @@ DATA_QUALITY_EVENT_FIELDS = [
 RAW_TAR_PATH_PATTERN = re.compile(
     r"(?P<year>\d{4})[\\/](?P<month>\d{2})[\\/](?P<day>\d{2})[\\/](?P<hour>\d{2})[\\/](?P<filename>[^\\/]+\.tar\.gz)$"
 )
+_DATA_QUALITY_CACHE_PATH: Path | None = None
+_DATA_QUALITY_SEEN_KEYS: set[tuple[str, ...]] = set()
 
 # =============================================================================
 # PARSING
@@ -204,27 +206,11 @@ def append_data_quality_event(
         "action_taken": action_taken,
         "note": note,
     }
-
-    if DATA_QUALITY_EVENTS_PATH.exists():
-        with DATA_QUALITY_EVENTS_PATH.open("r", newline="", encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            existing_fields = reader.fieldnames or []
-            existing_rows = list(reader)
-        if existing_fields != DATA_QUALITY_EVENT_FIELDS:
-            migrated_rows = []
-            for row in existing_rows:
-                migrated = {field: row.get(field, "") for field in DATA_QUALITY_EVENT_FIELDS}
-                if not migrated["member_name"]:
-                    migrated["member_name"] = row.get("missing_member", "")
-                if not migrated["issue_type"]:
-                    migrated["issue_type"] = (
-                        "missing_member" if row.get("missing_member", "") else ""
-                    )
-                migrated_rows.append(migrated)
-            with DATA_QUALITY_EVENTS_PATH.open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=DATA_QUALITY_EVENT_FIELDS)
-                writer.writeheader()
-                writer.writerows(migrated_rows)
+    _initialize_data_quality_cache(DATA_QUALITY_EVENTS_PATH)
+    normalized_event = _normalize_data_quality_row(event)
+    event_key = _data_quality_event_key(normalized_event)
+    if event_key in _DATA_QUALITY_SEEN_KEYS:
+        return
 
     write_header = not DATA_QUALITY_EVENTS_PATH.exists()
 
@@ -232,7 +218,96 @@ def append_data_quality_event(
         writer = csv.DictWriter(f, fieldnames=DATA_QUALITY_EVENT_FIELDS)
         if write_header:
             writer.writeheader()
-        writer.writerow(event)
+        writer.writerow(normalized_event)
+    _DATA_QUALITY_SEEN_KEYS.add(event_key)
+
+
+def normalize_data_quality_events(
+    path: Path = DATA_QUALITY_EVENTS_PATH,
+) -> tuple[int, int]:
+    """Normalize, sort, and deduplicate the data-quality event log.
+
+    Returns:
+        Tuple of (original_row_count, normalized_row_count).
+    """
+    if not path.exists() or path.stat().st_size == 0:
+        return 0, 0
+
+    with path.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+
+    original_count = len(rows)
+    if not rows:
+        return original_count, 0
+
+    normalized_rows = []
+    seen = set()
+    for row in rows:
+        normalized = _normalize_data_quality_row(row)
+        key = _data_quality_event_key(normalized)
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized_rows.append(normalized)
+
+    normalized_rows.sort(
+        key=lambda row: (
+            row["timestamp"],
+            row["provider"],
+            row["consumer"],
+            row["issue_type"],
+            row["tar_path"],
+            row["member_name"],
+            row["action_taken"],
+            row["note"],
+        )
+    )
+
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=DATA_QUALITY_EVENT_FIELDS)
+        writer.writeheader()
+        writer.writerows(normalized_rows)
+
+    global _DATA_QUALITY_CACHE_PATH, _DATA_QUALITY_SEEN_KEYS
+    _DATA_QUALITY_CACHE_PATH = path.resolve()
+    _DATA_QUALITY_SEEN_KEYS = seen
+
+    return original_count, len(normalized_rows)
+
+
+def _normalize_data_quality_row(row: dict[str, str]) -> dict[str, str]:
+    normalized = {field: row.get(field, "") for field in DATA_QUALITY_EVENT_FIELDS}
+    if not normalized["member_name"]:
+        normalized["member_name"] = row.get("missing_member", "")
+    if not normalized["issue_type"]:
+        normalized["issue_type"] = (
+            "missing_member" if row.get("missing_member", "") else ""
+        )
+    normalized["missing_member"] = (
+        normalized["member_name"] if normalized["issue_type"] == "missing_member" else ""
+    )
+    normalized["note"] = normalized["note"] or ""
+    return normalized
+
+
+def _data_quality_event_key(row: dict[str, str]) -> tuple[str, ...]:
+    return tuple(row[field] for field in DATA_QUALITY_EVENT_FIELDS)
+
+
+def _initialize_data_quality_cache(path: Path) -> None:
+    global _DATA_QUALITY_CACHE_PATH, _DATA_QUALITY_SEEN_KEYS
+
+    resolved_path = path.resolve()
+    if resolved_path == _DATA_QUALITY_CACHE_PATH:
+        return
+
+    if path.exists() and path.stat().st_size > 0:
+        normalize_data_quality_events(path)
+        return
+
+    _DATA_QUALITY_CACHE_PATH = resolved_path
+    _DATA_QUALITY_SEEN_KEYS = set()
 
 
 def extract_all_from_tar(tar_path: str | Path) -> dict[str, dict | None]:
