@@ -12,7 +12,7 @@ import argparse
 import csv
 from pathlib import Path
 
-from artifact_index import rebuild_artifact_index
+from internal.artifact_index import rebuild_artifact_index
 from internal.data_utils import (
     AMSTERDAM_PROVIDER,
     DEFAULT_DATA_ROOT,

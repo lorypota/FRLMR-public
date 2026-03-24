@@ -28,7 +28,7 @@ from pyproj import Transformer
 from shapely.geometry import Point
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from artifact_index import rebuild_artifact_index
+from internal.artifact_index import rebuild_artifact_index
 from internal.data_utils import (
     DEN_HAAG_BBOX,
     DEN_HAAG_CENTER,
@@ -581,7 +581,6 @@ def process_date(
 
 def build_panel_controls_html(
     panel_id: str,
-    date_slider_max: int,
     visualization_options: str,
 ) -> str:
     """Render the floating controls card for one map panel."""
@@ -593,10 +592,10 @@ def build_panel_controls_html(
             <div class="controls-row">
                 <div class="control-inline slider-row">
                     <div class="control-header">
-                        <label for="{panel_id}-date-slider">Date</label>
+                        <label for="{panel_id}-date-input">Date</label>
                         <span class="date-readout" id="{panel_id}-date-label"></span>
                     </div>
-                    <input type="range" id="{panel_id}-date-slider" min="0" max="{date_slider_max}" value="0" step="1">
+                    <input type="date" id="{panel_id}-date-input">
                 </div>
             </div>
             <div class="controls-row">
@@ -757,11 +756,13 @@ def build_page_styles(left_map_id: str) -> str:
         }}
 
         .panel-controls select,
-        .panel-controls input[type="range"] {{
+        .panel-controls input[type="range"],
+        .panel-controls input[type="date"] {{
             accent-color: #1e6bb8;
         }}
 
-        .panel-controls select {{
+        .panel-controls select,
+        .panel-controls input[type="date"] {{
             font-size: 13px;
             padding: 4px 8px;
             border: 1px solid #c6cdd4;
@@ -1052,7 +1053,8 @@ def build_page_styles(left_map_id: str) -> str:
             color: #9fb1c3;
         }}
 
-        body.theme-dark .panel-controls select {{
+        body.theme-dark .panel-controls select,
+        body.theme-dark .panel-controls input[type="date"] {{
             background: #13202c;
             color: #edf4fb;
             border-color: #38506a;
@@ -1065,6 +1067,7 @@ def build_page_styles(left_map_id: str) -> str:
         }}
 
         body.theme-dark .panel-controls select,
+        body.theme-dark .panel-controls input[type="date"],
         body.theme-dark .panel-controls input[type="range"],
         body.theme-dark .legend-select-filter select,
         body.theme-dark .legend-hotspot-control input[type="range"] {{
@@ -1158,18 +1161,15 @@ def build_page_styles(left_map_id: str) -> str:
 
 
 def build_page_html(
-    date_slider_max: int,
     visualization_options: str,
 ) -> str:
     """Return the compare-mode page chrome."""
     left_controls = build_panel_controls_html(
         "left",
-        date_slider_max,
         visualization_options,
     )
     right_controls = build_panel_controls_html(
         "right",
-        date_slider_max,
         visualization_options,
     )
     return dedent(
@@ -1293,6 +1293,7 @@ def build_custom_js(
         var loadedDateKeys = Object.create(null);
         var providerDateData = Object.create(null);
         var defaultVisualizationMode = __DEFAULT_VISUALIZATION_MODE__;
+        var defaultInitialDate = '2026-03-01';
         var defaultCenter = __DEFAULT_CENTER__;
         var defaultZoom = __DEFAULT_ZOOM__;
         var artifactsIndexPath = '__ARTIFACTS_INDEX_PATH__';
@@ -2193,14 +2194,21 @@ def build_custom_js(
             return dateData;
         }
 
+        function getLoadedDates() {
+            return dates.filter(function(dateKey) {
+                return !!loadedDateKeys[dateKey];
+            });
+        }
+
         function recomputeActiveData() {
             allData = Object.create(null);
             globalMaxByLevel = Object.create(null);
             for (var l = 0; l < postcodeLevels.length; l += 1) {
                 globalMaxByLevel[postcodeLevels[l]] = 0;
             }
-            for (var i = 0; i < dates.length; i += 1) {
-                var dateData = composeDateData(dates[i]);
+            var loadedDates = getLoadedDates();
+            for (var i = 0; i < loadedDates.length; i += 1) {
+                var dateData = composeDateData(loadedDates[i]);
                 if (dateData) {
                     for (var j = 0; j < postcodeLevels.length; j += 1) {
                         var level = postcodeLevels[j];
@@ -2682,7 +2690,7 @@ def build_custom_js(
                 ),
                 headingLabel: document.getElementById(panelId + '-panel-heading-label'),
                 dateLabel: document.getElementById(panelId + '-date-label'),
-                dateSlider: document.getElementById(panelId + '-date-slider'),
+                dateInput: document.getElementById(panelId + '-date-input'),
                 hourLabel: document.getElementById(panelId + '-hour-label'),
                 hourSlider: document.getElementById(panelId + '-hour-slider'),
                 visualization: document.getElementById(panelId + '-visualization-mode')
@@ -2697,15 +2705,27 @@ def build_custom_js(
             return allData[dateKey] || null;
         }
 
-        function getDateIndex(dateKey) {
-            var index = dates.indexOf(dateKey);
-            return index === -1 ? 0 : index;
-        }
-
-        function getDateAtIndex(index) {
-            if (dates.length === 0) return null;
-            var boundedIndex = Math.max(0, Math.min(index, dates.length - 1));
-            return dates[boundedIndex];
+        function getClosestAvailableDate(dateKey) {
+            if (!dates.length) return null;
+            if (dates.indexOf(dateKey) !== -1) return dateKey;
+            if (dateKey <= dates[0]) return dates[0];
+            if (dateKey >= dates[dates.length - 1]) return dates[dates.length - 1];
+            for (var i = 1; i < dates.length; i += 1) {
+                if (dates[i] >= dateKey) {
+                    var previousDate = dates[i - 1];
+                    var nextDate = dates[i];
+                    var previousDistance = Math.abs(
+                        new Date(previousDate + 'T00:00:00').getTime() -
+                        new Date(dateKey + 'T00:00:00').getTime()
+                    );
+                    var nextDistance = Math.abs(
+                        new Date(nextDate + 'T00:00:00').getTime() -
+                        new Date(dateKey + 'T00:00:00').getTime()
+                    );
+                    return previousDistance <= nextDistance ? previousDate : nextDate;
+                }
+            }
+            return dates[dates.length - 1];
         }
 
         function normalizeHour(dateData, requestedHour) {
@@ -3141,12 +3161,11 @@ def build_custom_js(
                 },
                 syncControlsFromState: function() {
                     var dateData = getDateData(this.currentDate);
-                    this.controls.dateSlider.max = Math.max(dates.length - 1, 0);
-                    this.controls.dateSlider.disabled = dates.length === 0;
+                    this.controls.dateInput.disabled = dates.length === 0;
                     this.controls.dateLabel.textContent = this.currentDate || 'No date';
-                    this.controls.dateSlider.value = this.currentDate
-                        ? getDateIndex(this.currentDate)
-                        : 0;
+                    this.controls.dateInput.min = dates.length ? dates[0] : '';
+                    this.controls.dateInput.max = dates.length ? dates[dates.length - 1] : '';
+                    this.controls.dateInput.value = this.currentDate || '';
                     this.controls.visualization.value = this.visualizationMode;
                     this.controls.visualization.disabled = !this.currentDate;
                     this.controls.hourSlider.disabled = !dateData;
@@ -3485,8 +3504,8 @@ def build_custom_js(
 
             panel.geojsonLayer = buildPolygonLayer(panel);
 
-            panel.controls.dateSlider.addEventListener('input', function() {
-                var dateValue = getDateAtIndex(parseInt(this.value, 10));
+            panel.controls.dateInput.addEventListener('change', function() {
+                var dateValue = getClosestAvailableDate(this.value);
                 if (dateValue !== null) {
                     panel.setDate(dateValue);
                 }
@@ -3691,11 +3710,12 @@ def build_custom_js(
                 return;
             }
 
-            panels.left.currentDate = dates[0];
-            panels.right.currentDate = dates[0];
+            var initialDate = getClosestAvailableDate(defaultInitialDate);
+            panels.left.currentDate = initialDate;
+            panels.right.currentDate = initialDate;
 
             showStatus('Loading first date...', 'info', 60);
-            var firstDateData = await ensureDateDataLoaded(dates[0]);
+            var firstDateData = await ensureDateDataLoaded(initialDate);
             panels.left.requestedHour = 0;
             panels.left.currentHour = normalizeHour(firstDateData, panels.left.requestedHour);
             panels.right.requestedHour = panels.left.requestedHour;
@@ -3709,7 +3729,6 @@ def build_custom_js(
             updateLegendLayout();
             showStatus('Map ready', 'info', 100);
             clearStatusSoon(900);
-            warmRemainingDates();
         } catch (error) {
             showStatus('Failed to initialize map: ' + error.message, 'error');
         }
@@ -3789,12 +3808,9 @@ def main():
     default_visualization_json = json.dumps(DEFAULT_VISUALIZATION_MODE)
     visualization_options = build_visualization_options_html()
     visualization_js = build_visualization_js()
-    date_slider_max = 0
 
     m.get_root().header.add_child(folium.Element(build_page_styles(map_id)))
-    m.get_root().html.add_child(
-        folium.Element(build_page_html(date_slider_max, visualization_options))
-    )
+    m.get_root().html.add_child(folium.Element(build_page_html(visualization_options)))
     m.get_root().html.add_child(
         folium.Element(
             build_custom_js(

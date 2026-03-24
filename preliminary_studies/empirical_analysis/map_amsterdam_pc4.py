@@ -30,7 +30,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from artifact_index import rebuild_artifact_index
+from internal.artifact_index import rebuild_artifact_index
 from internal.data_utils import (
     AMSTERDAM_BBOX,
     AMSTERDAM_CENTER,

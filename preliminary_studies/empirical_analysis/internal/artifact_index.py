@@ -1,17 +1,12 @@
-"""Build an index of saved artifacts under empirical_analysis/output.
+"""Build an index of saved artifacts under empirical_analysis/output."""
 
-Usage:
-    uv run preliminary_studies/empirical_analysis/artifact_index.py
-"""
-
-import argparse
 import csv
 import json
 import re
 from datetime import UTC, datetime
 from pathlib import Path
 
-from internal.paths import OUTPUT_DIR, ensure_output_dirs
+from .paths import OUTPUT_DIR, ensure_output_dirs
 
 DATE_PATTERN = re.compile(r"(\d{8})")
 
@@ -123,20 +118,3 @@ def rebuild_artifact_index(output_dir: Path = OUTPUT_DIR) -> tuple[Path, Path, i
         json.dump(rows, f, indent=2)
 
     return csv_path, json_path, len(rows)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Build artifact index for empirical analysis"
-    )
-    parser.add_argument("--output-dir", default=str(OUTPUT_DIR))
-    args = parser.parse_args()
-
-    csv_path, json_path, n_rows = rebuild_artifact_index(Path(args.output_dir))
-    print(f"Wrote {n_rows} artifact rows")
-    print(f"CSV index: {csv_path}")
-    print(f"JSON index: {json_path}")
-
-
-if __name__ == "__main__":
-    main()

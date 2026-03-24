@@ -22,7 +22,7 @@ import folium
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from artifact_index import rebuild_artifact_index
+from internal.artifact_index import rebuild_artifact_index
 from internal.data_utils import (
     DEN_HAAG_BBOX,
     DEN_HAAG_CENTER,

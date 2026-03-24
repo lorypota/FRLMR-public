@@ -1,6 +1,34 @@
 # Empirical Analysis Folder
 
-This folder contains small scripts used to inspect GBFS snapshots (TNO internal data) and build map artifacts.
+This folder contains scripts for inspecting GBFS snapshots (TNO internal data), building interactive maps, and running statistical coverage analysis.
+
+## Project Structure
+
+```text
+empirical_analysis/
+├── stage_gbfs_subset.py         # Stage raw data from TNO network share
+├── build_data_tables.py         # Parse tar snapshots into CSV tables
+│
+├── map_den_haag_stations.py     # Den Haag station map
+├── map_den_haag_pc4.py          # Den Haag interactive area map
+├── map_amsterdam_pc4.py         # Amsterdam PC4 map
+│
+├── internal/
+│   ├── data_utils.py            # Raw snapshot parsing and extraction
+│   ├── artifact_index.py        # Internal artifact catalog helper
+│   ├── processed_data_utils.py  # CSV table loading helpers
+│   ├── paths.py                 # Output directory paths
+│
+├── output/
+│   ├── data/                    # Processed CSV tables (docked, dockless, stations)
+│   ├── maps/                    # Interactive HTML maps
+│   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
+│   ├── index/                   # Artifact indexing
+│   └── analysis/                # Statistical analysis outputs
+│
+├── AGENTS.md                    # Development guidelines
+└── README.md
+```
 
 The main current focus is **Den Haag** (although older exploration files of Amsterdam are not deleted), which has four shared-mobility operators of interest:
 
@@ -19,8 +47,13 @@ The [Dashboard Deelmobiliteit](https://crow-smartmobility.nl/kenniscatalogus/das
 
 ## Scripts
 
+### Data pipeline
+
 - `stage_gbfs_subset.py`: stage selected providers and snapshots from TNO server into a local folder.
 - `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
+
+### Maps
+
 - `map_den_haag_stations.py`: build a Den Haag station map.
 - `map_den_haag_pc4.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
 - `map_amsterdam_pc4.py`: build Amsterdam PC4 map with date/hour controls.
@@ -31,6 +64,7 @@ The [Dashboard Deelmobiliteit](https://crow-smartmobility.nl/kenniscatalogus/das
 These are used by the runnable scripts above and do not need to be run directly.
 
 - `internal/data_utils.py`: shared data parsing and loading utilities.
+- `internal/artifact_index.py`: internal helper that rebuilds `output/index/artifacts.csv` and `output/index/artifacts.json`.
 - `internal/processed_data_utils.py`: helpers for reading processed CSV tables.
 - `internal/paths.py`: shared output folder paths.
 - `internal/pc4_visualizations/`: modules per visualization type (`gradient`, `fixed`, `hotspot`, `house_proximity`).
@@ -131,12 +165,6 @@ output/
 ## Artifact Indexing
 
 The map scripts and `build_data_tables.py` rebuild the artifact index automatically at the end of each run.
-
-You can also rebuild it manually:
-
-```bash
-uv run preliminary_studies/empirical_analysis/artifact_index.py
-```
 
 `artifacts.csv` and `artifacts.json` include:
 
