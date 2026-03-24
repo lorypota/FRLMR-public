@@ -37,14 +37,14 @@ def build_js() -> str:
         }}
 
         function proportionalColorForCount(count, allData, globalMax, mode, dateKey, hour) {{
-            if (count === 0) return themeColor('scaleBlue');
+            if (count === 0) return themeColor('scaleZero');
             var ratio = Math.min(
                 count / getEffectiveMax(allData, globalMax, mode, dateKey, hour),
                 1.0
             );
-            if (ratio <= 0.33) return themeColor('scaleGreen');
+            if (ratio <= 0.33) return themeColor('scaleRed');
             if (ratio <= 0.66) return themeColor('scaleOrange');
-            return themeColor('scaleRed');
+            return themeColor('scaleGreen');
         }}
 
         function proportionalLegendHtml(allData, globalMax, mode, dateKey, hour) {{
@@ -53,10 +53,10 @@ def build_js() -> str:
             var t2 = Math.round(mx * 0.66);
             var label = mode === 'global' ? 'global' :
                         mode === 'per-date' ? 'this date' : 'this hour';
-            return '<span style="color:' + themeColor('scaleBlue') + ';">&#9632;</span> 0<br>' +
-                   '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 1 &ndash; ' + t1 + '<br>' +
+            return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
+                   '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 1 &ndash; ' + t1 + '<br>' +
                    '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> ' + (t1 + 1) + ' &ndash; ' + t2 + '<br>' +
-                   '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> ' + (t2 + 1) +
+                   '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> ' + (t2 + 1) +
                    '+ (max ' + mx + ' ' + label + ')<br>';
         }}
         """

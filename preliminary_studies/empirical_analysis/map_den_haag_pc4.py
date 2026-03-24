@@ -44,7 +44,6 @@ from internal.pc4_visualizations import (
 from internal.pc4_visualizations.hotspot import build_hourly_hotspot_data
 from internal.processed_data_utils import (
     load_docked_day,
-    load_dockless_day,
     load_station_day,
 )
 
@@ -451,11 +450,6 @@ def process_date(
 
     hour_to_row = {ts.hour: df_hourly.loc[ts] for ts in df_hourly.index}
 
-    print("    Loading dockless-bike data...")
-    bikes_df = load_dockless_day(data_dir, PROVIDER, year, month, day)
-    if bikes_df is None:
-        bikes_df = pd.DataFrame(columns=["timestamp", "bike_id", "lat", "lon"])
-
     counts = {}
     for pc4 in pc4_gdf["postcode"]:
         pc4_key = str(int(pc4))
@@ -483,64 +477,7 @@ def process_date(
             counts[pc4_key]["s"][hour] += value
             counts[pc4_key]["c"][hour] += value
 
-    bikes_by_hour: dict[str, list[list[float]]] = {}
-    if not bikes_df.empty and {"timestamp", "bike_id", "lat", "lon"}.issubset(
-        bikes_df.columns
-    ):
-        bikes_df["timestamp"] = pd.to_datetime(bikes_df["timestamp"])
-        bikes_df["lat"] = pd.to_numeric(bikes_df["lat"], errors="coerce")
-        bikes_df["lon"] = pd.to_numeric(bikes_df["lon"], errors="coerce")
-        bikes_df = bikes_df.dropna(subset=["timestamp", "bike_id", "lat", "lon"])
-        bikes_df["hour_idx"] = bikes_df["timestamp"].dt.hour
-
-        bike_gdf = gpd.GeoDataFrame(
-            bikes_df,
-            geometry=[
-                Point(lon, lat)
-                for lon, lat in zip(bikes_df["lon"], bikes_df["lat"], strict=True)
-            ],
-            crs="EPSG:4326",
-        )
-        bikes_with_pc4 = gpd.sjoin(
-            bike_gdf,
-            pc4_gdf[["postcode", "geometry"]],
-            how="left",
-            predicate="within",
-        )
-
-        free_bike_counts = (
-            bikes_with_pc4.groupby(["hour_idx", "postcode"])["bike_id"]
-            .nunique()
-            .reset_index(name="bike_count")
-        )
-        for _, row in free_bike_counts.iterrows():
-            hour = int(row["hour_idx"])
-            if pd.isna(row["postcode"]) or hour > max_hour:
-                continue
-            pc4_key = str(int(row["postcode"]))
-            if pc4_key in counts:
-                counts[pc4_key]["f"][hour] += int(row["bike_count"])
-                counts[pc4_key]["c"][hour] += int(row["bike_count"])
-
-        hourly_bikes = (
-            bikes_with_pc4.sort_values("timestamp")
-            .groupby(["hour_idx", "bike_id"])
-            .first()
-            .reset_index()
-        )
-        for hour in hours:
-            hour_data = hourly_bikes[hourly_bikes["hour_idx"] == hour]
-            bikes_by_hour[str(hour)] = [
-                [round(r["lat"], 6), round(r["lon"], 6), int(r["postcode"])]
-                for _, r in hour_data.iterrows()
-                if pd.notna(r["postcode"])
-            ]
-            print(
-                f"      Hour {hour:02d}: {len(bikes_by_hour[str(hour)])} dockless bikes"
-            )
-    else:
-        for hour in hours:
-            bikes_by_hour[str(hour)] = []
+    bikes_by_hour: dict[str, list[list[float]]] = {str(hour): [] for hour in hours}
 
     stations_js = []
     for station in dh_stations:
@@ -562,12 +499,7 @@ def process_date(
             }
         )
 
-    hotspot = build_hourly_hotspot_data(
-        stations_js,
-        bikes_by_hour,
-        hours,
-        DEN_HAAG_BBOX,
-    )
+    hotspot = build_hourly_hotspot_data(stations_js, hours, DEN_HAAG_BBOX)
 
     return {
         "hours": hours,
@@ -784,16 +716,12 @@ def build_page_styles(left_map_id: str) -> str:
             width: 100%;
         }}
 
-        .legend-symbol-dockless {{
-            color: #333;
-        }}
-
         .legend-scale-zero {{
-            color: #3388ff;
+            color: #6f7882;
         }}
 
         .legend-scale-low {{
-            color: #2ca02c;
+            color: #d62728;
         }}
 
         .legend-scale-medium {{
@@ -801,7 +729,7 @@ def build_page_styles(left_map_id: str) -> str:
         }}
 
         .legend-scale-high {{
-            color: #d62728;
+            color: #2ca02c;
         }}
 
         .hotspot-size-label {{
@@ -1079,16 +1007,12 @@ def build_page_styles(left_map_id: str) -> str:
             border-color: #314253;
         }}
 
-        body.theme-dark .legend-symbol-dockless {{
-            color: #d0dae4;
-        }}
-
         body.theme-dark .legend-scale-zero {{
-            color: #58a6ff;
+            color: #8a949e;
         }}
 
         body.theme-dark .legend-scale-low {{
-            color: #5ee38b;
+            color: #ff7373;
         }}
 
         body.theme-dark .legend-scale-medium {{
@@ -1096,7 +1020,7 @@ def build_page_styles(left_map_id: str) -> str:
         }}
 
         body.theme-dark .legend-scale-high {{
-            color: #ff7373;
+            color: #5ee38b;
         }}
 
         body.theme-dark .leaflet-control-zoom a {{
@@ -1235,8 +1159,7 @@ def build_page_html(
                         <option value="wijk">CBS wijken</option>
                     </select>
                 </div>
-                <span class="legend-symbol-dockless">&#9679;</span> Dockless bike<br>
-                Station bikes stored:<br>
+                Station bikes available:<br>
                 <span class="legend-scale-zero">&#9679;</span> 0<br>
                 <span class="legend-scale-low">&#9679;</span> 1 &ndash; 3<br>
                 <span class="legend-scale-medium">&#9679;</span> 4 &ndash; 6<br>
@@ -1401,24 +1324,6 @@ def build_custom_js(
             return normalizeAreaCode(
                 station && station.pc ? station.pc[level || postcodeLevel] : ''
             );
-        }
-
-        function getBikeAreaFieldIndex(level) {
-            if (level === 'pc4') return 2;
-            if (level === 'pc6') return 4;
-            if (level === 'buurt') return 5;
-            if (level === 'wijk') return 6;
-            return 2;
-        }
-
-        function getBikeAreaCode(bike, level) {
-            if (!bike) return '';
-            return normalizeAreaCode(bike[getBikeAreaFieldIndex(level || postcodeLevel)]);
-        }
-
-        function setBikeAreaCode(bike, level, areaCode) {
-            if (!bike) return;
-            bike[getBikeAreaFieldIndex(level)] = normalizeAreaCode(areaCode);
         }
 
         function setStatusProgress(percent) {
@@ -1911,9 +1816,6 @@ def build_custom_js(
             var hotspot = Object.create(null);
             for (var i = 0; i < hours.length; i += 1) {
                 var hour = hours[i];
-                var dockless = (bikesByHour[String(hour)] || []).map(function(bike) {
-                    return [bike[0], bike[1]];
-                });
                 var stationPoints = [];
                 var stationMax = 0;
                 for (var j = 0; j < stations.length; j += 1) {
@@ -1927,7 +1829,6 @@ def build_custom_js(
                     }
                 }
                 hotspot[String(hour)] = {
-                    dockless: dockless,
                     stations: stationPoints,
                     stationMax: stationMax
                 };
@@ -1935,7 +1836,7 @@ def build_custom_js(
             return hotspot;
         }
 
-        function buildDateData(providerKey, dateKey, stationMeta, dockedCsvText, docklessCsvText) {
+        function buildDateData(providerKey, dateKey, stationMeta, dockedCsvText) {
             var dockedLines = csvLines(dockedCsvText);
             if (dockedLines.length < 2) {
                 throw new Error('Docked table is empty for ' + dateKey);
@@ -2017,68 +1918,8 @@ def build_custom_js(
             }
 
             var bikesByHour = Object.create(null);
-            var validHours = Object.create(null);
             for (var h2 = 0; h2 < hours.length; h2 += 1) {
                 bikesByHour[String(hours[h2])] = [];
-                validHours[hours[h2]] = true;
-            }
-
-            var docklessLines = csvLines(docklessCsvText);
-            if (docklessLines.length > 1) {
-                var docklessHeader = parseCsvLine(docklessLines[0]);
-                var idxTimestamp = docklessHeader.indexOf('timestamp');
-                var idxBikeId = docklessHeader.indexOf('bike_id');
-                var idxLat = docklessHeader.indexOf('lat');
-                var idxLon = docklessHeader.indexOf('lon');
-                if (idxTimestamp !== -1 && idxBikeId !== -1 && idxLat !== -1 && idxLon !== -1) {
-                    var seenByHour = Object.create(null);
-                    for (var j = 1; j < docklessLines.length; j += 1) {
-                        var bikeFields = parseCsvLine(docklessLines[j]);
-                        var hourVal = parseHourFromTimestamp(bikeFields[idxTimestamp]);
-                        if (!validHours[hourVal] || hourVal > maxHour) continue;
-                        var bikeId = bikeFields[idxBikeId];
-                        if (!bikeId) continue;
-                        if (!seenByHour[hourVal]) {
-                            seenByHour[hourVal] = Object.create(null);
-                        }
-                        if (seenByHour[hourVal][bikeId]) continue;
-                        var latVal = parseFloat(bikeFields[idxLat]);
-                        var lonVal = parseFloat(bikeFields[idxLon]);
-                        if (!isFinite(latVal) || !isFinite(lonVal)) continue;
-                        if (!withinDenHaagBBox(latVal, lonVal)) continue;
-                        var bikePc4 = findAreaCodeForPoint(latVal, lonVal, 'pc4');
-                        var bikePc6 = findAreaCodeForPoint(latVal, lonVal, 'pc6');
-                        if (!bikePc4 && !bikePc6) continue;
-                        seenByHour[hourVal][bikeId] = true;
-                        bikesByHour[String(hourVal)].push([
-                            round6(latVal),
-                            round6(lonVal),
-                            bikePc4,
-                            providerKey,
-                            bikePc6,
-                            '',
-                            ''
-                        ]);
-                        if (bikePc4 && counts.pc4) {
-                            var bikePc4Entry = ensureAreaCountEntry(
-                                counts.pc4,
-                                bikePc4,
-                                maxHour
-                            );
-                            bikePc4Entry.f[hourVal] += 1;
-                            bikePc4Entry.c[hourVal] += 1;
-                        }
-                        if (bikePc6 && counts.pc6) {
-                            var bikePc6Entry = ensureAreaCountEntry(
-                                counts.pc6,
-                                bikePc6,
-                                maxHour
-                            );
-                            bikePc6Entry.f[hourVal] += 1;
-                            bikePc6Entry.c[hourVal] += 1;
-                        }
-                    }
-                }
             }
 
             var dateData = {
@@ -2271,24 +2112,6 @@ def build_custom_js(
                 }
             }
 
-            var bikesByHour = dateData.bikes || {};
-            for (var j = 0; j < hours.length; j += 1) {
-                var bikeHour = hours[j];
-                var bikes = bikesByHour[String(bikeHour)] || [];
-                for (var b = 0; b < bikes.length; b += 1) {
-                    var bike = bikes[b];
-                    var bikeAreaCode = getBikeAreaCode(bike, level);
-                    if (!bikeAreaCode) {
-                        bikeAreaCode = findAreaCodeForPoint(bike[0], bike[1], level);
-                        setBikeAreaCode(bike, level, bikeAreaCode);
-                    }
-                    if (!bikeAreaCode) continue;
-                    var bikeEntry = ensureAreaCountEntry(counts, bikeAreaCode, maxHour);
-                    bikeEntry.f[bikeHour] += 1;
-                    bikeEntry.c[bikeHour] += 1;
-                }
-            }
-
             dateData.counts[level] = counts;
             if (!dateData.dateMaxByLevel) {
                 dateData.dateMaxByLevel = Object.create(null);
@@ -2399,15 +2222,13 @@ def build_custom_js(
                 }
                 providerLoadPromises[cacheKey] = Promise.all([
                     loadStationMetadataForProviderDate(providerKey, dateKey),
-                    fetchText(artifacts.docked),
-                    artifacts.dockless ? fetchText(artifacts.dockless) : Promise.resolve('')
+                    fetchText(artifacts.docked)
                 ]).then(function(results) {
                     var dateData = buildDateData(
                         providerKey,
                         dateKey,
                         results[0],
-                        results[1],
-                        results[2]
+                        results[1]
                     );
                     providerDateData[providerKey][dateKey] = dateData;
                     return dateData;
@@ -2509,17 +2330,6 @@ def build_custom_js(
                 panels.right.renderAll();
                 updateLegendLayout();
             }
-        }
-
-        function getDocklessMarkerStyle(isSelected, muted) {
-            var selectedColor = themeColor('selectedMarker');
-            var baseColor = themeColor('docklessMarker');
-            return {
-                color: isSelected ? selectedColor : baseColor,
-                fillColor: isSelected ? selectedColor : baseColor,
-                fillOpacity: isSelected ? 0.95 : (muted ? 0.25 : 0.7),
-                weight: isSelected ? 2 : 1
-            };
         }
 
         function getStationMarkerStyle(isSelected, muted, availability) {
@@ -2638,16 +2448,6 @@ def build_custom_js(
 
             var points = [];
             var seen = Object.create(null);
-            var bikes = dateData.bikes[hourKey] || [];
-            for (var i = 0; i < bikes.length; i += 1) {
-                var bikeLat = bikes[i][0];
-                var bikeLon = bikes[i][1];
-                var bikeKey = bikeLat + '|' + bikeLon;
-                if (seen[bikeKey]) continue;
-                seen[bikeKey] = true;
-                points.push([bikeLat, bikeLon]);
-            }
-
             var stations = dateData.stations || [];
             for (var j = 0; j < stations.length; j += 1) {
                 var station = stations[j];
@@ -2980,8 +2780,7 @@ def build_custom_js(
             var pcData = dateCounts[String(areaCode)] || { c: [], s: [], f: [] };
             return {
                 total: pcData.c[panel.currentHour] || 0,
-                docked: pcData.s[panel.currentHour] || 0,
-                dockless: pcData.f[panel.currentHour] || 0
+                docked: pcData.s[panel.currentHour] || 0
             };
         }
 
@@ -2993,8 +2792,7 @@ def build_custom_js(
                 .setContent(
                     '<b>' + escapeHtml(getAreaLabel()) + ' ' + escapeHtml(areaCode) + '</b><br>' +
                     'Available bikes: <b>' + stats.total + '</b><br>' +
-                    '&nbsp;&nbsp;Docked: ' + stats.docked + '<br>' +
-                    '&nbsp;&nbsp;Dockless: ' + stats.dockless
+                    '&nbsp;&nbsp;Station-based: ' + stats.docked
                 )
                 .openOn(panel.map);
         }
@@ -3034,7 +2832,7 @@ def build_custom_js(
                     return {
                         color: getPolygonStrokeColor(panel.visualizationMode),
                         weight: getPolygonWeight(panel, areaCode),
-                        fillColor: themeColor('scaleBlue'),
+                        fillColor: themeColor('scaleZero'),
                         fillOpacity: getPolygonFillOpacity(panel.visualizationMode)
                     };
                 },
@@ -3081,10 +2879,8 @@ def build_custom_js(
                 geojsonLayer: null,
                 houseLayer: L.layerGroup().addTo(mapInstance),
                 hotspotLayer: L.layerGroup().addTo(mapInstance),
-                bikeLayer: L.layerGroup().addTo(mapInstance),
                 stationLayer: L.layerGroup().addTo(mapInstance),
                 houseRenderer: L.canvas({ padding: 0.2 }),
-                bikeMarkers: [],
                 stationMarkers: [],
                 currentDate: null,
                 currentHour: 0,
@@ -3252,23 +3048,9 @@ def build_custom_js(
                         this.currentDate,
                         this.currentHour
                     );
-                    var dockless = hotspotData.dockless || [];
                     var stations = hotspotData.stations || [];
                     var stationMax = hotspotData.stationMax || 0;
                     var zoomLevel = this.map.getZoom();
-
-                    for (var i = 0; i < dockless.length; i++) {
-                        L.circleMarker(dockless[i], {
-                            radius: hotspotDocklessRadius(
-                                zoomLevel,
-                                this.hotspotRadiusScale
-                            ),
-                            stroke: false,
-                            fillColor: themeColor('hotspotDockless'),
-                            fillOpacity: 0.15,
-                            interactive: false
-                        }).addTo(this.hotspotLayer);
-                    }
 
                     for (var j = 0; j < stations.length; j++) {
                         var station = stations[j];
@@ -3389,34 +3171,6 @@ def build_custom_js(
                         }
                     }
                 },
-                renderBikes: function() {
-                    this.bikeLayer.clearLayers();
-                    this.bikeMarkers = [];
-                    if (!shouldShowPointMarkers(this)) return;
-
-                    var dateData = getDateData(this.currentDate);
-                    var bikes = (dateData && dateData.bikes[String(this.currentHour)]) || [];
-                    var muted = isHotspotMode(this.visualizationMode);
-                    for (var i = 0; i < bikes.length; i++) {
-                        var bikeAreaCode = getBikeAreaCode(bikes[i]);
-                        var isSelected = (
-                            selectedAreaCode !== null && bikeAreaCode === selectedAreaCode
-                        );
-                        var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {
-                            radius: isSelected ? POINT_MARKER_RADIUS_SELECTED : POINT_MARKER_RADIUS,
-                            color: getDocklessMarkerStyle(isSelected, muted).color,
-                            fillColor: getDocklessMarkerStyle(isSelected, muted).fillColor,
-                            fillOpacity: getDocklessMarkerStyle(isSelected, muted).fillOpacity,
-                            weight: getDocklessMarkerStyle(isSelected, muted).weight
-                        });
-                        marker._areaCode = bikeAreaCode;
-                        marker.bindTooltip(
-                            'Dockless bike<br>Provider: ' + escapeHtml(getProviderLabel(bikes[i][3]))
-                        );
-                        marker.addTo(this.bikeLayer);
-                        this.bikeMarkers.push(marker);
-                    }
-                },
                 renderStations: function() {
                     this.stationLayer.clearLayers();
                     this.stationMarkers = [];
@@ -3456,16 +3210,6 @@ def build_custom_js(
                 },
                 applySelection: function(areaCode) {
                     var muted = isHotspotMode(this.visualizationMode);
-                    for (var i = 0; i < this.bikeMarkers.length; i++) {
-                        var bikeMarker = this.bikeMarkers[i];
-                        if (areaCode !== null && bikeMarker._areaCode === areaCode) {
-                            bikeMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
-                            bikeMarker.setStyle(getDocklessMarkerStyle(true, muted));
-                        } else {
-                            bikeMarker.setRadius(POINT_MARKER_RADIUS);
-                            bikeMarker.setStyle(getDocklessMarkerStyle(false, muted));
-                        }
-                    }
                     for (var j = 0; j < this.stationMarkers.length; j++) {
                         var stationMarker = this.stationMarkers[j];
                         var stationStyle;
@@ -3495,7 +3239,6 @@ def build_custom_js(
                     this.renderPolygons();
                     this.renderHotspotLayer();
                     this.renderHouses();
-                    this.renderBikes();
                     this.renderStations();
                     this.renderLegend();
                     this.applySelection(selectedAreaCode);
@@ -3535,7 +3278,6 @@ def build_custom_js(
                 panel.renderPolygons();
                 panel.renderHotspotLayer();
                 panel.renderHouses();
-                panel.renderBikes();
                 panel.renderStations();
                 panel.renderLegend();
                 panel.applySelection(selectedAreaCode);

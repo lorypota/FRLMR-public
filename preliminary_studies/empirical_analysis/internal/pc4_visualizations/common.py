@@ -2,16 +2,16 @@
 
 from textwrap import dedent
 
-COLOR_BLUE = "#3388ff"
+COLOR_BLUE = "#6f7882"
 COLOR_GREEN = "#2ca02c"
 COLOR_ORANGE = "#ff7f0e"
 COLOR_RED = "#d62728"
-LIGHT_BLUE = "#d0e4ff"
+LIGHT_BLUE = "#c5ccd3"
 
-HOTSPOT_LOW = "#8f1cff"
-HOTSPOT_MEDIUM = "#e31c79"
-HOTSPOT_HIGH = "#ff6f3c"
-HOTSPOT_PEAK = "#ffd166"
+HOTSPOT_DOCKLESS = "#9aa3ab"
+HOTSPOT_LOW = "#d62728"
+HOTSPOT_MEDIUM = "#ff7f0e"
+HOTSPOT_PEAK = "#2ca02c"
 
 HOUSE_NEAR = "#1a9850"
 HOUSE_MID = "#91cf60"
@@ -47,9 +47,9 @@ def build_common_js() -> str:
                 docklessMarker: '#333333',
                 stationMarker: '#e377c2',
                 selectedMarker: '#000000',
-                hotspotDockless: '{HOTSPOT_LOW}',
-                hotspotLow: '{HOTSPOT_MEDIUM}',
-                hotspotMedium: '{HOTSPOT_HIGH}',
+                hotspotDockless: '{HOTSPOT_DOCKLESS}',
+                hotspotLow: '{HOTSPOT_LOW}',
+                hotspotMedium: '{HOTSPOT_MEDIUM}',
                 hotspotPeak: '{HOTSPOT_PEAK}',
                 houseNear: '{HOUSE_NEAR}',
                 houseMid: '{HOUSE_MID}',
@@ -61,8 +61,8 @@ def build_common_js() -> str:
                 legendSubtleText: '#555555'
             }},
             dark: {{
-                scaleZero: '#35526e',
-                scaleBlue: '#58a6ff',
+                scaleZero: '#5b6670',
+                scaleBlue: '#8a949e',
                 scaleGreen: '#5ee38b',
                 scaleOrange: '#ffb454',
                 scaleRed: '#ff7373',
@@ -72,10 +72,10 @@ def build_common_js() -> str:
                 docklessMarker: '#d0dae4',
                 stationMarker: '#ff8fda',
                 selectedMarker: '#ffffff',
-                hotspotDockless: '#b96aff',
-                hotspotLow: '#ff5db8',
-                hotspotMedium: '#ff9d57',
-                hotspotPeak: '#ffe08a',
+                hotspotDockless: '#8f99a3',
+                hotspotLow: '#ff7373',
+                hotspotMedium: '#ffb454',
+                hotspotPeak: '#5ee38b',
                 houseNear: '#4fd889',
                 houseMid: '#a8e76d',
                 houseFar: '#ffc16b',
@@ -150,24 +150,24 @@ def build_common_js() -> str:
         function stationColorForAvailability(avail) {{
             var count = Number(avail);
             if (!isFinite(count) || count <= 0) return themeColor('scaleBlue');
-            if (count <= 3) return themeColor('scaleGreen');
+            if (count <= 3) return themeColor('scaleRed');
             if (count <= 6) return themeColor('scaleOrange');
-            return themeColor('scaleRed');
+            return themeColor('scaleGreen');
         }}
 
         function ratioToGradient(ratio) {{
             var palette = getThemePalette();
-            var blue = hexToRgbArray(palette.scaleBlue);
-            var green = hexToRgbArray(palette.scaleGreen);
-            var orange = hexToRgbArray(palette.scaleOrange);
+            var zero = hexToRgbArray(palette.scaleZero);
             var red = hexToRgbArray(palette.scaleRed);
+            var orange = hexToRgbArray(palette.scaleOrange);
+            var green = hexToRgbArray(palette.scaleGreen);
             var rgb;
             if (ratio <= 0.33) {{
-                rgb = lerpColor(blue, green, ratio / 0.33);
+                rgb = lerpColor(zero, red, ratio / 0.33);
             }} else if (ratio <= 0.66) {{
-                rgb = lerpColor(green, orange, (ratio - 0.33) / 0.33);
+                rgb = lerpColor(red, orange, (ratio - 0.33) / 0.33);
             }} else {{
-                rgb = lerpColor(orange, red, (ratio - 0.66) / 0.34);
+                rgb = lerpColor(orange, green, (ratio - 0.66) / 0.34);
             }}
             return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
         }}

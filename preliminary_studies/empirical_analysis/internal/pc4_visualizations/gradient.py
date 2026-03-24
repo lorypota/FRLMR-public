@@ -59,10 +59,10 @@ def build_js() -> str:
             return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
                    '<div style="height:14px;width:120px;border:1px solid ' + themeColor('gradientBorder') + ';border-radius:2px;' +
                    'background:linear-gradient(to right,' +
-                   themeColor('scaleBlue') + ',' +
-                   themeColor('scaleGreen') + ',' +
+                   themeColor('scaleZero') + ',' +
+                   themeColor('scaleRed') + ',' +
                    themeColor('scaleOrange') + ',' +
-                   themeColor('scaleRed') + ');' +
+                   themeColor('scaleGreen') + ');' +
                    'margin:4px 0;"></div>' +
                    '1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' +
                    mx + ' (p95 cap)<br>';

@@ -13,6 +13,9 @@ empirical_analysis/
 ├── map_den_haag_pc4.py          # Den Haag interactive area map
 ├── map_amsterdam_pc4.py         # Amsterdam PC4 map
 │
+├── docs/
+│   └── data_notes.md            # Notes on feed quirks and interpretation
+│
 ├── internal/
 │   ├── data_utils.py            # Raw snapshot parsing and extraction
 │   ├── artifact_index.py        # Internal artifact catalog helper
@@ -30,20 +33,7 @@ empirical_analysis/
 └── README.md
 ```
 
-The main current focus is **Den Haag** (although older exploration files of Amsterdam are not deleted), which has four shared-mobility operators of interest:
-
-| Operator            | Vehicle type                     | In GBFS feed?          | Notes                                                        |
-| ------------------- | -------------------------------- | ---------------------- | ------------------------------------------------------------ |
-| **Donkey Republic** | Shared bikes (docked + dockless) | Yes (`donkey_denHaag`) | Main data source: 436 stations, ~900 free bikes              |
-| **HTM**             | Shared bikes                     | No                     | HTM ended shared-bike activity early 2024                    |
-| **Cargoroo**        | Cargo bikes                      | No                     | Listed by municipality but no GBFS feed on the network share |
-| **Bondi**           | Shared bikes                     | No                     | Not listed on municipal provider page                        |
-
-Additionally, **NS OV-fiets** (`ns_ov_fiets`) has 6 docked stations in Den Haag at train stations (HS, Centraal, Voorburg, Rijswijk, Mariahoeve, Laan van NOI).
-
-The GBFS network share contains 13 providers total (see full list in the data exploration notes below), but only `donkey_denHaag` and `ns_ov_fiets` have data within Den Haag. Providers that cover other cities: CKL/Cykl, check*\*, dott*\*, goabout, donkey.
-
-The [Dashboard Deelmobiliteit](https://crow-smartmobility.nl/kenniscatalogus/dashboard-deelmobiliteit/) aggregates data from shared-mobility providers across NL using GBFS/MDS/TOMP standards. Access requires a government login via <info@deelfietsdashboard.nl>. HTM, Cargoroo, and Bondi data may be available there but is not on the TNO network share.
+Operational context on Den Haag providers and GBFS coverage is documented in [docs/data_notes.md](docs/data_notes.md).
 
 ## Scripts
 
@@ -88,17 +78,7 @@ uv run preliminary_studies/empirical_analysis/stage_gbfs_subset.py `
   --providers donkey_denHaag ns_ov_fiets
 ```
 
-Use `--mode first-per-hour` for lighter transfers every hour instead of every minute (24 snapshots/day instead of 1440).
-
-**Size estimates** for `donkey_denHaag + ns_ov_fiets`:
-
-| Period  | 2026 per-minute | 2022 per-minute | 2026 per-hour |
-| ------- | --------------- | --------------- | ------------- |
-| 1 day   | ~130 MB         | ~40 MB          | ~2.2 MB       |
-| 1 week  | ~900 MB         | ~280 MB         | ~15 MB        |
-| 1 month | ~3.6 GB         | ~1.1 GB         | ~62 MB        |
-
-Data is available from 2021-04 to present. `donkey_denHaag` starts from 2021-10. File sizes grew over time as Donkey added more stations (15 KB/file in 2021 → 78 KB/file in 2026). NS OV-fiets stays ~14 KB/file throughout.
+Use `--mode first-per-hour` for lighter transfers every hour instead of every minute: 24 snapshots/day instead of 1440. See [docs/data_notes.md](docs/data_notes.md) for staging-size estimates and raw-data coverage notes.
 
 ### 2. Build CSV tables
 

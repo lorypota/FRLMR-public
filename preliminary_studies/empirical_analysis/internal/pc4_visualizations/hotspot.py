@@ -22,7 +22,6 @@ HOTSPOT_MARKER_ZOOM_THRESHOLD = 15
 
 def build_hourly_hotspot_data(
     stations: list[dict],
-    bikes_by_hour: dict[str, list[list[float]]],
     hours: list[int],
     bbox: dict[str, float] | None = None,
 ) -> dict[str, dict[str, list]]:
@@ -31,11 +30,6 @@ def build_hourly_hotspot_data(
 
     hotspot = {}
     for hour in hours:
-        dockless_points = [
-            [bike[0], bike[1]]
-            for bike in bikes_by_hour.get(str(hour), [])
-            if len(bike) >= 2
-        ]
         station_points = []
         station_max = 0
         for station in stations:
@@ -48,7 +42,6 @@ def build_hourly_hotspot_data(
             station_max = max(station_max, int(avail))
 
         hotspot[str(hour)] = {
-            "dockless": dockless_points,
             "stations": station_points,
             "stationMax": station_max,
         }
@@ -76,10 +69,9 @@ def build_js() -> str:
         function getHotspotHourData(allData, dateKey, hour) {{
             var dateData = allData[dateKey];
             if (!dateData || !dateData.hotspot) {{
-                return {{ dockless: [], stations: [], stationMax: 0 }};
+                return {{ stations: [], stationMax: 0 }};
             }}
             return dateData.hotspot[String(hour)] || {{
-                dockless: [],
                 stations: [],
                 stationMax: 0
             }};
@@ -132,9 +124,8 @@ def build_js() -> str:
 
         function hotspotLegendHtml() {{
             return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">Zoom-aware density circles</div>' +
-                   '<span style="color:' + themeColor('hotspotDockless') + ';">&#9632;</span> Dockless bikes: vivid magenta-violet circles<br>' +
-                   '<span style="color:' + themeColor('hotspotMedium') + ';">&#9632;</span> Stations with availability: larger brighter circles<br>' +
-                   '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> Brighter overlap = more supply in this area';
+                   '<span style="color:' + themeColor('hotspotLow') + ';">&#9632;</span> Low station availability<br>' +
+                   '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> High station availability';
         }}
 
         function hotspotFillColor(avail, stationMax) {{

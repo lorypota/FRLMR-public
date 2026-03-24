@@ -58,7 +58,7 @@ body.compare-on #panel-right {
     inset: 0;
 }
 
-#map_797b8d6ed9c126edb22a7f974de5eb18,
+#map_309e1e2364dd79052ca8290613a2a14d,
 #compare-map-right {
     position: absolute !important;
     inset: 0;
@@ -136,11 +136,13 @@ body.compare-on #panel-right {
 }
 
 .panel-controls select,
-.panel-controls input[type="range"] {
+.panel-controls input[type="range"],
+.panel-controls input[type="date"] {
     accent-color: #1e6bb8;
 }
 
-.panel-controls select {
+.panel-controls select,
+.panel-controls input[type="date"] {
     font-size: 13px;
     padding: 4px 8px;
     border: 1px solid #c6cdd4;
@@ -162,16 +164,12 @@ body.compare-on #panel-right {
     width: 100%;
 }
 
-.legend-symbol-dockless {
-    color: #333;
-}
-
 .legend-scale-zero {
-    color: #3388ff;
+    color: #6f7882;
 }
 
 .legend-scale-low {
-    color: #2ca02c;
+    color: #d62728;
 }
 
 .legend-scale-medium {
@@ -179,7 +177,7 @@ body.compare-on #panel-right {
 }
 
 .legend-scale-high {
-    color: #d62728;
+    color: #2ca02c;
 }
 
 .hotspot-size-label {
@@ -431,7 +429,8 @@ body.theme-dark .legend-credit {
     color: #9fb1c3;
 }
 
-body.theme-dark .panel-controls select {
+body.theme-dark .panel-controls select,
+body.theme-dark .panel-controls input[type="date"] {
     background: #13202c;
     color: #edf4fb;
     border-color: #38506a;
@@ -444,6 +443,7 @@ body.theme-dark .legend-select-filter select {
 }
 
 body.theme-dark .panel-controls select,
+body.theme-dark .panel-controls input[type="date"],
 body.theme-dark .panel-controls input[type="range"],
 body.theme-dark .legend-select-filter select,
 body.theme-dark .legend-hotspot-control input[type="range"] {
@@ -455,16 +455,12 @@ body.theme-dark .compare-sync-options {
     border-color: #314253;
 }
 
-body.theme-dark .legend-symbol-dockless {
-    color: #d0dae4;
-}
-
 body.theme-dark .legend-scale-zero {
-    color: #58a6ff;
+    color: #8a949e;
 }
 
 body.theme-dark .legend-scale-low {
-    color: #5ee38b;
+    color: #ff7373;
 }
 
 body.theme-dark .legend-scale-medium {
@@ -472,7 +468,7 @@ body.theme-dark .legend-scale-medium {
 }
 
 body.theme-dark .legend-scale-high {
-    color: #ff7373;
+    color: #5ee38b;
 }
 
 body.theme-dark .leaflet-control-zoom a {
@@ -546,7 +542,7 @@ body.theme-dark .leaflet-popup-content {
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_797b8d6ed9c126edb22a7f974de5eb18 {
+                #map_309e1e2364dd79052ca8290613a2a14d {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -594,10 +590,10 @@ body.theme-dark .leaflet-popup-content {
     <div class="controls-row">
         <div class="control-inline slider-row">
             <div class="control-header">
-                <label for="left-date-slider">Date</label>
+                <label for="left-date-input">Date</label>
                 <span class="date-readout" id="left-date-label"></span>
             </div>
-            <input type="range" id="left-date-slider" min="0" max="0" value="0" step="1">
+            <input type="date" id="left-date-input">
         </div>
     </div>
     <div class="controls-row">
@@ -635,10 +631,10 @@ body.theme-dark .leaflet-popup-content {
     <div class="controls-row">
         <div class="control-inline slider-row">
             <div class="control-header">
-                <label for="right-date-slider">Date</label>
+                <label for="right-date-input">Date</label>
                 <span class="date-readout" id="right-date-label"></span>
             </div>
-            <input type="range" id="right-date-slider" min="0" max="0" value="0" step="1">
+            <input type="date" id="right-date-input">
         </div>
     </div>
     <div class="controls-row">
@@ -713,8 +709,7 @@ body.theme-dark .leaflet-popup-content {
                 <option value="wijk">CBS wijken</option>
             </select>
         </div>
-        <span class="legend-symbol-dockless">&#9679;</span> Dockless bike<br>
-        Station bikes stored:<br>
+        Station bikes available:<br>
         <span class="legend-scale-zero">&#9679;</span> 0<br>
         <span class="legend-scale-low">&#9679;</span> 1 &ndash; 3<br>
         <span class="legend-scale-medium">&#9679;</span> 4 &ndash; 6<br>
@@ -737,7 +732,7 @@ body.theme-dark .leaflet-popup-content {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
-        var leftMap = map_797b8d6ed9c126edb22a7f974de5eb18;
+        var leftMap = map_309e1e2364dd79052ca8290613a2a14d;
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
@@ -753,6 +748,7 @@ body.theme-dark .leaflet-popup-content {
         var loadedDateKeys = Object.create(null);
         var providerDateData = Object.create(null);
         var defaultVisualizationMode = "gradient";
+        var defaultInitialDate = '2026-03-01';
         var defaultCenter = [52.075, 4.3];
         var defaultZoom = 13;
         var artifactsIndexPath = '../index/artifacts.json';
@@ -781,8 +777,8 @@ body.theme-dark .leaflet-popup-content {
 
         var THEME_PALETTES = {
     light: {
-        scaleZero: '#d0e4ff',
-        scaleBlue: '#3388ff',
+        scaleZero: '#c5ccd3',
+        scaleBlue: '#6f7882',
         scaleGreen: '#2ca02c',
         scaleOrange: '#ff7f0e',
         scaleRed: '#d62728',
@@ -792,10 +788,10 @@ body.theme-dark .leaflet-popup-content {
         docklessMarker: '#333333',
         stationMarker: '#e377c2',
         selectedMarker: '#000000',
-        hotspotDockless: '#8f1cff',
-        hotspotLow: '#e31c79',
-        hotspotMedium: '#ff6f3c',
-        hotspotPeak: '#ffd166',
+        hotspotDockless: '#9aa3ab',
+        hotspotLow: '#d62728',
+        hotspotMedium: '#ff7f0e',
+        hotspotPeak: '#2ca02c',
         houseNear: '#1a9850',
         houseMid: '#91cf60',
         houseFar: '#fdae61',
@@ -806,8 +802,8 @@ body.theme-dark .leaflet-popup-content {
         legendSubtleText: '#555555'
     },
     dark: {
-        scaleZero: '#35526e',
-        scaleBlue: '#58a6ff',
+        scaleZero: '#5b6670',
+        scaleBlue: '#8a949e',
         scaleGreen: '#5ee38b',
         scaleOrange: '#ffb454',
         scaleRed: '#ff7373',
@@ -817,10 +813,10 @@ body.theme-dark .leaflet-popup-content {
         docklessMarker: '#d0dae4',
         stationMarker: '#ff8fda',
         selectedMarker: '#ffffff',
-        hotspotDockless: '#b96aff',
-        hotspotLow: '#ff5db8',
-        hotspotMedium: '#ff9d57',
-        hotspotPeak: '#ffe08a',
+        hotspotDockless: '#8f99a3',
+        hotspotLow: '#ff7373',
+        hotspotMedium: '#ffb454',
+        hotspotPeak: '#5ee38b',
         houseNear: '#4fd889',
         houseMid: '#a8e76d',
         houseFar: '#ffc16b',
@@ -895,24 +891,24 @@ function getPolygonFillOpacity(mode) {
 function stationColorForAvailability(avail) {
     var count = Number(avail);
     if (!isFinite(count) || count <= 0) return themeColor('scaleBlue');
-    if (count <= 3) return themeColor('scaleGreen');
+    if (count <= 3) return themeColor('scaleRed');
     if (count <= 6) return themeColor('scaleOrange');
-    return themeColor('scaleRed');
+    return themeColor('scaleGreen');
 }
 
 function ratioToGradient(ratio) {
     var palette = getThemePalette();
-    var blue = hexToRgbArray(palette.scaleBlue);
-    var green = hexToRgbArray(palette.scaleGreen);
-    var orange = hexToRgbArray(palette.scaleOrange);
+    var zero = hexToRgbArray(palette.scaleZero);
     var red = hexToRgbArray(palette.scaleRed);
+    var orange = hexToRgbArray(palette.scaleOrange);
+    var green = hexToRgbArray(palette.scaleGreen);
     var rgb;
     if (ratio <= 0.33) {
-        rgb = lerpColor(blue, green, ratio / 0.33);
+        rgb = lerpColor(zero, red, ratio / 0.33);
     } else if (ratio <= 0.66) {
-        rgb = lerpColor(green, orange, (ratio - 0.33) / 0.33);
+        rgb = lerpColor(red, orange, (ratio - 0.33) / 0.33);
     } else {
-        rgb = lerpColor(orange, red, (ratio - 0.66) / 0.34);
+        rgb = lerpColor(orange, green, (ratio - 0.66) / 0.34);
     }
     return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
 }
@@ -966,14 +962,14 @@ function getEffectiveMax(allData, globalMax, mode, dateKey, hour) {
 }
 
 function proportionalColorForCount(count, allData, globalMax, mode, dateKey, hour) {
-    if (count === 0) return themeColor('scaleBlue');
+    if (count === 0) return themeColor('scaleZero');
     var ratio = Math.min(
         count / getEffectiveMax(allData, globalMax, mode, dateKey, hour),
         1.0
     );
-    if (ratio <= 0.33) return themeColor('scaleGreen');
+    if (ratio <= 0.33) return themeColor('scaleRed');
     if (ratio <= 0.66) return themeColor('scaleOrange');
-    return themeColor('scaleRed');
+    return themeColor('scaleGreen');
 }
 
 function proportionalLegendHtml(allData, globalMax, mode, dateKey, hour) {
@@ -982,10 +978,10 @@ function proportionalLegendHtml(allData, globalMax, mode, dateKey, hour) {
     var t2 = Math.round(mx * 0.66);
     var label = mode === 'global' ? 'global' :
                 mode === 'per-date' ? 'this date' : 'this hour';
-    return '<span style="color:' + themeColor('scaleBlue') + ';">&#9632;</span> 0<br>' +
-           '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 1 &ndash; ' + t1 + '<br>' +
+    return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
+           '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 1 &ndash; ' + t1 + '<br>' +
            '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> ' + (t1 + 1) + ' &ndash; ' + t2 + '<br>' +
-           '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> ' + (t2 + 1) +
+           '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> ' + (t2 + 1) +
            '+ (max ' + mx + ' ' + label + ')<br>';
 }
 
@@ -1038,27 +1034,27 @@ function gradientLegendHtml(allData, globalMax, mode, dateKey, hour) {
     return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
            '<div style="height:14px;width:120px;border:1px solid ' + themeColor('gradientBorder') + ';border-radius:2px;' +
            'background:linear-gradient(to right,' +
-           themeColor('scaleBlue') + ',' +
-           themeColor('scaleGreen') + ',' +
+           themeColor('scaleZero') + ',' +
+           themeColor('scaleRed') + ',' +
            themeColor('scaleOrange') + ',' +
-           themeColor('scaleRed') + ');' +
+           themeColor('scaleGreen') + ');' +
            'margin:4px 0;"></div>' +
            '1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' +
            mx + ' (p95 cap)<br>';
 }
 
 function fixedColorForCount(count) {
-    if (count === 0) return themeColor('scaleBlue');
-    if (count <= 3) return themeColor('scaleGreen');
+    if (count === 0) return themeColor('scaleZero');
+    if (count <= 3) return themeColor('scaleRed');
     if (count <= 6) return themeColor('scaleOrange');
-    return themeColor('scaleRed');
+    return themeColor('scaleGreen');
 }
 
 function fixedLegendHtml() {
-    return '<span style="color:' + themeColor('scaleBlue') + ';">&#9632;</span> 0 bikes<br>' +
-           '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 1 &ndash; 3<br>' +
+    return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0 bikes<br>' +
+           '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 1 &ndash; 3<br>' +
            '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> 4 &ndash; 6<br>' +
-           '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 7+<br>';
+           '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 7+<br>';
 }
 
 var DOCKLESS_BASE_RADIUS_PX = 11;
@@ -1077,10 +1073,9 @@ var HOTSPOT_MARKER_ZOOM_THRESHOLD = 15;
 function getHotspotHourData(allData, dateKey, hour) {
     var dateData = allData[dateKey];
     if (!dateData || !dateData.hotspot) {
-        return { dockless: [], stations: [], stationMax: 0 };
+        return { stations: [], stationMax: 0 };
     }
     return dateData.hotspot[String(hour)] || {
-        dockless: [],
         stations: [],
         stationMax: 0
     };
@@ -1133,9 +1128,8 @@ function hotspotStationOpacity(avail, stationMax) {
 
 function hotspotLegendHtml() {
     return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">Zoom-aware density circles</div>' +
-           '<span style="color:' + themeColor('hotspotDockless') + ';">&#9632;</span> Dockless bikes: vivid magenta-violet circles<br>' +
-           '<span style="color:' + themeColor('hotspotMedium') + ';">&#9632;</span> Stations with availability: larger brighter circles<br>' +
-           '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> Brighter overlap = more supply in this area';
+           '<span style="color:' + themeColor('hotspotLow') + ';">&#9632;</span> Low station availability<br>' +
+           '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> High station availability';
 }
 
 function hotspotFillColor(avail, stationMax) {
@@ -1337,7 +1331,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
 }
 
-        var leftMapElement = document.getElementById('map_797b8d6ed9c126edb22a7f974de5eb18');
+        var leftMapElement = document.getElementById('map_309e1e2364dd79052ca8290613a2a14d');
         var leftMapSlot = document.getElementById('left-map-slot');
         if (leftMapElement && leftMapSlot && leftMapElement.parentNode !== leftMapSlot) {
             leftMapSlot.appendChild(leftMapElement);
@@ -1416,24 +1410,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             return normalizeAreaCode(
                 station && station.pc ? station.pc[level || postcodeLevel] : ''
             );
-        }
-
-        function getBikeAreaFieldIndex(level) {
-            if (level === 'pc4') return 2;
-            if (level === 'pc6') return 4;
-            if (level === 'buurt') return 5;
-            if (level === 'wijk') return 6;
-            return 2;
-        }
-
-        function getBikeAreaCode(bike, level) {
-            if (!bike) return '';
-            return normalizeAreaCode(bike[getBikeAreaFieldIndex(level || postcodeLevel)]);
-        }
-
-        function setBikeAreaCode(bike, level, areaCode) {
-            if (!bike) return;
-            bike[getBikeAreaFieldIndex(level)] = normalizeAreaCode(areaCode);
         }
 
         function setStatusProgress(percent) {
@@ -1926,9 +1902,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             var hotspot = Object.create(null);
             for (var i = 0; i < hours.length; i += 1) {
                 var hour = hours[i];
-                var dockless = (bikesByHour[String(hour)] || []).map(function(bike) {
-                    return [bike[0], bike[1]];
-                });
                 var stationPoints = [];
                 var stationMax = 0;
                 for (var j = 0; j < stations.length; j += 1) {
@@ -1942,7 +1915,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     }
                 }
                 hotspot[String(hour)] = {
-                    dockless: dockless,
                     stations: stationPoints,
                     stationMax: stationMax
                 };
@@ -1950,7 +1922,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             return hotspot;
         }
 
-        function buildDateData(providerKey, dateKey, stationMeta, dockedCsvText, docklessCsvText) {
+        function buildDateData(providerKey, dateKey, stationMeta, dockedCsvText) {
             var dockedLines = csvLines(dockedCsvText);
             if (dockedLines.length < 2) {
                 throw new Error('Docked table is empty for ' + dateKey);
@@ -2032,68 +2004,8 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             }
 
             var bikesByHour = Object.create(null);
-            var validHours = Object.create(null);
             for (var h2 = 0; h2 < hours.length; h2 += 1) {
                 bikesByHour[String(hours[h2])] = [];
-                validHours[hours[h2]] = true;
-            }
-
-            var docklessLines = csvLines(docklessCsvText);
-            if (docklessLines.length > 1) {
-                var docklessHeader = parseCsvLine(docklessLines[0]);
-                var idxTimestamp = docklessHeader.indexOf('timestamp');
-                var idxBikeId = docklessHeader.indexOf('bike_id');
-                var idxLat = docklessHeader.indexOf('lat');
-                var idxLon = docklessHeader.indexOf('lon');
-                if (idxTimestamp !== -1 && idxBikeId !== -1 && idxLat !== -1 && idxLon !== -1) {
-                    var seenByHour = Object.create(null);
-                    for (var j = 1; j < docklessLines.length; j += 1) {
-                        var bikeFields = parseCsvLine(docklessLines[j]);
-                        var hourVal = parseHourFromTimestamp(bikeFields[idxTimestamp]);
-                        if (!validHours[hourVal] || hourVal > maxHour) continue;
-                        var bikeId = bikeFields[idxBikeId];
-                        if (!bikeId) continue;
-                        if (!seenByHour[hourVal]) {
-                            seenByHour[hourVal] = Object.create(null);
-                        }
-                        if (seenByHour[hourVal][bikeId]) continue;
-                        var latVal = parseFloat(bikeFields[idxLat]);
-                        var lonVal = parseFloat(bikeFields[idxLon]);
-                        if (!isFinite(latVal) || !isFinite(lonVal)) continue;
-                        if (!withinDenHaagBBox(latVal, lonVal)) continue;
-                        var bikePc4 = findAreaCodeForPoint(latVal, lonVal, 'pc4');
-                        var bikePc6 = findAreaCodeForPoint(latVal, lonVal, 'pc6');
-                        if (!bikePc4 && !bikePc6) continue;
-                        seenByHour[hourVal][bikeId] = true;
-                        bikesByHour[String(hourVal)].push([
-                            round6(latVal),
-                            round6(lonVal),
-                            bikePc4,
-                            providerKey,
-                            bikePc6,
-                            '',
-                            ''
-                        ]);
-                        if (bikePc4 && counts.pc4) {
-                            var bikePc4Entry = ensureAreaCountEntry(
-                                counts.pc4,
-                                bikePc4,
-                                maxHour
-                            );
-                            bikePc4Entry.f[hourVal] += 1;
-                            bikePc4Entry.c[hourVal] += 1;
-                        }
-                        if (bikePc6 && counts.pc6) {
-                            var bikePc6Entry = ensureAreaCountEntry(
-                                counts.pc6,
-                                bikePc6,
-                                maxHour
-                            );
-                            bikePc6Entry.f[hourVal] += 1;
-                            bikePc6Entry.c[hourVal] += 1;
-                        }
-                    }
-                }
             }
 
             var dateData = {
@@ -2209,14 +2121,21 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             return dateData;
         }
 
+        function getLoadedDates() {
+            return dates.filter(function(dateKey) {
+                return !!loadedDateKeys[dateKey];
+            });
+        }
+
         function recomputeActiveData() {
             allData = Object.create(null);
             globalMaxByLevel = Object.create(null);
             for (var l = 0; l < postcodeLevels.length; l += 1) {
                 globalMaxByLevel[postcodeLevels[l]] = 0;
             }
-            for (var i = 0; i < dates.length; i += 1) {
-                var dateData = composeDateData(dates[i]);
+            var loadedDates = getLoadedDates();
+            for (var i = 0; i < loadedDates.length; i += 1) {
+                var dateData = composeDateData(loadedDates[i]);
                 if (dateData) {
                     for (var j = 0; j < postcodeLevels.length; j += 1) {
                         var level = postcodeLevels[j];
@@ -2276,24 +2195,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     if (value <= 0) continue;
                     stationEntry.s[hourKey] += value;
                     stationEntry.c[hourKey] += value;
-                }
-            }
-
-            var bikesByHour = dateData.bikes || {};
-            for (var j = 0; j < hours.length; j += 1) {
-                var bikeHour = hours[j];
-                var bikes = bikesByHour[String(bikeHour)] || [];
-                for (var b = 0; b < bikes.length; b += 1) {
-                    var bike = bikes[b];
-                    var bikeAreaCode = getBikeAreaCode(bike, level);
-                    if (!bikeAreaCode) {
-                        bikeAreaCode = findAreaCodeForPoint(bike[0], bike[1], level);
-                        setBikeAreaCode(bike, level, bikeAreaCode);
-                    }
-                    if (!bikeAreaCode) continue;
-                    var bikeEntry = ensureAreaCountEntry(counts, bikeAreaCode, maxHour);
-                    bikeEntry.f[bikeHour] += 1;
-                    bikeEntry.c[bikeHour] += 1;
                 }
             }
 
@@ -2407,15 +2308,13 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 }
                 providerLoadPromises[cacheKey] = Promise.all([
                     loadStationMetadataForProviderDate(providerKey, dateKey),
-                    fetchText(artifacts.docked),
-                    artifacts.dockless ? fetchText(artifacts.dockless) : Promise.resolve('')
+                    fetchText(artifacts.docked)
                 ]).then(function(results) {
                     var dateData = buildDateData(
                         providerKey,
                         dateKey,
                         results[0],
-                        results[1],
-                        results[2]
+                        results[1]
                     );
                     providerDateData[providerKey][dateKey] = dateData;
                     return dateData;
@@ -2517,17 +2416,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 panels.right.renderAll();
                 updateLegendLayout();
             }
-        }
-
-        function getDocklessMarkerStyle(isSelected, muted) {
-            var selectedColor = themeColor('selectedMarker');
-            var baseColor = themeColor('docklessMarker');
-            return {
-                color: isSelected ? selectedColor : baseColor,
-                fillColor: isSelected ? selectedColor : baseColor,
-                fillOpacity: isSelected ? 0.95 : (muted ? 0.25 : 0.7),
-                weight: isSelected ? 2 : 1
-            };
         }
 
         function getStationMarkerStyle(isSelected, muted, availability) {
@@ -2646,16 +2534,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
 
             var points = [];
             var seen = Object.create(null);
-            var bikes = dateData.bikes[hourKey] || [];
-            for (var i = 0; i < bikes.length; i += 1) {
-                var bikeLat = bikes[i][0];
-                var bikeLon = bikes[i][1];
-                var bikeKey = bikeLat + '|' + bikeLon;
-                if (seen[bikeKey]) continue;
-                seen[bikeKey] = true;
-                points.push([bikeLat, bikeLon]);
-            }
-
             var stations = dateData.stations || [];
             for (var j = 0; j < stations.length; j += 1) {
                 var station = stations[j];
@@ -2698,7 +2576,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 ),
                 headingLabel: document.getElementById(panelId + '-panel-heading-label'),
                 dateLabel: document.getElementById(panelId + '-date-label'),
-                dateSlider: document.getElementById(panelId + '-date-slider'),
+                dateInput: document.getElementById(panelId + '-date-input'),
                 hourLabel: document.getElementById(panelId + '-hour-label'),
                 hourSlider: document.getElementById(panelId + '-hour-slider'),
                 visualization: document.getElementById(panelId + '-visualization-mode')
@@ -2713,15 +2591,27 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             return allData[dateKey] || null;
         }
 
-        function getDateIndex(dateKey) {
-            var index = dates.indexOf(dateKey);
-            return index === -1 ? 0 : index;
-        }
-
-        function getDateAtIndex(index) {
-            if (dates.length === 0) return null;
-            var boundedIndex = Math.max(0, Math.min(index, dates.length - 1));
-            return dates[boundedIndex];
+        function getClosestAvailableDate(dateKey) {
+            if (!dates.length) return null;
+            if (dates.indexOf(dateKey) !== -1) return dateKey;
+            if (dateKey <= dates[0]) return dates[0];
+            if (dateKey >= dates[dates.length - 1]) return dates[dates.length - 1];
+            for (var i = 1; i < dates.length; i += 1) {
+                if (dates[i] >= dateKey) {
+                    var previousDate = dates[i - 1];
+                    var nextDate = dates[i];
+                    var previousDistance = Math.abs(
+                        new Date(previousDate + 'T00:00:00').getTime() -
+                        new Date(dateKey + 'T00:00:00').getTime()
+                    );
+                    var nextDistance = Math.abs(
+                        new Date(nextDate + 'T00:00:00').getTime() -
+                        new Date(dateKey + 'T00:00:00').getTime()
+                    );
+                    return previousDistance <= nextDistance ? previousDate : nextDate;
+                }
+            }
+            return dates[dates.length - 1];
         }
 
         function normalizeHour(dateData, requestedHour) {
@@ -2976,8 +2866,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             var pcData = dateCounts[String(areaCode)] || { c: [], s: [], f: [] };
             return {
                 total: pcData.c[panel.currentHour] || 0,
-                docked: pcData.s[panel.currentHour] || 0,
-                dockless: pcData.f[panel.currentHour] || 0
+                docked: pcData.s[panel.currentHour] || 0
             };
         }
 
@@ -2989,8 +2878,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 .setContent(
                     '<b>' + escapeHtml(getAreaLabel()) + ' ' + escapeHtml(areaCode) + '</b><br>' +
                     'Available bikes: <b>' + stats.total + '</b><br>' +
-                    '&nbsp;&nbsp;Docked: ' + stats.docked + '<br>' +
-                    '&nbsp;&nbsp;Dockless: ' + stats.dockless
+                    '&nbsp;&nbsp;Station-based: ' + stats.docked
                 )
                 .openOn(panel.map);
         }
@@ -3030,7 +2918,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     return {
                         color: getPolygonStrokeColor(panel.visualizationMode),
                         weight: getPolygonWeight(panel, areaCode),
-                        fillColor: themeColor('scaleBlue'),
+                        fillColor: themeColor('scaleZero'),
                         fillOpacity: getPolygonFillOpacity(panel.visualizationMode)
                     };
                 },
@@ -3077,10 +2965,8 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 geojsonLayer: null,
                 houseLayer: L.layerGroup().addTo(mapInstance),
                 hotspotLayer: L.layerGroup().addTo(mapInstance),
-                bikeLayer: L.layerGroup().addTo(mapInstance),
                 stationLayer: L.layerGroup().addTo(mapInstance),
                 houseRenderer: L.canvas({ padding: 0.2 }),
-                bikeMarkers: [],
                 stationMarkers: [],
                 currentDate: null,
                 currentHour: 0,
@@ -3157,12 +3043,11 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 },
                 syncControlsFromState: function() {
                     var dateData = getDateData(this.currentDate);
-                    this.controls.dateSlider.max = Math.max(dates.length - 1, 0);
-                    this.controls.dateSlider.disabled = dates.length === 0;
+                    this.controls.dateInput.disabled = dates.length === 0;
                     this.controls.dateLabel.textContent = this.currentDate || 'No date';
-                    this.controls.dateSlider.value = this.currentDate
-                        ? getDateIndex(this.currentDate)
-                        : 0;
+                    this.controls.dateInput.min = dates.length ? dates[0] : '';
+                    this.controls.dateInput.max = dates.length ? dates[dates.length - 1] : '';
+                    this.controls.dateInput.value = this.currentDate || '';
                     this.controls.visualization.value = this.visualizationMode;
                     this.controls.visualization.disabled = !this.currentDate;
                     this.controls.hourSlider.disabled = !dateData;
@@ -3249,23 +3134,9 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         this.currentDate,
                         this.currentHour
                     );
-                    var dockless = hotspotData.dockless || [];
                     var stations = hotspotData.stations || [];
                     var stationMax = hotspotData.stationMax || 0;
                     var zoomLevel = this.map.getZoom();
-
-                    for (var i = 0; i < dockless.length; i++) {
-                        L.circleMarker(dockless[i], {
-                            radius: hotspotDocklessRadius(
-                                zoomLevel,
-                                this.hotspotRadiusScale
-                            ),
-                            stroke: false,
-                            fillColor: themeColor('hotspotDockless'),
-                            fillOpacity: 0.15,
-                            interactive: false
-                        }).addTo(this.hotspotLayer);
-                    }
 
                     for (var j = 0; j < stations.length; j++) {
                         var station = stations[j];
@@ -3386,34 +3257,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         }
                     }
                 },
-                renderBikes: function() {
-                    this.bikeLayer.clearLayers();
-                    this.bikeMarkers = [];
-                    if (!shouldShowPointMarkers(this)) return;
-
-                    var dateData = getDateData(this.currentDate);
-                    var bikes = (dateData && dateData.bikes[String(this.currentHour)]) || [];
-                    var muted = isHotspotMode(this.visualizationMode);
-                    for (var i = 0; i < bikes.length; i++) {
-                        var bikeAreaCode = getBikeAreaCode(bikes[i]);
-                        var isSelected = (
-                            selectedAreaCode !== null && bikeAreaCode === selectedAreaCode
-                        );
-                        var marker = L.circleMarker([bikes[i][0], bikes[i][1]], {
-                            radius: isSelected ? POINT_MARKER_RADIUS_SELECTED : POINT_MARKER_RADIUS,
-                            color: getDocklessMarkerStyle(isSelected, muted).color,
-                            fillColor: getDocklessMarkerStyle(isSelected, muted).fillColor,
-                            fillOpacity: getDocklessMarkerStyle(isSelected, muted).fillOpacity,
-                            weight: getDocklessMarkerStyle(isSelected, muted).weight
-                        });
-                        marker._areaCode = bikeAreaCode;
-                        marker.bindTooltip(
-                            'Dockless bike<br>Provider: ' + escapeHtml(getProviderLabel(bikes[i][3]))
-                        );
-                        marker.addTo(this.bikeLayer);
-                        this.bikeMarkers.push(marker);
-                    }
-                },
                 renderStations: function() {
                     this.stationLayer.clearLayers();
                     this.stationMarkers = [];
@@ -3453,16 +3296,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 },
                 applySelection: function(areaCode) {
                     var muted = isHotspotMode(this.visualizationMode);
-                    for (var i = 0; i < this.bikeMarkers.length; i++) {
-                        var bikeMarker = this.bikeMarkers[i];
-                        if (areaCode !== null && bikeMarker._areaCode === areaCode) {
-                            bikeMarker.setRadius(POINT_MARKER_RADIUS_SELECTED);
-                            bikeMarker.setStyle(getDocklessMarkerStyle(true, muted));
-                        } else {
-                            bikeMarker.setRadius(POINT_MARKER_RADIUS);
-                            bikeMarker.setStyle(getDocklessMarkerStyle(false, muted));
-                        }
-                    }
                     for (var j = 0; j < this.stationMarkers.length; j++) {
                         var stationMarker = this.stationMarkers[j];
                         var stationStyle;
@@ -3492,7 +3325,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                     this.renderPolygons();
                     this.renderHotspotLayer();
                     this.renderHouses();
-                    this.renderBikes();
                     this.renderStations();
                     this.renderLegend();
                     this.applySelection(selectedAreaCode);
@@ -3501,8 +3333,8 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
 
             panel.geojsonLayer = buildPolygonLayer(panel);
 
-            panel.controls.dateSlider.addEventListener('input', function() {
-                var dateValue = getDateAtIndex(parseInt(this.value, 10));
+            panel.controls.dateInput.addEventListener('change', function() {
+                var dateValue = getClosestAvailableDate(this.value);
                 if (dateValue !== null) {
                     panel.setDate(dateValue);
                 }
@@ -3532,7 +3364,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 panel.renderPolygons();
                 panel.renderHotspotLayer();
                 panel.renderHouses();
-                panel.renderBikes();
                 panel.renderStations();
                 panel.renderLegend();
                 panel.applySelection(selectedAreaCode);
@@ -3707,11 +3538,12 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                 return;
             }
 
-            panels.left.currentDate = dates[0];
-            panels.right.currentDate = dates[0];
+            var initialDate = getClosestAvailableDate(defaultInitialDate);
+            panels.left.currentDate = initialDate;
+            panels.right.currentDate = initialDate;
 
             showStatus('Loading first date...', 'info', 60);
-            var firstDateData = await ensureDateDataLoaded(dates[0]);
+            var firstDateData = await ensureDateDataLoaded(initialDate);
             panels.left.requestedHour = 0;
             panels.left.currentHour = normalizeHour(firstDateData, panels.left.requestedHour);
             panels.right.requestedHour = panels.left.requestedHour;
@@ -3725,7 +3557,6 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             updateLegendLayout();
             showStatus('Map ready', 'info', 100);
             clearStatusSoon(900);
-            warmRemainingDates();
         } catch (error) {
             showStatus('Failed to initialize map: ' + error.message, 'error');
         }
@@ -3733,14 +3564,14 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     </script>
     
     
-            <div class="folium-map" id="map_797b8d6ed9c126edb22a7f974de5eb18" ></div>
+            <div class="folium-map" id="map_309e1e2364dd79052ca8290613a2a14d" ></div>
         
 </body>
 <script>
     
     
-            var map_797b8d6ed9c126edb22a7f974de5eb18 = L.map(
-                "map_797b8d6ed9c126edb22a7f974de5eb18",
+            var map_309e1e2364dd79052ca8290613a2a14d = L.map(
+                "map_309e1e2364dd79052ca8290613a2a14d",
                 {
                     center: [52.075, 4.3],
                     crs: L.CRS.EPSG3857,

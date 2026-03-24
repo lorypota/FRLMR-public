@@ -11,17 +11,17 @@ def build_js() -> str:
         f"""
         {""}
         function fixedColorForCount(count) {{
-            if (count === 0) return themeColor('scaleBlue');
-            if (count <= 3) return themeColor('scaleGreen');
+            if (count === 0) return themeColor('scaleZero');
+            if (count <= 3) return themeColor('scaleRed');
             if (count <= 6) return themeColor('scaleOrange');
-            return themeColor('scaleRed');
+            return themeColor('scaleGreen');
         }}
 
         function fixedLegendHtml() {{
-            return '<span style="color:' + themeColor('scaleBlue') + ';">&#9632;</span> 0 bikes<br>' +
-                   '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 1 &ndash; 3<br>' +
+            return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0 bikes<br>' +
+                   '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 1 &ndash; 3<br>' +
                    '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> 4 &ndash; 6<br>' +
-                   '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 7+<br>';
+                   '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 7+<br>';
         }}
         """
     ).strip()
