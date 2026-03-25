@@ -18,6 +18,11 @@ MAPS_DIR = OUTPUT_DIR / "maps"
 GEODATA_DIR = OUTPUT_DIR / "geodata"
 INDEX_DIR = OUTPUT_DIR / "index"
 
+ANALYSIS_DIR = OUTPUT_DIR / "analysis"
+ANALYSIS_FIGURES_DIR = ANALYSIS_DIR / "figures"
+ANALYSIS_TABLES_DIR = ANALYSIS_DIR / "tables"
+ANALYSIS_CACHE_DIR = ANALYSIS_DIR / "cache"
+
 DEFAULT_DATA_ROOT = PROJECT_ROOT / "data"
 
 
@@ -30,6 +35,9 @@ def ensure_output_dirs() -> None:
         MAPS_DIR,
         GEODATA_DIR,
         INDEX_DIR,
+        ANALYSIS_FIGURES_DIR,
+        ANALYSIS_TABLES_DIR,
+        ANALYSIS_CACHE_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)
 

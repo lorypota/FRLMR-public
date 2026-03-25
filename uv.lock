@@ -28,6 +28,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cbsodata"
+version = "1.3.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/20/a2/abc89c2ff94c39b2d56c7a3c344c8ac22b7c96ffc49908bacf98261fcd65/cbsodata-1.3.5.tar.gz", hash = "sha256:32e4f0ed6884794513a4666673c53fe0227219f409c370615938eff60bf146c8", size = 22436, upload-time = "2023-10-23T18:48:43.03Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/8c/70ff1ba83e76eeee7d095bca26850a796f1f79203c9912b51698512094e0/cbsodata-1.3.5-py3-none-any.whl", hash = "sha256:01e980914dabe7fefa11dd8bdad3672c520d4b0fd00b93439b3afb1958839aad", size = 12518, upload-time = "2023-10-23T18:48:41.497Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.1.4"
 source = { registry = "https://pypi.org/simple" }
@@ -194,6 +206,7 @@ name = "fairmss"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cbsodata" },
     { name = "folium" },
     { name = "geopandas" },
     { name = "inequalipy" },
@@ -214,6 +227,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cbsodata", specifier = ">=1.3.5" },
     { name = "folium", specifier = ">=0.20.0" },
     { name = "geopandas", specifier = ">=1.1.2" },
     { name = "inequalipy", specifier = ">=1.0.5" },

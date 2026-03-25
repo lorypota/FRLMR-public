@@ -13,6 +13,10 @@ empirical_analysis/
 ├── map_den_haag_pc4.py          # Den Haag interactive area map
 ├── map_amsterdam_pc4.py         # Amsterdam PC4 map
 │
+├── analysis_temporal.py         # Temporal docked-bike coverage: hourly profiles, commute patterns
+├── analysis_spatial.py          # Spatial docked-bike inequality: demographic correlations, Gini/Theil
+├── analysis_splintering.py      # Splintering urbanism: docked-bike category comparisons, coverage gaps
+│
 ├── docs/
 │   └── data_notes.md            # Notes on feed quirks and interpretation
 │
@@ -21,6 +25,9 @@ empirical_analysis/
 │   ├── artifact_index.py        # Internal artifact catalog helper
 │   ├── processed_data_utils.py  # CSV table loading helpers
 │   ├── paths.py                 # Output directory paths
+│   ├── coverage_utils.py        # Coverage computation (nearest-bike distances, aggregation)
+│   ├── cbs_income.py            # CBS StatLine income/WOZ data fetcher
+│   └── pc4_visualizations/      # Map visualization mode modules
 │
 ├── output/
 │   ├── data/                    # Processed CSV tables (docked, dockless, stations)
@@ -28,6 +35,9 @@ empirical_analysis/
 │   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
 │   ├── index/                   # Artifact indexing
 │   └── analysis/                # Statistical analysis outputs
+│       ├── figures/             #   PNG plots
+│       ├── tables/              #   CSV summary tables
+│       └── cache/               #   Per-day coverage cache (used between scripts)
 │
 ├── AGENTS.md                    # Development guidelines
 └── README.md
@@ -47,7 +57,14 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 - `map_den_haag_stations.py`: build a Den Haag station map.
 - `map_den_haag_pc4.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
 - `map_amsterdam_pc4.py`: build Amsterdam PC4 map with date/hour controls.
-- `artifact_index.py`: rebuild output artifact index files manually if needed.
+
+### Statistical analysis
+
+Run in this order (each builds on the previous):
+
+1. `uv run preliminary_studies/empirical_analysis/analysis_temporal.py`: hourly docked-bike coverage profiles, weekday/weekend comparison, peak/trough identification, Wilcoxon test for morning vs afternoon. Produces cached per-buurt-per-hour coverage used by steps 2 and 3.
+2. `uv run preliminary_studies/empirical_analysis/analysis_spatial.py`: per-buurt mean docked-bike coverage correlated with demographics (income, WOZ, migration background, car ownership), Gini and Theil inequality metrics, Spearman correlations, scatter plots, choropleth map.
+3. `uv run preliminary_studies/empirical_analysis/analysis_splintering.py`: classifies buurten into demographic terciles, compares docked-bike coverage distributions via Mann-Whitney U and Kruskal-Wallis tests, plots time-varying coverage gaps between categories.
 
 ## Internal Helper Modules
 
@@ -57,6 +74,8 @@ These are used by the runnable scripts above and do not need to be run directly.
 - `internal/artifact_index.py`: internal helper that rebuilds `output/index/artifacts.csv` and `output/index/artifacts.json`.
 - `internal/processed_data_utils.py`: helpers for reading processed CSV tables.
 - `internal/paths.py`: shared output folder paths.
+- `internal/coverage_utils.py`: coverage computation (house/buurt loading, coordinate conversion, nearest-bike distances, buurt aggregation).
+- `internal/cbs_income.py`: CBS StatLine income/WOZ data fetcher (table 85618NED) with local caching.
 - `internal/pc4_visualizations/`: modules per visualization type (`gradient`, `fixed`, `hotspot`, `house_proximity`).
 
 ## How To Run
