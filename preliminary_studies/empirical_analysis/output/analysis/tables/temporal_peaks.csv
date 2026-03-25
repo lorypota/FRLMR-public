@@ -1,0 +1,4 @@
+metric,hour,pct_within_500m,test,statistic,p_value,n
+best_coverage_hour,5.0,53.87657385799758,,,,
+worst_coverage_hour,16.0,52.02911058312268,,,,
+morning_vs_afternoon,,,Wilcoxon,161069.5,1.3506159798578138e-127,1524.0
