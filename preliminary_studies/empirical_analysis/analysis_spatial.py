@@ -213,58 +213,48 @@ def run():
     logger.info("Saved spatial_correlations.csv")
 
     # --- Plots ---
-    _plot_scatter(buurt_summary, corr_df, all_demo_vars)
+    _plot_scatter_cars(buurt_summary, corr_df)
     _plot_choropleth(buurt_summary, buurten)
 
     logger.info("Done. Outputs in %s and %s", ANALYSIS_FIGURES_DIR, ANALYSIS_TABLES_DIR)
 
 
-def _plot_scatter(buurt_summary, corr_df, all_demo_vars):
-    """Create scatter plots for each demographic variable."""
-    plot_vars = [
-        ("percentage_met_herkomstland_buiten_europa", "spatial_scatter_migration.png"),
-        ("personenautos_per_huishouden", "spatial_scatter_cars.png"),
-        ("gemiddeld_inkomen_per_inwoner", "spatial_scatter_income.png"),
-        ("gemiddelde_woz_waarde", "spatial_scatter_woz.png"),
-        ("pct_huishoudens_laag_inkomen", "spatial_scatter_low_income.png"),
-    ]
+def _plot_scatter_cars(buurt_summary, corr_df):
+    """Scatter plot for car ownership (the only strong correlation)."""
+    var = "personenautos_per_huishouden"
+    if var not in buurt_summary.columns:
+        return
+    mask = buurt_summary["mean_distance"].notna() & buurt_summary[var].notna()
+    if mask.sum() < 5:
+        return
 
-    for var, filename in plot_vars:
-        if var not in buurt_summary.columns:
-            continue
-        mask = buurt_summary["mean_distance"].notna() & buurt_summary[var].notna()
-        if mask.sum() < 5:
-            continue
+    x = buurt_summary.loc[mask, var]
+    y = buurt_summary.loc[mask, "mean_distance"]
+    sizes = buurt_summary.loc[mask, "total_addresses"] / 50
 
-        x = buurt_summary.loc[mask, var]
-        y = buurt_summary.loc[mask, "mean_distance"]
-        sizes = buurt_summary.loc[mask, "total_addresses"] / 50
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.scatter(x, y, s=sizes, alpha=0.6, edgecolors="k", linewidths=0.3)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.scatter(x, y, s=sizes, alpha=0.6, edgecolors="k", linewidths=0.3)
+    corr_row = corr_df[corr_df["variable"] == var]
+    if not corr_row.empty:
+        rho = corr_row.iloc[0]["spearman_rho"]
+        pval = corr_row.iloc[0]["p_value"]
+        ax.annotate(
+            f"Spearman rho = {rho:.3f}\np = {pval:.4f}",
+            xy=(0.05, 0.95),
+            xycoords="axes fraction",
+            va="top",
+            fontsize=10,
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+        )
 
-        # Add correlation annotation
-        corr_row = corr_df[corr_df["variable"] == var]
-        if not corr_row.empty:
-            rho = corr_row.iloc[0]["spearman_rho"]
-            pval = corr_row.iloc[0]["p_value"]
-            ax.annotate(
-                f"Spearman rho = {rho:.3f}\np = {pval:.4f}",
-                xy=(0.05, 0.95),
-                xycoords="axes fraction",
-                va="top",
-                fontsize=10,
-                bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-            )
-
-        label = all_demo_vars.get(var, var)
-        ax.set_xlabel(label)
-        ax.set_ylabel("Mean distance to nearest bike (m)")
-        ax.set_title(f"Coverage vs {label}")
-        plt.tight_layout()
-        plt.savefig(ANALYSIS_FIGURES_DIR / filename, dpi=150)
-        plt.close()
-        logger.info("Saved %s", filename)
+    ax.set_xlabel("Cars per household")
+    ax.set_ylabel("Mean distance to nearest bike (m)")
+    ax.set_title("Coverage vs Cars per household")
+    plt.tight_layout()
+    plt.savefig(ANALYSIS_FIGURES_DIR / "spatial_scatter_cars.png", dpi=150)
+    plt.close()
+    logger.info("Saved spatial_scatter_cars.png")
 
 
 def _plot_choropleth(buurt_summary, buurten):

@@ -201,9 +201,9 @@ def run():
             }
         )
 
-        # Plots
-        _plot_boxplot(coverage_with_class, var, tercile_col, info)
-        _plot_hourly_gap(coverage_with_class, var, tercile_col, info)
+        # Plot boxplot only for car ownership (the only significant result)
+        if var == "personenautos_per_huishouden":
+            _plot_boxplot(coverage_with_class, buurt_features, var, tercile_col, info)
 
     # Save results
     if all_test_results:
@@ -218,17 +218,25 @@ def run():
         )
         logger.info("Saved splintering_category_summary.csv")
 
-    # Combined hourly profiles plot
-    _plot_combined_profiles(coverage_with_class, CLASSIFICATION_VARS)
-
     logger.info("Done. Outputs in %s and %s", ANALYSIS_FIGURES_DIR, ANALYSIS_TABLES_DIR)
 
 
-def _plot_boxplot(coverage_with_class, var, tercile_col, info):
+def _plot_boxplot(coverage_with_class, buurt_features, var, tercile_col, info):
     """Box plot of mean distance by tercile."""
     data = coverage_with_class[coverage_with_class[tercile_col].notna()].copy()
     if data.empty:
         return
+
+    # Compute tercile boundaries for tick labels
+    valid_vals = buurt_features[var].dropna()
+    t1_max = valid_vals.quantile(1 / 3)
+    t2_max = valid_vals.quantile(2 / 3)
+
+    range_strs = [
+        f"(\u2264{t1_max:.2f})",
+        f"({t1_max:.2f}\u2013{t2_max:.2f})",
+        f"(>{t2_max:.2f})",
+    ]
 
     # Aggregate to per-buurt means first (not per-hour)
     buurt_means = (
@@ -242,7 +250,9 @@ def _plot_boxplot(coverage_with_class, var, tercile_col, info):
         vals = buurt_means[buurt_means[tercile_col] == t]["mean_distance"].dropna()
         if len(vals) > 0:
             groups.append(vals)
-            labels.append(info["tercile_labels"][int(t) - 1])
+            labels.append(
+                f"{info['tercile_labels'][int(t) - 1]}\n{range_strs[int(t) - 1]}"
+            )
 
     if groups:
         bp = ax.boxplot(groups, tick_labels=labels, patch_artist=True)
@@ -262,79 +272,6 @@ def _plot_boxplot(coverage_with_class, var, tercile_col, info):
     plt.savefig(ANALYSIS_FIGURES_DIR / f"splintering_boxplot_{safe_name}.png", dpi=150)
     plt.close()
     logger.info("Saved splintering_boxplot_%s.png", safe_name)
-
-
-def _plot_hourly_gap(coverage_with_class, var, tercile_col, info):
-    """Plot coverage gap between top and bottom tercile by hour."""
-    data = coverage_with_class[coverage_with_class[tercile_col].notna()].copy()
-    if data.empty:
-        return
-
-    hourly = data.groupby(["hour", tercile_col])["mean_distance"].mean().unstack()
-    if 1 not in hourly.columns or 3 not in hourly.columns:
-        return
-
-    gap = hourly[3] - hourly[1]
-
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.bar(gap.index, gap.values, color="tab:red", alpha=0.7)
-    ax.axhline(0, color="black", linewidth=0.5)
-    ax.set_xlabel("Hour of day")
-    ax.set_ylabel("Distance gap: high - low tercile (m)")
-    ax.set_title(
-        f"Coverage gap by hour ({info['tercile_labels'][2]} vs {info['tercile_labels'][0]})"
-    )
-    ax.set_xticks(range(0, 24))
-    plt.tight_layout()
-
-    safe_name = var.replace("percentage_met_herkomstland_buiten_europa", "migration")
-    safe_name = safe_name.replace("personenautos_per_huishouden", "cars")
-    safe_name = safe_name.replace("gemiddeld_inkomen_per_inwoner", "income")
-    safe_name = safe_name.replace("gemiddelde_woz_waarde", "woz")
-    plt.savefig(ANALYSIS_FIGURES_DIR / f"splintering_gap_{safe_name}.png", dpi=150)
-    plt.close()
-    logger.info("Saved splintering_gap_%s.png", safe_name)
-
-
-def _plot_combined_profiles(coverage_with_class, classification_vars):
-    """Hourly coverage lines per tercile, one subplot per variable."""
-    vars_with_data = [
-        (var, info)
-        for var, info in classification_vars.items()
-        if f"{var}_tercile" in coverage_with_class.columns
-        and coverage_with_class[f"{var}_tercile"].notna().any()
-    ]
-    if not vars_with_data:
-        return
-
-    n = len(vars_with_data)
-    fig, axes = plt.subplots(1, n, figsize=(6 * n, 5), squeeze=False)
-
-    colors = ["#4CAF50", "#FFC107", "#F44336"]
-    for ax, (var, info) in zip(axes[0], vars_with_data, strict=True):
-        tercile_col = f"{var}_tercile"
-        for t in [1, 2, 3]:
-            sub = coverage_with_class[coverage_with_class[tercile_col] == t]
-            hourly = sub.groupby("hour")["mean_distance"].mean()
-            ax.plot(
-                hourly.index,
-                hourly.values,
-                "o-",
-                color=colors[int(t) - 1],
-                label=info["tercile_labels"][int(t) - 1],
-                markersize=3,
-            )
-        ax.set_xlabel("Hour of day")
-        ax.set_ylabel("Mean distance (m)")
-        ax.set_title(info["label"])
-        ax.set_xticks(range(0, 24, 3))
-        ax.legend(fontsize=8)
-
-    plt.suptitle("Hourly coverage by demographic category")
-    plt.tight_layout()
-    plt.savefig(ANALYSIS_FIGURES_DIR / "splintering_category_profiles.png", dpi=150)
-    plt.close()
-    logger.info("Saved splintering_category_profiles.png")
 
 
 if __name__ == "__main__":

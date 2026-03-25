@@ -229,57 +229,9 @@ def run():
     logger.info("Saved temporal_peaks.csv")
 
     # --- Plots ---
-    _plot_hourly_profile(summary)
     _plot_weekday_weekend(wd_summary)
-    _plot_distance_bands(city_df)
 
     logger.info("Done. Outputs in %s and %s", ANALYSIS_FIGURES_DIR, ANALYSIS_TABLES_DIR)
-
-
-def _plot_hourly_profile(summary):
-    fig, ax1 = plt.subplots(figsize=(10, 5))
-
-    hours = summary["hour"]
-    ax1.plot(
-        hours,
-        summary["mean_distance"],
-        "o-",
-        color="tab:red",
-        label="Mean distance (m)",
-    )
-    ax1.fill_between(
-        hours,
-        summary["mean_distance"] - summary["std_distance"],
-        summary["mean_distance"] + summary["std_distance"],
-        alpha=0.2,
-        color="tab:red",
-    )
-    ax1.set_xlabel("Hour of day")
-    ax1.set_ylabel("Mean distance to nearest bike (m)", color="tab:red")
-    ax1.set_xticks(range(0, 24))
-
-    ax2 = ax1.twinx()
-    ax2.plot(
-        hours, summary["mean_pct_500m"], "s-", color="tab:blue", label="% within 500m"
-    )
-    ax2.fill_between(
-        hours,
-        summary["mean_pct_500m"] - summary["std_pct_500m"],
-        summary["mean_pct_500m"] + summary["std_pct_500m"],
-        alpha=0.2,
-        color="tab:blue",
-    )
-    ax2.set_ylabel("% addresses within 500m", color="tab:blue")
-
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower left")
-
-    plt.title("Docked-bike coverage over 24 hours")
-    plt.tight_layout()
-    plt.savefig(ANALYSIS_FIGURES_DIR / "temporal_hourly_profile.png", dpi=150)
-    plt.close()
-    logger.info("Saved temporal_hourly_profile.png")
 
 
 def _plot_weekday_weekend(wd_summary):
@@ -312,30 +264,6 @@ def _plot_weekday_weekend(wd_summary):
     plt.savefig(ANALYSIS_FIGURES_DIR / "temporal_weekday_weekend.png", dpi=150)
     plt.close()
     logger.info("Saved temporal_weekday_weekend.png")
-
-
-def _plot_distance_bands(city_df):
-    band_cols = [c for c in city_df.columns if c.startswith("band_")]
-    if not band_cols:
-        return
-
-    hourly = city_df.groupby("hour")[band_cols].mean()
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.stackplot(
-        hourly.index,
-        *[hourly[c] for c in band_cols],
-        labels=[c.replace("band_", "") for c in band_cols],
-        alpha=0.8,
-    )
-    ax.set_xlabel("Hour of day")
-    ax.set_ylabel("% of addresses")
-    ax.set_title("Distance band distribution over 24 hours")
-    ax.set_xticks(range(0, 24))
-    ax.legend(loc="upper right")
-    plt.tight_layout()
-    plt.savefig(ANALYSIS_FIGURES_DIR / "temporal_distance_bands.png", dpi=150)
-    plt.close()
-    logger.info("Saved temporal_distance_bands.png")
 
 
 if __name__ == "__main__":

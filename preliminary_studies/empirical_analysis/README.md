@@ -18,7 +18,7 @@ empirical_analysis/
 ├── analysis_splintering.py      # Splintering urbanism: docked-bike category comparisons, coverage gaps
 │
 ├── docs/
-│   └── data_notes.md            # Notes on feed quirks and interpretation
+│   └── data_notes.md            # Notes on data feed and interpretation
 │
 ├── internal/
 │   ├── data_utils.py            # Raw snapshot parsing and extraction
