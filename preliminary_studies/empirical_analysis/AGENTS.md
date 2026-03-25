@@ -68,4 +68,4 @@ This file should only hold agent-specific guidance that helps with editing or re
 - Prefer keeping current script entry points and output layout stable.
 - If you change output names, paths, or generated-page behavior, check `README.md` and update it if needed.
 - For `map_den_haag_pc4.py`, decide first whether a change belongs in the top-level script or under `internal/pc4_visualizations/`.
-- Avoid combining data-loading changes and UI refactors in one patch unless the task requires both.
+- Try to understand fully requests by user and ask clarifying questions and aim for small targeted changes ONLY if you understand the final goal of user and if what you're doing would specifically answer the user question concretely.

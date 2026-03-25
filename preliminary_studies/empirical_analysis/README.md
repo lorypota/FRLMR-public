@@ -13,9 +13,7 @@ empirical_analysis/
 ├── map_den_haag_pc4.py          # Den Haag interactive area map
 ├── map_amsterdam_pc4.py         # Amsterdam PC4 map
 │
-├── analysis_temporal.py         # Temporal docked-bike coverage: hourly profiles, commute patterns
-├── analysis_spatial.py          # Spatial docked-bike inequality: demographic correlations, Gini/Theil
-├── analysis_splintering.py      # Splintering urbanism: docked-bike category comparisons, coverage gaps
+├── analysis_statistics.py       # Statistical coverage analysis
 │
 ├── docs/
 │   └── data_notes.md            # Notes on data feed and interpretation
@@ -34,10 +32,11 @@ empirical_analysis/
 │   ├── maps/                    # Interactive HTML maps
 │   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
 │   ├── index/                   # Artifact indexing
-│   └── analysis/                # Statistical analysis outputs
-│       ├── figures/             #   PNG plots
-│       ├── tables/              #   CSV summary tables
-│       └── cache/               #   Per-day coverage cache (used between scripts)
+│   └── analysis/                # Statistical analysis outputs by date range
+│       └── <run_tag>/           #   One folder per temporal date filter
+│           ├── figures/         #   PNG plots
+│           ├── tables/          #   CSV/JSON summary outputs
+│           └── buurt_hour_coverage/  #   Per-day buurt-hour coverage used by spatial step
 │
 ├── AGENTS.md                    # Development guidelines
 └── README.md
@@ -60,11 +59,19 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 
 ### Statistical analysis
 
-Run in this order (each builds on the previous):
+`uv run preliminary_studies/empirical_analysis/analysis_statistics.py` runs statistical analysis scripts in sequence.
 
-1. `uv run preliminary_studies/empirical_analysis/analysis_temporal.py`: hourly docked-bike coverage profiles, weekday/weekend comparison, peak/trough identification, Wilcoxon test for morning vs afternoon. Produces cached per-buurt-per-hour coverage used by steps 2 and 3.
-2. `uv run preliminary_studies/empirical_analysis/analysis_spatial.py`: per-buurt mean docked-bike coverage correlated with demographics (income, WOZ, migration background, car ownership), Gini and Theil inequality metrics, Spearman correlations, scatter plots, choropleth map.
-3. `uv run preliminary_studies/empirical_analysis/analysis_splintering.py`: classifies buurten into demographic terciles, compares docked-bike coverage distributions via Mann-Whitney U and Kruskal-Wallis tests, plots time-varying coverage gaps between categories.
+Step-wise runs:
+
+1. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step temporal`: hourly docked-bike coverage profiles, a raw daily-hour table, year-month-hour summaries, weekday/weekend comparison by year and month, and covered addresses within 500m per bike. Produces per-buurt-per-hour coverage used by the spatial step.
+2. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step spatial`: per-buurt mean docked-bike coverage correlated with demographic variables, plus Gini and Theil inequality metrics. Also includes comparisons after splitting neighborhoods into low, middle, and high thirds for a demographic variable. Produces summary tables, a car-ownership scatter plot, a choropleth map, grouped comparison tables, and one grouped boxplot.
+
+Options for temporal step:
+
+- `--start-date YYYY-MM-DD` and `--end-date YYYY-MM-DD`: restrict analysis to a specific date range.
+- `--max-workers N`: process daily temporal files in parallel.
+
+Each run writes to its own folder under `output/analysis/`, based on the date filter. For example, `--start-date 2026-01-01 --end-date 2026-12-31` writes to `output/analysis/20260101_20261231/`. The processed dates used in that run are recorded in `tables/processed_dates.json`.
 
 ## Internal Helper Modules
 
@@ -122,55 +129,3 @@ uv run python -m http.server 8000
 ```
 
 Then open: <http://localhost:8000/preliminary_studies/empirical_analysis/output/maps/den_haag_pc4.html>
-
-## Output Structure
-
-All generated artifacts are under `output/`:
-
-```text
-output/
-  data/
-    docked/
-      donkey_denHaag/ (and ns_ov_fiets/)
-        docked_YYYYMMDD.csv  ← num_bikes_available per station (timestamp × station_id)
-        docks_YYYYMMDD.csv   ← num_docks_available per station (timestamp × station_id)
-    dockless/
-      donkey_denHaag/
-        dockless_YYYYMMDD.csv  ← free bike positions (timestamp, bike_id, lat, lon,
-                                  is_reserved, is_disabled, last_reported, station_id,
-                                  vehicle_type_id)
-    stations/
-      donkey_denHaag/ (and ns_ov_fiets/)
-        stations_YYYYMMDD.csv  ← station metadata (station_id, name, lat, lon, capacity,
-                                  is_virtual_station, region_id)
-  maps/
-    den_haag_stations.html
-    den_haag_pc4.html
-    amsterdam_pc4.html
-  geodata/
-    pc4_den_haag.geojson
-    pc6_den_haag/
-      part_01.geojson
-      part_02.geojson
-    buurten_den_haag.geojson
-    wijken_den_haag.geojson
-    pc4_amsterdam.geojson
-    houses_den_haag.json
-  index/
-    artifacts.csv
-    artifacts.json
-```
-
-## Artifact Indexing
-
-The map scripts and `build_data_tables.py` rebuild the artifact index automatically at the end of each run.
-
-`artifacts.csv` and `artifacts.json` include:
-
-- `artifact_type`
-- `provider`
-- `city`
-- `date`
-- `path`
-- `size_bytes`
-- `modified_at_utc`
