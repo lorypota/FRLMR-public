@@ -400,10 +400,6 @@ def run_temporal(start_date: date | None, end_date: date | None, max_workers: in
         index=False,
     )
 
-    _plot_temporal_profiles(yearly_summary, run_paths)
-    _plot_temporal_efficiency(yearly_summary, run_paths)
-    _plot_weekday_weekend(wd_summary, run_paths)
-
 
 def run_spatial(start_date: date | None, end_date: date | None):
     ensure_output_dirs()
@@ -624,89 +620,6 @@ def _run_spatial_grouped_comparisons(buurten, coverage_df, income_df, run_paths)
             run_paths["tables_dir"] / "spatial_grouped_summary.csv",
             index=False,
         )
-
-
-def _plot_weekday_weekend(wd_summary, run_paths):
-    years = sorted(wd_summary["year"].unique())
-    fig, axes = plt.subplots(len(years), 2, figsize=(14, 4 * len(years)), squeeze=False)
-    for row_idx, year in enumerate(years):
-        year_df = wd_summary[wd_summary["year"] == year]
-        for is_wd, label, color in [
-            (True, "Weekday", "tab:blue"),
-            (False, "Weekend", "tab:orange"),
-        ]:
-            sub = year_df[year_df["weekday"] == is_wd]
-            if sub.empty:
-                continue
-            axes[row_idx, 0].plot(
-                sub["hour"], sub["mean_distance"], "o-", color=color, label=label
-            )
-            axes[row_idx, 1].plot(
-                sub["hour"], sub["mean_pct_500m"], "o-", color=color, label=label
-            )
-
-        axes[row_idx, 0].set_xlabel("Hour of day")
-        axes[row_idx, 0].set_ylabel("Mean distance to nearest bike (m)")
-        axes[row_idx, 0].set_title(f"Mean distance ({year})")
-        axes[row_idx, 0].set_xticks(range(0, 24))
-        axes[row_idx, 0].legend()
-        axes[row_idx, 1].set_xlabel("Hour of day")
-        axes[row_idx, 1].set_ylabel("% addresses within 500m")
-        axes[row_idx, 1].set_title(f"Coverage rate ({year})")
-        axes[row_idx, 1].set_xticks(range(0, 24))
-        axes[row_idx, 1].legend()
-
-    plt.suptitle("Weekday vs Weekend docked-bike coverage by year")
-    plt.tight_layout()
-    plt.savefig(run_paths["figures_dir"] / "temporal_weekday_weekend.png", dpi=150)
-    plt.close()
-
-
-def _plot_temporal_profiles(yearly_summary, run_paths):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-    grouped = yearly_summary.groupby(["year", "month"])
-    for (year, month), sub in grouped:
-        label = f"{year}-{month:02d}"
-        ax1.plot(sub["hour"], sub["mean_distance"], "o-", label=label)
-        ax2.plot(sub["hour"], sub["mean_pct_500m"], "o-", label=label)
-
-    ax1.set_xlabel("Hour of day")
-    ax1.set_ylabel("Mean distance to nearest bike (m)")
-    ax1.set_title("Mean distance by year, month, and hour")
-    ax1.set_xticks(range(0, 24))
-    ax1.legend()
-    ax2.set_xlabel("Hour of day")
-    ax2.set_ylabel("% addresses within 500m")
-    ax2.set_title("Coverage rate by year, month, and hour")
-    ax2.set_xticks(range(0, 24))
-    ax2.legend()
-    plt.tight_layout()
-    plt.savefig(run_paths["figures_dir"] / "temporal_year_month_hour.png", dpi=150)
-    plt.close()
-
-
-def _plot_temporal_efficiency(yearly_summary, run_paths):
-    fig, ax = plt.subplots(figsize=(8, 5))
-    grouped = yearly_summary.groupby(["year", "month"])
-    for (year, month), sub in grouped:
-        ax.plot(
-            sub["hour"],
-            sub["mean_covered_addresses_per_bike_500m"],
-            "o-",
-            label=f"{year}-{month:02d}",
-        )
-
-    ax.set_xlabel("Hour of day")
-    ax.set_ylabel("Covered addresses within 500m per bike")
-    ax.set_title("Per-bike coverage efficiency by year, month, and hour")
-    ax.set_xticks(range(0, 24))
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig(
-        run_paths["figures_dir"] / "temporal_efficiency_year_month_hour.png",
-        dpi=150,
-    )
-    plt.close()
 
 
 def _plot_scatter_cars(buurt_summary, corr_df, run_paths):

@@ -63,7 +63,7 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 
 Step-wise runs:
 
-1. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step temporal`: hourly docked-bike coverage profiles, a raw daily-hour table, year-month-hour summaries, weekday/weekend comparison by year and month, and covered addresses within 500m per bike. Produces per-buurt-per-hour coverage used by the spatial step.
+1. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step temporal`: a raw daily-hour table, year-month-hour summaries, weekday/weekend comparison by year and month, and covered addresses within 500m per bike. Produces per-buurt-per-hour coverage used by the spatial step.
 2. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step spatial`: per-buurt mean docked-bike coverage correlated with demographic variables, plus Gini and Theil inequality metrics. Also includes comparisons after splitting neighborhoods into low, middle, and high thirds for a demographic variable. Produces summary tables, a car-ownership scatter plot, a choropleth map, grouped comparison tables, and one grouped boxplot.
 
 Options for temporal step:
