@@ -1,0 +1,7 @@
+variable,label,spearman_rho,p_value,n
+percentage_met_herkomstland_buiten_europa,% non-European background,-0.23488594162542664,0.0022471504871496004,167
+personenautos_per_huishouden,Cars per household,0.628179001649283,3.6306307007969123e-19,162
+bevolkingsdichtheid_inwoners_per_km2,Population density (per km2),-0.5362106160578402,3.437763066189982e-14,172
+gemiddeld_inkomen_per_inwoner,Mean income per resident (x1000 EUR),-0.15247025947537718,0.12797186339174477,101
+gemiddelde_woz_waarde,Mean WOZ property value (x1000 EUR),0.0006095585370696298,0.9951242824937235,103
+pct_huishoudens_laag_inkomen,% low-income households,-0.2950336640170418,0.002883676655565961,100
