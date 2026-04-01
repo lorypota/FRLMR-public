@@ -1,4 +1,4 @@
-"""Continuous gradient polygon visualization for Den Haag PC4 map."""
+"""Continuous gradient polygon visualization for the Den Haag area map."""
 
 from textwrap import dedent
 

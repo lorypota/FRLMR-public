@@ -1,1206 +1,738 @@
-"""
-Interactive Den Haag postcode map with time slider
-
-Usage:
-    uv run preliminary_studies/empirical_analysis/map_den_haag_pc4.py
-
-Creates an interactive Folium map showing Den Haag area polygons and bike
-availability over time with multiple visualization modes. The map supports PC4,
-PC6, CBS buurten, and CBS wijken.
-
-Output:
-    output/maps/den_haag_pc4.html
-"""
-
-import argparse
-import json
-import os
-import sys
-import urllib.parse
-import urllib.request
-from pathlib import Path
-from textwrap import dedent
-
-import folium
-import geopandas as gpd
-import pandas as pd
-from pyproj import Transformer
-from shapely.geometry import Point
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from internal.artifact_index import rebuild_artifact_index
-from internal.data_utils import (
-    DEN_HAAG_BBOX,
-    DEN_HAAG_CENTER,
-    PROVIDER,
-    filter_by_bbox,
-)
-from internal.paths import DATA_DIR, GEODATA_DIR, MAPS_DIR, ensure_output_dirs
-from internal.pc4_visualizations import (
-    DEFAULT_VISUALIZATION_MODE,
-    build_visualization_js,
-    build_visualization_options_html,
-)
-from internal.pc4_visualizations.hotspot import build_hourly_hotspot_data
-from internal.processed_data_utils import (
-    load_docked_day,
-    load_station_day,
-)
-
-HOUSE_POINTS_CACHE = str(GEODATA_DIR / "houses_den_haag.json")
-HOUSE_POINTS_CACHE_VERSION = 2
-
-BAG_WFS_URL = "https://service.pdok.nl/kadaster/bag/wfs/v2_0"
-BAG_PAGE_SIZE = 1000
-HOUSE_CELL_SIZE_DEGREES = 0.0025
-HOUSE_DOWNLOAD_TILE_COUNT = 6
-HOUSE_BBOX_BUFFER = 0.005  # ~500m buffer to catch edge houses
-PDOK_API_PAGE_SIZE = 500
-PDOK_JAARCODE = 2024
-
-AREA_LEVEL_CONFIG = {
-    "pc4": {
-        "label": "PC4",
-        "endpoint_url": "https://api.pdok.nl/cbs/postcode4/ogc/v1/collections/postcode4/items",
-        "property": "postcode",
-        "cache_path": str(GEODATA_DIR / "pc4_den_haag.geojson"),
-        "query_params": {"jaarcode": PDOK_JAARCODE},
-    },
-    "pc6": {
-        "label": "PC6",
-        "endpoint_url": "https://api.pdok.nl/cbs/postcode6/ogc/v1/collections/postcode6/items",
-        "property": "postcode6",
-        "cache_path": str(GEODATA_DIR / "pc6_den_haag"),
-        "query_params": {"jaarcode": PDOK_JAARCODE},
-    },
-    "buurt": {
-        "label": "CBS buurten",
-        "endpoint_url": (
-            "https://api.pdok.nl/cbs/wijken-en-buurten-2024/"
-            "ogc/v1/collections/buurten/items"
-        ),
-        "property": "buurtcode",
-        "cache_path": str(GEODATA_DIR / "buurten_den_haag.geojson"),
-    },
-    "wijk": {
-        "label": "CBS wijken",
-        "endpoint_url": (
-            "https://api.pdok.nl/cbs/wijken-en-buurten-2024/"
-            "ogc/v1/collections/wijken/items"
-        ),
-        "property": "wijkcode",
-        "cache_path": str(GEODATA_DIR / "wijken_den_haag.geojson"),
-    },
-}
-AREA_LEVELS = tuple(AREA_LEVEL_CONFIG)
-DEFAULT_AREA_LEVEL = "pc4"
-POSTCODE_LEVEL_CONFIG = AREA_LEVEL_CONFIG
-POSTCODE_LEVELS = AREA_LEVELS
-DEFAULT_POSTCODE_LEVEL = DEFAULT_AREA_LEVEL
-
-LIGHT_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-DARK_MAP_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-MAP_TILE_ATTRIBUTION = (
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> '
-    'contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-)
-DEFAULT_ZOOM = 13
-ALL_PROVIDERS_VALUE = "__all__"
-MAP_PROVIDER_INFO = {
-    "donkey_denHaag": {"label": "Donkey Republic"},
-    "ns_ov_fiets": {"label": "NS OV-fiets"},
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <style>
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
+body {
+    font-family: sans-serif;
+    background: #dfe6ea;
+    color: #24313f;
+}
 
-def _build_bag_bbox_28992(bbox: dict[str, float]) -> str:
-    """Return a BAG WFS bbox string in the default service CRS."""
-    transformer = Transformer.from_crs("EPSG:4326", "EPSG:28992", always_xy=True)
-    min_x, min_y = transformer.transform(bbox["lon_min"], bbox["lat_min"])
-    max_x, max_y = transformer.transform(bbox["lon_max"], bbox["lat_max"])
-    return f"{min_x:.3f},{min_y:.3f},{max_x:.3f},{max_y:.3f},EPSG:28992"
+#map-shell {
+    position: fixed;
+    inset: 0;
+    padding: 12px;
+    box-sizing: border-box;
+}
 
+#map-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    height: 100%;
+}
 
-def download_house_points(bbox: dict[str, float], cache_path: str) -> dict:
-    """Download and cache Den Haag residential BAG points in a compact grid.
+body.compare-on #map-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
 
-    Each coordinate stores [lat_i, lon_i, address_count] triples so we know
-    how many addresses (apartments) share the same building location.
-    """
-    if os.path.exists(cache_path):
-        with open(cache_path, encoding="utf-8") as f:
-            cached = json.load(f)
-        if cached.get("version") == HOUSE_POINTS_CACHE_VERSION:
-            print(f"  Loading cached house points from {cache_path}")
-            return cached
-        print("  House-point cache version changed, rebuilding...")
+.map-panel {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #eef2f3;
+    box-shadow: 0 10px 28px rgba(22, 35, 46, 0.14);
+}
 
-    print("  Downloading BAG residential points from PDOK...")
-    transformer = Transformer.from_crs("EPSG:28992", "EPSG:4326", always_xy=True)
+#panel-right {
+    display: none;
+}
 
-    # Count how many addresses share each coordinate (apartments in same building)
-    coord_counts: dict[tuple[int, int], int] = {}
-    fetched_count = 0
+body.compare-on #panel-right {
+    display: block;
+}
 
-    # Expand bbox slightly to catch edge houses
-    dl_bbox = {
-        "lat_min": bbox["lat_min"] - HOUSE_BBOX_BUFFER,
-        "lat_max": bbox["lat_max"] + HOUSE_BBOX_BUFFER,
-        "lon_min": bbox["lon_min"] - HOUSE_BBOX_BUFFER,
-        "lon_max": bbox["lon_max"] + HOUSE_BBOX_BUFFER,
+.map-slot {
+    position: absolute;
+    inset: 0;
+}
+
+#map_8b28ca77ad0bcaaebac20bb4fddcea0d,
+#compare-map-right {
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.panel-controls {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 1200;
+    width: min(380px, calc(100% - 32px));
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #c8d0d7;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 12px 26px rgba(34, 49, 63, 0.16);
+    box-sizing: border-box;
+}
+
+.drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+
+.drag-handle.is-dragging {
+    cursor: grabbing;
+}
+
+.panel-heading-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #5c6a78;
+}
+
+.controls-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.controls-row:last-child {
+    margin-bottom: 0;
+}
+
+.control-inline {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: min(300px, 100%);
+}
+
+.control-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.control-inline label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #304050;
+}
+
+.panel-controls select,
+.panel-controls input[type="range"],
+.panel-controls input[type="date"] {
+    accent-color: #1e6bb8;
+}
+
+.panel-controls select,
+.panel-controls input[type="date"] {
+    font-size: 13px;
+    padding: 4px 8px;
+    border: 1px solid #c6cdd4;
+    border-radius: 6px;
+    background: white;
+    color: #1d2b38;
+    width: 100%;
+}
+
+.date-readout,
+.hour-readout {
+    font-size: 14px;
+    font-weight: 700;
+    text-align: right;
+    color: #1d2b38;
+}
+
+.slider-row input[type="range"] {
+    width: 100%;
+}
+
+.legend-scale-zero {
+    color: #6f7882;
+}
+
+.legend-scale-low {
+    color: #d62728;
+}
+
+.legend-scale-medium {
+    color: #ff7f0e;
+}
+
+.legend-scale-high {
+    color: #2ca02c;
+}
+
+.hotspot-size-label {
+    min-width: 44px;
+    font-size: 13px;
+    text-align: right;
+    color: #51606f;
+}
+
+.legend-hotspot-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #e1e7ec;
+}
+
+.legend-hotspot-control-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.legend-hotspot-control label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #304050;
+}
+
+.legend-hotspot-control input[type="range"] {
+    flex: 1 1 auto;
+    min-width: 120px;
+}
+
+#legend-box {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    z-index: 1300;
+    width: min(330px, calc(100% - 48px));
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #c2ccd5;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 14px 28px rgba(36, 49, 63, 0.18);
+    box-sizing: border-box;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.runtime-status {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1400;
+    max-width: min(680px, calc(100% - 36px));
+    padding: 10px 14px;
+    border: 1px solid #c8d0d7;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 24px rgba(36, 49, 63, 0.16);
+    box-sizing: border-box;
+    color: #22303d;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.runtime-status-text {
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.runtime-status-progress {
+    height: 8px;
+    border-radius: 999px;
+    background: #dfe7ee;
+    overflow: hidden;
+}
+
+.runtime-status-progress-bar {
+    width: 0%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #1f7ae0 0%, #4db6ff 100%);
+    transition: width 180ms ease;
+}
+
+.runtime-status.is-error {
+    border-color: #c94747;
+    color: #8f1f1f;
+}
+
+.runtime-status.is-error .runtime-status-progress {
+    display: none;
+}
+
+.legend-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.legend-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d2b38;
+}
+
+.legend-credit {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #6a7a89;
+}
+
+.legend-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #41515f;
+    user-select: none;
+}
+
+.legend-toggle input {
+    margin: 0;
+}
+
+.legend-drag-handle {
+    margin-bottom: 8px;
+}
+
+.compare-sync-options {
+    display: none;
+    gap: 6px;
+    flex-direction: column;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e1e7ec;
+}
+
+body.compare-on .compare-sync-options {
+    display: flex;
+}
+
+.legend-static {
+    color: #4d5c6a;
+    margin-bottom: 10px;
+}
+
+.legend-select-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.legend-select-filter label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #304050;
+}
+
+.legend-select-filter select {
+    font-size: 13px;
+    padding: 4px 8px;
+    border: 1px solid #c6cdd4;
+    border-radius: 6px;
+    background: white;
+    color: #1d2b38;
+    width: 100%;
+}
+
+#legend-dynamic {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#legend-right-content {
+    display: none;
+}
+
+body.compare-on #legend-right-content {
+    display: block;
+}
+
+body.compare-on.legend-unified #legend-right-content {
+    display: none;
+}
+
+.leaflet-popup-content {
+    margin: 10px 12px;
+}
+
+body.theme-dark {
+    background: #111923;
+    color: #e5edf5;
+}
+
+body.theme-dark .map-panel {
+    background: #16202b;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
+}
+
+body.theme-dark .panel-controls,
+body.theme-dark #legend-box {
+    background: rgba(20, 29, 39, 0.95);
+    border-color: #314253;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+}
+
+body.theme-dark .runtime-status {
+    background: rgba(20, 29, 39, 0.95);
+    border-color: #314253;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
+    color: #d6e1ec;
+}
+
+body.theme-dark .runtime-status-progress {
+    background: #223244;
+}
+
+body.theme-dark .runtime-status.is-error {
+    border-color: #da6c6c;
+    color: #ffb1b1;
+}
+
+body.theme-dark .panel-heading-label,
+body.theme-dark .hotspot-size-label,
+body.theme-dark .legend-static,
+body.theme-dark .legend-toggle {
+    color: #c3d0dc;
+}
+
+body.theme-dark .control-inline label,
+body.theme-dark .legend-title,
+body.theme-dark .legend-select-filter label,
+body.theme-dark .legend-hotspot-control label,
+body.theme-dark .date-readout,
+body.theme-dark .hour-readout {
+    color: #edf4fb;
+}
+
+body.theme-dark .legend-credit {
+    color: #9fb1c3;
+}
+
+body.theme-dark .panel-controls select,
+body.theme-dark .panel-controls input[type="date"] {
+    background: #13202c;
+    color: #edf4fb;
+    border-color: #38506a;
+}
+
+body.theme-dark .legend-select-filter select {
+    background: #13202c;
+    color: #edf4fb;
+    border-color: #38506a;
+}
+
+body.theme-dark .panel-controls select,
+body.theme-dark .panel-controls input[type="date"],
+body.theme-dark .panel-controls input[type="range"],
+body.theme-dark .legend-select-filter select,
+body.theme-dark .legend-hotspot-control input[type="range"] {
+    accent-color: #66b7ff;
+}
+
+body.theme-dark .legend-hotspot-control,
+body.theme-dark .compare-sync-options {
+    border-color: #314253;
+}
+
+body.theme-dark .legend-scale-zero {
+    color: #8a949e;
+}
+
+body.theme-dark .legend-scale-low {
+    color: #ff7373;
+}
+
+body.theme-dark .legend-scale-medium {
+    color: #ffb454;
+}
+
+body.theme-dark .legend-scale-high {
+    color: #5ee38b;
+}
+
+body.theme-dark .leaflet-control-zoom a {
+    background: rgba(20, 29, 39, 0.96);
+    color: #edf4fb;
+    border-bottom-color: #314253;
+}
+
+body.theme-dark .leaflet-control-zoom a:hover {
+    background: #233242;
+}
+
+body.theme-dark .leaflet-control-attribution {
+    background: rgba(20, 29, 39, 0.92);
+    color: #c3d0dc;
+}
+
+body.theme-dark .leaflet-control-attribution a {
+    color: #8ec8ff;
+}
+
+body.theme-dark .leaflet-popup-content-wrapper,
+body.theme-dark .leaflet-popup-tip {
+    background: #16202b;
+    color: #edf4fb;
+}
+
+body.theme-dark .leaflet-popup-content {
+    color: #edf4fb;
+}
+
+@media (max-width: 1100px) {
+    body.compare-on #map-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     }
 
-    tile_total = HOUSE_DOWNLOAD_TILE_COUNT * HOUSE_DOWNLOAD_TILE_COUNT
-    pages_fetched = 0
-    lat_step = (dl_bbox["lat_max"] - dl_bbox["lat_min"]) / HOUSE_DOWNLOAD_TILE_COUNT
-    lon_step = (dl_bbox["lon_max"] - dl_bbox["lon_min"]) / HOUSE_DOWNLOAD_TILE_COUNT
+    .panel-controls {
+        left: auto;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+    }
 
-    for tile_y in range(HOUSE_DOWNLOAD_TILE_COUNT):
-        for tile_x in range(HOUSE_DOWNLOAD_TILE_COUNT):
-            tile_bbox = {
-                "lat_min": dl_bbox["lat_min"] + (tile_y * lat_step),
-                "lat_max": dl_bbox["lat_min"] + ((tile_y + 1) * lat_step),
-                "lon_min": dl_bbox["lon_min"] + (tile_x * lon_step),
-                "lon_max": dl_bbox["lon_min"] + ((tile_x + 1) * lon_step),
+    #legend-box {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        width: auto;
+        max-width: none;
+    }
+}
+
+.house-marker-icon,
+.house-cluster-icon {
+    background: none !important;
+    border: none !important;
+}
+</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_8b28ca77ad0bcaaebac20bb4fddcea0d {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
             }
-            tile_bbox_28992 = _build_bag_bbox_28992(tile_bbox)
-            page_index = 0
+            </style>
 
-            while True:
-                params = urllib.parse.urlencode(
-                    {
-                        "service": "WFS",
-                        "version": "2.0.0",
-                        "request": "GetFeature",
-                        "typeNames": "bag:verblijfsobject",
-                        "count": BAG_PAGE_SIZE,
-                        "startIndex": page_index * BAG_PAGE_SIZE,
-                        "bbox": tile_bbox_28992,
-                        "outputFormat": "application/json; subtype=geojson",
-                    }
-                )
-                url = f"{BAG_WFS_URL}?{params}"
-                with urllib.request.urlopen(url, timeout=60) as resp:
-                    payload = json.load(resp)
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
 
-                features = payload.get("features", [])
-                if not features:
-                    break
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
 
-                fetched_count += len(features)
-                pages_fetched += 1
-                for feature in features:
-                    props = feature.get("properties") or {}
-                    if "woonfunctie" not in str(props.get("gebruiksdoel", "")).lower():
-                        continue
-                    if "in gebruik" not in str(props.get("status", "")).lower():
-                        continue
+        
+</head>
+<body>
+    
+    <div id="map-shell">
+    <div id="map-grid">
+        <section class="map-panel" id="panel-left">
+            <div class="map-slot" id="left-map-slot"></div>
 
-                    geometry = feature.get("geometry") or {}
-                    coords = geometry.get("coordinates") or []
-                    if geometry.get("type") != "Point" or len(coords) < 2:
-                        continue
-
-                    lon, lat = transformer.transform(coords[0], coords[1])
-                    if not (
-                        dl_bbox["lat_min"] <= lat <= dl_bbox["lat_max"]
-                        and dl_bbox["lon_min"] <= lon <= dl_bbox["lon_max"]
-                    ):
-                        continue
-
-                    lat_i = int(round(lat * 1_000_000))
-                    lon_i = int(round(lon * 1_000_000))
-                    coord_key = (lat_i, lon_i)
-                    coord_counts[coord_key] = coord_counts.get(coord_key, 0) + 1
-
-                page_index += 1
-                if pages_fetched == 1 or pages_fetched % 25 == 0:
-                    tile_number = (tile_y * HOUSE_DOWNLOAD_TILE_COUNT) + tile_x + 1
-                    print(
-                        f"    Tiles done: {tile_number}/{tile_total} | "
-                        f"pages fetched: {pages_fetched} | "
-                        f"raw points: {fetched_count} | "
-                        f"unique locations: {len(coord_counts)}"
-                    )
-                if len(features) < BAG_PAGE_SIZE:
-                    break
-
-    # Build cells: each cell stores [lat_i, lon_i, count, lat_i, lon_i, count, ...]
-    cells: dict[str, list[int]] = {}
-    for (lat_i, lon_i), count in coord_counts.items():
-        lon = lon_i / 1_000_000
-        lat = lat_i / 1_000_000
-        cell_x = int(lon // HOUSE_CELL_SIZE_DEGREES)
-        cell_y = int(lat // HOUSE_CELL_SIZE_DEGREES)
-        cell_key = f"{cell_x}:{cell_y}"
-        if cell_key not in cells:
-            cells[cell_key] = []
-        cells[cell_key].extend((lat_i, lon_i, count))
-
-    kept_count = len(coord_counts)
-    total_addresses = sum(coord_counts.values())
-    payload = {
-        "version": HOUSE_POINTS_CACHE_VERSION,
-        "cellSize": HOUSE_CELL_SIZE_DEGREES,
-        "count": kept_count,
-        "totalAddresses": total_addresses,
-        "cells": cells,
-    }
-    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-    tmp_path = f"{cache_path}.tmp"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, separators=(",", ":"))
-    os.replace(tmp_path, cache_path)
-    print(
-        f"  Cached {kept_count} unique locations "
-        f"({total_addresses} total addresses) to {cache_path}"
-    )
-    return payload
-
-
-def _build_area_api_url(
-    endpoint_url: str,
-    bbox: dict[str, float],
-    extra_params: dict[str, int | str] | None = None,
-) -> str:
-    """Build the first PDOK area-items URL for one boundary source."""
-    params = {
-        "f": "json",
-        "limit": PDOK_API_PAGE_SIZE,
-        "bbox": (
-            f"{bbox['lon_min']},{bbox['lat_min']},{bbox['lon_max']},{bbox['lat_max']}"
-        ),
-    }
-    if extra_params:
-        params.update(extra_params)
-    return f"{endpoint_url}?{urllib.parse.urlencode(params)}"
-
-
-def _iter_geojson_cache_parts(cache_path: str) -> list[Path]:
-    """Return one or more GeoJSON cache files for a cache target."""
-    cache = Path(cache_path)
-    if cache.is_file():
-        return [cache]
-    if cache.is_dir():
-        return sorted(cache.glob("*.geojson"))
-    return []
-
-
-def _load_geojson_cache(cache_path: str, area_label: str) -> gpd.GeoDataFrame | None:
-    """Load cached GeoJSON from a single file or a directory of split parts."""
-    parts = _iter_geojson_cache_parts(cache_path)
-    if not parts:
-        return None
-
-    if len(parts) == 1:
-        print(f"  Loading cached {area_label} polygons from {parts[0]}")
-        return gpd.read_file(parts[0])
-
-    print(
-        f"  Loading cached {area_label} polygons from {len(parts)} files in {cache_path}"
-    )
-    frames = [gpd.read_file(part) for part in parts]
-    merged = gpd.GeoDataFrame(
-        pd.concat(frames, ignore_index=True),
-        geometry="geometry",
-        crs=frames[0].crs,
-    )
-    return merged
-
-
-def _write_geojson_cache(gdf: gpd.GeoDataFrame, cache_path: str) -> None:
-    """Write GeoJSON cache as one file or split parts, based on cache_path."""
-    cache = Path(cache_path)
-    if cache.suffix.lower() == ".geojson":
-        cache.parent.mkdir(parents=True, exist_ok=True)
-        gdf.to_file(cache, driver="GeoJSON")
-        print(f"  Cached to {cache}")
-        return
-
-    cache.mkdir(parents=True, exist_ok=True)
-    for old_part in cache.glob("*.geojson"):
-        old_part.unlink()
-
-    n_rows = len(gdf)
-    part_count = 2
-    chunk_size = max(1, (n_rows + part_count - 1) // part_count)
-    for part_index, start in enumerate(range(0, n_rows, chunk_size), start=1):
-        stop = min(start + chunk_size, n_rows)
-        part_path = cache / f"part_{part_index:02d}.geojson"
-        gdf.iloc[start:stop].to_file(part_path, driver="GeoJSON")
-
-    print(f"  Cached to {cache} ({len(list(cache.glob('*.geojson')))} parts)")
-
-
-def _build_runtime_geojson_resource(cache_path: str) -> str | list[str]:
-    """Return one runtime path or a list of split-part paths from maps/ to geodata/."""
-    parts = _iter_geojson_cache_parts(cache_path)
-    if not parts:
-        rel_path = os.path.relpath(cache_path, MAPS_DIR).replace("\\", "/")
-        return rel_path
-    rel_paths = [os.path.relpath(part, MAPS_DIR).replace("\\", "/") for part in parts]
-    if len(rel_paths) == 1:
-        return rel_paths[0]
-    return rel_paths
-
-
-def download_postcode_polygons(
-    *,
-    bbox: dict[str, float],
-    cache_path: str,
-    endpoint_url: str,
-    area_property: str,
-    area_label: str,
-    query_params: dict[str, int | str] | None = None,
-) -> gpd.GeoDataFrame:
-    """Download postcode polygons from PDOK CBS API, with local caching."""
-    cached_gdf = _load_geojson_cache(cache_path, area_label)
-    if cached_gdf is not None:
-        return cached_gdf
-
-    print(f"  Downloading {area_label} polygons from PDOK...")
-    features = []
-    page_count = 0
-    next_url = _build_area_api_url(endpoint_url, bbox, query_params)
-    while next_url:
-        with urllib.request.urlopen(next_url, timeout=60) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-
-        page_features = payload.get("features", [])
-        if not page_features:
-            break
-        features.extend(page_features)
-        page_count += 1
-        if page_count == 1 or page_count % 5 == 0:
-            print(
-                f"    Pages fetched: {page_count} | "
-                f"{area_label} areas so far: {len(features)}"
-            )
-
-        next_url = None
-        for link in payload.get("links", []):
-            if link.get("rel") == "next" and link.get("href"):
-                next_url = link["href"]
-                break
-
-    gdf = gpd.GeoDataFrame.from_features(features, crs="EPSG:4326")
-    if area_property not in gdf.columns:
-        raise KeyError(f"{area_label} response missing '{area_property}' column")
-    print(f"  Downloaded {len(gdf)} {area_label} areas")
-
-    _write_geojson_cache(gdf, cache_path)
-    return gdf
-
-
-def process_date(
-    data_dir: str,
-    year: int,
-    month: int,
-    day: int,
-    pc4_gdf: gpd.GeoDataFrame,
-) -> dict | None:
-    """Process one date's processed tables."""
-    date_str = f"{year}-{month:02d}-{day:02d}"
-    stations_df = load_station_day(data_dir, PROVIDER, year, month, day)
-    if stations_df is None or stations_df.empty:
-        print(f"  {date_str}: station metadata not found, skipping")
-        return None
-
-    required_station_cols = {"station_id", "name", "lat", "lon", "capacity"}
-    if not required_station_cols.issubset(stations_df.columns):
-        print(f"  {date_str}: station metadata columns missing, skipping")
-        return None
-
-    all_stations = stations_df[list(required_station_cols)].to_dict("records")
-    dh_stations = filter_by_bbox(all_stations, DEN_HAAG_BBOX)
-    if not dh_stations:
-        print(f"  {date_str}: no stations in bbox, skipping")
-        return None
-    dh_station_ids = {str(s["station_id"]) for s in dh_stations}
-    print(f"    Stations: {len(dh_stations)}")
-
-    station_gdf = gpd.GeoDataFrame(
-        dh_stations,
-        geometry=[Point(s["lon"], s["lat"]) for s in dh_stations],
-        crs="EPSG:4326",
-    )
-    station_joined = gpd.sjoin(
-        station_gdf,
-        pc4_gdf[["postcode", "geometry"]],
-        how="left",
-        predicate="within",
-    )
-    station_to_pc4 = {}
-    for _, row in station_joined.iterrows():
-        if pd.notna(row["postcode"]):
-            station_to_pc4[row["station_id"]] = int(row["postcode"])
-
-    print("    Loading docked-bike data...")
-    df_avail = load_docked_day(data_dir, PROVIDER, year, month, day)
-    if df_avail is None or df_avail.empty:
-        print(f"  {date_str}: docked table not found, skipping")
-        return None
-    df_avail.columns = df_avail.columns.map(str)
-    df_hourly = df_avail.resample("h").first()
-    hours = sorted({int(ts.hour) for ts in df_hourly.index})
-    if not hours:
-        print(f"  {date_str}: no hourly docked data, skipping")
-        return None
-    max_hour = max(hours)
-    print(f"\n  Processing {date_str} (hours {hours[0]}-{max_hour})...")
-
-    hour_to_row = {ts.hour: df_hourly.loc[ts] for ts in df_hourly.index}
-
-    counts = {}
-    for pc4 in pc4_gdf["postcode"]:
-        pc4_key = str(int(pc4))
-        counts[pc4_key] = {
-            "c": [0] * (max_hour + 1),
-            "s": [0] * (max_hour + 1),
-            "f": [0] * (max_hour + 1),
-        }
-
-    for hour in hours:
-        row = hour_to_row.get(hour)
-        if row is None:
-            continue
-        for station_id in dh_station_ids:
-            if station_id not in df_hourly.columns:
-                continue
-            pc4 = station_to_pc4.get(station_id)
-            if not pc4:
-                continue
-            pc4_key = str(pc4)
-            if pc4_key not in counts:
-                continue
-            raw_value = row.get(station_id, 0)
-            value = int(raw_value) if pd.notna(raw_value) else 0
-            counts[pc4_key]["s"][hour] += value
-            counts[pc4_key]["c"][hour] += value
-
-    bikes_by_hour: dict[str, list[list[float]]] = {str(hour): [] for hour in hours}
-
-    stations_js = []
-    for station in dh_stations:
-        station_id = station["station_id"]
-        pc4 = station_to_pc4.get(station_id, 0)
-        hourly_avail = [0] * (max_hour + 1)
-        for hour in hours:
-            row = hour_to_row.get(hour)
-            if row is not None and station_id in df_hourly.columns:
-                raw_value = row.get(station_id, 0)
-                hourly_avail[hour] = int(raw_value) if pd.notna(raw_value) else 0
-        stations_js.append(
-            {
-                "ll": [round(station["lat"], 6), round(station["lon"], 6)],
-                "n": station["name"],
-                "cap": int(station["capacity"]) if pd.notna(station["capacity"]) else 0,
-                "pc": pc4,
-                "av": hourly_avail,
-            }
-        )
-
-    hotspot = build_hourly_hotspot_data(stations_js, hours, DEN_HAAG_BBOX)
-
-    return {
-        "hours": hours,
-        "maxHour": max_hour,
-        "counts": counts,
-        "bikes": bikes_by_hour,
-        "stations": stations_js,
-        "hotspot": hotspot,
-    }
-
-
-def build_panel_controls_html(
-    panel_id: str,
-    visualization_options: str,
-) -> str:
-    """Render the floating controls card for one map panel."""
-    return f"""
-        <div class="panel-controls" id="{panel_id}-controls-box">
-            <div class="drag-handle panel-drag-handle">
-                <span class="panel-heading-label" id="{panel_id}-panel-heading-label">Map controls</span>
+<div class="panel-controls" id="left-controls-box">
+    <div class="drag-handle panel-drag-handle">
+        <span class="panel-heading-label" id="left-panel-heading-label">Map controls</span>
+    </div>
+    <div class="controls-row">
+        <div class="control-inline slider-row">
+            <div class="control-header">
+                <label for="left-date-input">Date</label>
+                <span class="date-readout" id="left-date-label"></span>
             </div>
-            <div class="controls-row">
-                <div class="control-inline slider-row">
-                    <div class="control-header">
-                        <label for="{panel_id}-date-input">Date</label>
-                        <span class="date-readout" id="{panel_id}-date-label"></span>
-                    </div>
-                    <input type="date" id="{panel_id}-date-input">
-                </div>
-            </div>
-            <div class="controls-row">
-                <div class="control-inline slider-row">
-                    <div class="control-header">
-                        <label for="{panel_id}-hour-slider">Time</label>
-                        <span class="hour-readout" id="{panel_id}-hour-label">00:00</span>
-                    </div>
-                    <input type="range" id="{panel_id}-hour-slider" min="0" max="23" value="0">
-                </div>
-            </div>
-            <div class="controls-row">
-                <div class="control-inline">
-                    <label for="{panel_id}-visualization-mode">Visualization</label>
-                    <select id="{panel_id}-visualization-mode">
-{visualization_options}
-                    </select>
-                </div>
-            </div>
+            <input type="date" id="left-date-input">
         </div>
-    """
-
-
-def build_page_styles(left_map_id: str) -> str:
-    """Return page-level styles for the compare-mode layout."""
-    return dedent(
-        f"""
-        <style>
-        html, body {{
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }}
-
-        body {{
-            font-family: sans-serif;
-            background: #dfe6ea;
-            color: #24313f;
-        }}
-
-        #map-shell {{
-            position: fixed;
-            inset: 0;
-            padding: 12px;
-            box-sizing: border-box;
-        }}
-
-        #map-grid {{
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 12px;
-            height: 100%;
-        }}
-
-        body.compare-on #map-grid {{
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        }}
-
-        .map-panel {{
-            position: relative;
-            min-width: 0;
-            min-height: 0;
-            border-radius: 14px;
-            overflow: hidden;
-            background: #eef2f3;
-            box-shadow: 0 10px 28px rgba(22, 35, 46, 0.14);
-        }}
-
-        #panel-right {{
-            display: none;
-        }}
-
-        body.compare-on #panel-right {{
-            display: block;
-        }}
-
-        .map-slot {{
-            position: absolute;
-            inset: 0;
-        }}
-
-        #{left_map_id},
-        #compare-map-right {{
-            position: absolute !important;
-            inset: 0;
-            width: 100% !important;
-            height: 100% !important;
-        }}
-
-        .panel-controls {{
-            position: absolute;
-            right: 16px;
-            bottom: 16px;
-            z-index: 1200;
-            width: min(380px, calc(100% - 32px));
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid #c8d0d7;
-            border-radius: 12px;
-            padding: 12px 14px;
-            box-shadow: 0 12px 26px rgba(34, 49, 63, 0.16);
-            box-sizing: border-box;
-        }}
-
-        .drag-handle {{
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 12px;
-            margin-bottom: 10px;
-            cursor: grab;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-        }}
-
-        .drag-handle.is-dragging {{
-            cursor: grabbing;
-        }}
-
-        .panel-heading-label {{
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: #5c6a78;
-        }}
-
-        .controls-row {{
-            display: flex;
-            justify-content: center;
-            margin-bottom: 10px;
-        }}
-
-        .controls-row:last-child {{
-            margin-bottom: 0;
-        }}
-
-        .control-inline {{
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 6px;
-            width: min(300px, 100%);
-        }}
-
-        .control-header {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }}
-
-        .control-inline label {{
-            font-size: 13px;
-            font-weight: 600;
-            color: #304050;
-        }}
-
-        .panel-controls select,
-        .panel-controls input[type="range"],
-        .panel-controls input[type="date"] {{
-            accent-color: #1e6bb8;
-        }}
-
-        .panel-controls select,
-        .panel-controls input[type="date"] {{
-            font-size: 13px;
-            padding: 4px 8px;
-            border: 1px solid #c6cdd4;
-            border-radius: 6px;
-            background: white;
-            color: #1d2b38;
-            width: 100%;
-        }}
-
-        .date-readout,
-        .hour-readout {{
-            font-size: 14px;
-            font-weight: 700;
-            text-align: right;
-            color: #1d2b38;
-        }}
-
-        .slider-row input[type="range"] {{
-            width: 100%;
-        }}
-
-        .legend-scale-zero {{
-            color: #6f7882;
-        }}
-
-        .legend-scale-low {{
-            color: #d62728;
-        }}
-
-        .legend-scale-medium {{
-            color: #ff7f0e;
-        }}
-
-        .legend-scale-high {{
-            color: #2ca02c;
-        }}
-
-        .hotspot-size-label {{
-            min-width: 44px;
-            font-size: 13px;
-            text-align: right;
-            color: #51606f;
-        }}
-
-        .legend-hotspot-control {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-            padding-top: 8px;
-            border-top: 1px solid #e1e7ec;
-        }}
-
-        .legend-hotspot-control-stack {{
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }}
-
-        .legend-hotspot-control label {{
-            font-size: 13px;
-            font-weight: 600;
-            color: #304050;
-        }}
-
-        .legend-hotspot-control input[type="range"] {{
-            flex: 1 1 auto;
-            min-width: 120px;
-        }}
-
-        #legend-box {{
-            position: fixed;
-            left: 24px;
-            bottom: 24px;
-            z-index: 1300;
-            width: min(330px, calc(100% - 48px));
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid #c2ccd5;
-            border-radius: 12px;
-            padding: 12px 14px;
-            box-shadow: 0 14px 28px rgba(36, 49, 63, 0.18);
-            box-sizing: border-box;
-            font-size: 13px;
-            line-height: 1.5;
-        }}
-
-        .runtime-status {{
-            position: fixed;
-            top: 18px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1400;
-            max-width: min(680px, calc(100% - 36px));
-            padding: 10px 14px;
-            border: 1px solid #c8d0d7;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.96);
-            box-shadow: 0 10px 24px rgba(36, 49, 63, 0.16);
-            box-sizing: border-box;
-            color: #22303d;
-            font-size: 13px;
-            line-height: 1.4;
-        }}
-
-        .runtime-status-text {{
-            margin-bottom: 8px;
-            font-weight: 600;
-        }}
-
-        .runtime-status-progress {{
-            height: 8px;
-            border-radius: 999px;
-            background: #dfe7ee;
-            overflow: hidden;
-        }}
-
-        .runtime-status-progress-bar {{
-            width: 0%;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, #1f7ae0 0%, #4db6ff 100%);
-            transition: width 180ms ease;
-        }}
-
-        .runtime-status.is-error {{
-            border-color: #c94747;
-            color: #8f1f1f;
-        }}
-
-        .runtime-status.is-error .runtime-status-progress {{
-            display: none;
-        }}
-
-        .legend-top {{
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-bottom: 8px;
-        }}
-
-        .legend-title {{
-            font-size: 15px;
-            font-weight: 700;
-            color: #1d2b38;
-        }}
-
-        .legend-credit {{
-            margin-top: 2px;
-            font-size: 11px;
-            color: #6a7a89;
-        }}
-
-        .legend-toggle {{
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            color: #41515f;
-            user-select: none;
-        }}
-
-        .legend-toggle input {{
-            margin: 0;
-        }}
-
-        .legend-drag-handle {{
-            margin-bottom: 8px;
-        }}
-
-        .compare-sync-options {{
-            display: none;
-            gap: 6px;
-            flex-direction: column;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e1e7ec;
-        }}
-
-        body.compare-on .compare-sync-options {{
-            display: flex;
-        }}
-
-        .legend-static {{
-            color: #4d5c6a;
-            margin-bottom: 10px;
-        }}
-
-        .legend-select-filter {{
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-bottom: 10px;
-        }}
-
-        .legend-select-filter label {{
-            font-size: 13px;
-            font-weight: 600;
-            color: #304050;
-        }}
-
-        .legend-select-filter select {{
-            font-size: 13px;
-            padding: 4px 8px;
-            border: 1px solid #c6cdd4;
-            border-radius: 6px;
-            background: white;
-            color: #1d2b38;
-            width: 100%;
-        }}
-
-        #legend-dynamic {{
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }}
-
-        #legend-right-content {{
-            display: none;
-        }}
-
-        body.compare-on #legend-right-content {{
-            display: block;
-        }}
-
-        body.compare-on.legend-unified #legend-right-content {{
-            display: none;
-        }}
-
-        .leaflet-popup-content {{
-            margin: 10px 12px;
-        }}
-
-        body.theme-dark {{
-            background: #111923;
-            color: #e5edf5;
-        }}
-
-        body.theme-dark .map-panel {{
-            background: #16202b;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
-        }}
-
-        body.theme-dark .panel-controls,
-        body.theme-dark #legend-box {{
-            background: rgba(20, 29, 39, 0.95);
-            border-color: #314253;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
-        }}
-
-        body.theme-dark .runtime-status {{
-            background: rgba(20, 29, 39, 0.95);
-            border-color: #314253;
-            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.34);
-            color: #d6e1ec;
-        }}
-
-        body.theme-dark .runtime-status-progress {{
-            background: #223244;
-        }}
-
-        body.theme-dark .runtime-status.is-error {{
-            border-color: #da6c6c;
-            color: #ffb1b1;
-        }}
-
-        body.theme-dark .panel-heading-label,
-        body.theme-dark .hotspot-size-label,
-        body.theme-dark .legend-static,
-        body.theme-dark .legend-toggle {{
-            color: #c3d0dc;
-        }}
-
-        body.theme-dark .control-inline label,
-        body.theme-dark .legend-title,
-        body.theme-dark .legend-select-filter label,
-        body.theme-dark .legend-hotspot-control label,
-        body.theme-dark .date-readout,
-        body.theme-dark .hour-readout {{
-            color: #edf4fb;
-        }}
-
-        body.theme-dark .legend-credit {{
-            color: #9fb1c3;
-        }}
-
-        body.theme-dark .panel-controls select,
-        body.theme-dark .panel-controls input[type="date"] {{
-            background: #13202c;
-            color: #edf4fb;
-            border-color: #38506a;
-        }}
-
-        body.theme-dark .legend-select-filter select {{
-            background: #13202c;
-            color: #edf4fb;
-            border-color: #38506a;
-        }}
-
-        body.theme-dark .panel-controls select,
-        body.theme-dark .panel-controls input[type="date"],
-        body.theme-dark .panel-controls input[type="range"],
-        body.theme-dark .legend-select-filter select,
-        body.theme-dark .legend-hotspot-control input[type="range"] {{
-            accent-color: #66b7ff;
-        }}
-
-        body.theme-dark .legend-hotspot-control,
-        body.theme-dark .compare-sync-options {{
-            border-color: #314253;
-        }}
-
-        body.theme-dark .legend-scale-zero {{
-            color: #8a949e;
-        }}
-
-        body.theme-dark .legend-scale-low {{
-            color: #ff7373;
-        }}
-
-        body.theme-dark .legend-scale-medium {{
-            color: #ffb454;
-        }}
-
-        body.theme-dark .legend-scale-high {{
-            color: #5ee38b;
-        }}
-
-        body.theme-dark .leaflet-control-zoom a {{
-            background: rgba(20, 29, 39, 0.96);
-            color: #edf4fb;
-            border-bottom-color: #314253;
-        }}
-
-        body.theme-dark .leaflet-control-zoom a:hover {{
-            background: #233242;
-        }}
-
-        body.theme-dark .leaflet-control-attribution {{
-            background: rgba(20, 29, 39, 0.92);
-            color: #c3d0dc;
-        }}
-
-        body.theme-dark .leaflet-control-attribution a {{
-            color: #8ec8ff;
-        }}
-
-        body.theme-dark .leaflet-popup-content-wrapper,
-        body.theme-dark .leaflet-popup-tip {{
-            background: #16202b;
-            color: #edf4fb;
-        }}
-
-        body.theme-dark .leaflet-popup-content {{
-            color: #edf4fb;
-        }}
-
-        @media (max-width: 1100px) {{
-            body.compare-on #map-grid {{
-                grid-template-columns: minmax(0, 1fr);
-                grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-            }}
-
-            .panel-controls {{
-                left: auto;
-                right: 12px;
-                bottom: 12px;
-                width: auto;
-            }}
-
-            #legend-box {{
-                left: 12px;
-                right: 12px;
-                bottom: 12px;
-                width: auto;
-                max-width: none;
-            }}
-        }}
-
-        .house-marker-icon,
-        .house-cluster-icon {{
-            background: none !important;
-            border: none !important;
-        }}
-        </style>
-        """
-    ).strip()
-
-
-def build_page_html(
-    visualization_options: str,
-) -> str:
-    """Return the compare-mode page chrome."""
-    left_controls = build_panel_controls_html(
-        "left",
-        visualization_options,
-    )
-    right_controls = build_panel_controls_html(
-        "right",
-        visualization_options,
-    )
-    return dedent(
-        f"""
-        <div id="map-shell">
-            <div id="map-grid">
-                <section class="map-panel" id="panel-left">
-                    <div class="map-slot" id="left-map-slot"></div>
-                    {left_controls}
-                </section>
-                <section class="map-panel" id="panel-right">
-                    <div class="map-slot">
-                        <div id="compare-map-right"></div>
-                    </div>
-                    {right_controls}
-                </section>
+    </div>
+    <div class="controls-row">
+        <div class="control-inline slider-row">
+            <div class="control-header">
+                <label for="left-hour-slider">Time</label>
+                <span class="hour-readout" id="left-hour-label">00:00</span>
             </div>
+            <input type="range" id="left-hour-slider" min="0" max="23" value="0">
         </div>
-        <div id="legend-box">
-            <div class="drag-handle legend-drag-handle" id="legend-drag-handle">
-                <span class="legend-title">Available Bikes</span>
-                <div class="legend-credit">By Lorenzo Rota</div>
-            </div>
-            <div class="legend-top">
-                <label class="legend-toggle" for="theme-toggle">
-                    <input type="checkbox" id="theme-toggle">
-                    <span>Dark mode</span>
-                </label>
-                <label class="legend-toggle" for="compare-toggle">
-                    <input type="checkbox" id="compare-toggle">
-                    <span>Compare mode</span>
-                </label>
-            </div>
-            <div class="compare-sync-options" id="compare-sync-options">
-                <label class="legend-toggle" for="sync-movement-toggle">
-                    <input type="checkbox" id="sync-movement-toggle" checked>
-                    <span>Sync movement</span>
-                </label>
-                <label class="legend-toggle" for="sync-visualization-toggle">
-                    <input type="checkbox" id="sync-visualization-toggle" checked>
-                    <span>Sync visualization</span>
-                </label>
-                <label class="legend-toggle" for="sync-date-toggle">
-                    <input type="checkbox" id="sync-date-toggle">
-                    <span>Sync date</span>
-                </label>
-                <label class="legend-toggle" for="sync-time-toggle">
-                    <input type="checkbox" id="sync-time-toggle">
-                    <span>Sync time</span>
-                </label>
-            </div>
-            <div class="legend-static">
-                <div class="legend-select-filter">
-                    <label for="provider-filter">Provider</label>
-                    <select id="provider-filter"></select>
-                </div>
-                <div class="legend-select-filter">
-                    <label for="postcode-level-toggle">Area level</label>
-                    <select id="postcode-level-toggle">
-                        <option value="pc4">PC4</option>
-                        <option value="pc6">PC6</option>
-                        <option value="buurt">CBS buurten</option>
-                        <option value="wijk">CBS wijken</option>
-                    </select>
-                </div>
-                Station bikes available:<br>
-                <span class="legend-scale-zero">&#9679;</span> 0<br>
-                <span class="legend-scale-low">&#9679;</span> 1 &ndash; 3<br>
-                <span class="legend-scale-medium">&#9679;</span> 4 &ndash; 6<br>
-                <span class="legend-scale-high">&#9679;</span> 7+
-            </div>
-            <div id="legend-dynamic">
-                <div id="legend-left-content"></div>
-                <div id="legend-right-content"></div>
-            </div>
+    </div>
+    <div class="controls-row">
+        <div class="control-inline">
+            <label for="left-visualization-mode">Visualization</label>
+            <select id="left-visualization-mode">
+        <option value="gradient">Continuous gradient</option>
+        <option value="fixed">Fixed (0 / 1-3 / 4-6 / 7+)</option>
+        <option value="hotspot">Space-time hotspot</option>
+        <option value="house-proximity">House proximity</option>
+            </select>
         </div>
-        <div id="runtime-status" class="runtime-status" hidden>
-            <div id="runtime-status-text" class="runtime-status-text"></div>
-            <div class="runtime-status-progress">
-                <div id="runtime-status-progress-bar" class="runtime-status-progress-bar"></div>
+    </div>
+</div>
+
+        </section>
+        <section class="map-panel" id="panel-right">
+            <div class="map-slot">
+                <div id="compare-map-right"></div>
             </div>
+
+<div class="panel-controls" id="right-controls-box">
+    <div class="drag-handle panel-drag-handle">
+        <span class="panel-heading-label" id="right-panel-heading-label">Map controls</span>
+    </div>
+    <div class="controls-row">
+        <div class="control-inline slider-row">
+            <div class="control-header">
+                <label for="right-date-input">Date</label>
+                <span class="date-readout" id="right-date-label"></span>
+            </div>
+            <input type="date" id="right-date-input">
         </div>
-        """
-    ).strip()
+    </div>
+    <div class="controls-row">
+        <div class="control-inline slider-row">
+            <div class="control-header">
+                <label for="right-hour-slider">Time</label>
+                <span class="hour-readout" id="right-hour-label">00:00</span>
+            </div>
+            <input type="range" id="right-hour-slider" min="0" max="23" value="0">
+        </div>
+    </div>
+    <div class="controls-row">
+        <div class="control-inline">
+            <label for="right-visualization-mode">Visualization</label>
+            <select id="right-visualization-mode">
+        <option value="gradient">Continuous gradient</option>
+        <option value="fixed">Fixed (0 / 1-3 / 4-6 / 7+)</option>
+        <option value="hotspot">Space-time hotspot</option>
+        <option value="house-proximity">House proximity</option>
+            </select>
+        </div>
+    </div>
+</div>
 
-
-def build_custom_js(
-    *,
-    map_js: str,
-    map_id: str,
-    default_visualization_json: str,
-    visualization_js: str,
-    artifacts_index_path: str,
-    postcode_geojson_paths_json: str,
-    postcode_configs_json: str,
-    postcode_levels_json: str,
-    default_postcode_level_json: str,
-    house_data_path: str,
-) -> str:
-    """Build the client-side compare-mode behavior."""
-    js_template = """
+        </section>
+    </div>
+</div>
+<div id="legend-box">
+    <div class="drag-handle legend-drag-handle" id="legend-drag-handle">
+        <span class="legend-title">Available Bikes</span>
+        <div class="legend-credit">By Lorenzo Rota</div>
+    </div>
+    <div class="legend-top">
+        <label class="legend-toggle" for="theme-toggle">
+            <input type="checkbox" id="theme-toggle">
+            <span>Dark mode</span>
+        </label>
+        <label class="legend-toggle" for="compare-toggle">
+            <input type="checkbox" id="compare-toggle">
+            <span>Compare mode</span>
+        </label>
+    </div>
+    <div class="compare-sync-options" id="compare-sync-options">
+        <label class="legend-toggle" for="sync-movement-toggle">
+            <input type="checkbox" id="sync-movement-toggle" checked>
+            <span>Sync movement</span>
+        </label>
+        <label class="legend-toggle" for="sync-visualization-toggle">
+            <input type="checkbox" id="sync-visualization-toggle" checked>
+            <span>Sync visualization</span>
+        </label>
+        <label class="legend-toggle" for="sync-date-toggle">
+            <input type="checkbox" id="sync-date-toggle">
+            <span>Sync date</span>
+        </label>
+        <label class="legend-toggle" for="sync-time-toggle">
+            <input type="checkbox" id="sync-time-toggle">
+            <span>Sync time</span>
+        </label>
+    </div>
+    <div class="legend-static">
+        <div class="legend-select-filter">
+            <label for="provider-filter">Provider</label>
+            <select id="provider-filter"></select>
+        </div>
+        <div class="legend-select-filter">
+            <label for="postcode-level-toggle">Area level</label>
+            <select id="postcode-level-toggle">
+                <option value="pc4">PC4</option>
+                <option value="pc6">PC6</option>
+                <option value="buurt">CBS buurten</option>
+                <option value="wijk">CBS wijken</option>
+            </select>
+        </div>
+        Station bikes available:<br>
+        <span class="legend-scale-zero">&#9679;</span> 0<br>
+        <span class="legend-scale-low">&#9679;</span> 1 &ndash; 3<br>
+        <span class="legend-scale-medium">&#9679;</span> 4 &ndash; 6<br>
+        <span class="legend-scale-high">&#9679;</span> 7+
+    </div>
+    <div id="legend-dynamic">
+        <div id="legend-left-content"></div>
+        <div id="legend-right-content"></div>
+    </div>
+</div>
+<div id="runtime-status" class="runtime-status" hidden>
+    <div id="runtime-status-text" class="runtime-status-text"></div>
+    <div class="runtime-status-progress">
+        <div id="runtime-status-progress-bar" class="runtime-status-progress-bar"></div>
+    </div>
+</div>
+    
     <script>
     window.addEventListener('load', async function() {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
-        var leftMap = __LEFT_MAP__;
+        var leftMap = map_8b28ca77ad0bcaaebac20bb4fddcea0d;
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
@@ -1215,22 +747,22 @@ def build_custom_js(
         var stationMetadataPromises = Object.create(null);
         var loadedDateKeys = Object.create(null);
         var providerDateData = Object.create(null);
-        var defaultVisualizationMode = __DEFAULT_VISUALIZATION_MODE__;
+        var defaultVisualizationMode = "gradient";
         var defaultInitialDate = '2026-03-01';
-        var defaultCenter = __DEFAULT_CENTER__;
-        var defaultZoom = __DEFAULT_ZOOM__;
-        var artifactsIndexPath = '__ARTIFACTS_INDEX_PATH__';
-        var postcodeGeojsonPaths = __POSTCODE_GEOJSON_PATHS__;
-        var postcodeConfigs = __POSTCODE_CONFIGS__;
-        var postcodeLevels = __POSTCODE_LEVELS__;
-        var postcodeLevel = __DEFAULT_POSTCODE_LEVEL__;
-        var houseDataPath = '__HOUSE_DATA_PATH__';
-        var denHaagBBox = __DEN_HAAG_BBOX__;
-        var allProvidersValue = __ALL_PROVIDERS_VALUE__;
-        var providerInfo = __MAP_PROVIDER_INFO__;
-        var providerOrder = __MAP_PROVIDER_ORDER__;
+        var defaultCenter = [52.075, 4.3];
+        var defaultZoom = 13;
+        var artifactsIndexPath = '../index/artifacts.json';
+        var postcodeGeojsonPaths = {"pc4": "../geodata/pc4_den_haag.geojson", "pc6": ["../geodata/pc6_den_haag/part_01.geojson", "../geodata/pc6_den_haag/part_02.geojson"], "buurt": "../geodata/buurten_den_haag.geojson", "wijk": "../geodata/wijken_den_haag.geojson"};
+        var postcodeConfigs = {"pc4": {"label": "PC4", "property": "postcode"}, "pc6": {"label": "PC6", "property": "postcode6"}, "buurt": {"label": "CBS buurten", "property": "buurtcode"}, "wijk": {"label": "CBS wijken", "property": "wijkcode"}};
+        var postcodeLevels = ["pc4", "pc6", "buurt", "wijk"];
+        var postcodeLevel = "pc4";
+        var houseDataPath = '../geodata/houses_den_haag.json';
+        var denHaagBBox = {"lat_min": 52.03, "lat_max": 52.12, "lon_min": 4.22, "lon_max": 4.38};
+        var allProvidersValue = "__all__";
+        var providerInfo = {"donkey_denHaag": {"label": "Donkey Republic"}, "ns_ov_fiets": {"label": "NS OV-fiets"}};
+        var providerOrder = ["donkey_denHaag", "ns_ov_fiets"];
         var availableProviderKeys = [];
-        var activeProvider = __DEFAULT_PROVIDER__;
+        var activeProvider = "__all__";
         var compareEnabled = false;
         var selectedAreaCode = null;
         var viewportSyncInProgress = false;
@@ -1243,9 +775,563 @@ def build_custom_js(
         var houseData = null;
         var houseDataPromise = null;
 
-        __VISUALIZATION_JS__
+        var THEME_PALETTES = {
+    light: {
+        scaleZero: '#c5ccd3',
+        scaleBlue: '#6f7882',
+        scaleGreen: '#2ca02c',
+        scaleOrange: '#ff7f0e',
+        scaleRed: '#d62728',
+        polygonStroke: '#000000',
+        hotspotPolygonFill: '#ffffff',
+        hotspotPolygonStroke: '#7a7a7a',
+        docklessMarker: '#333333',
+        stationMarker: '#e377c2',
+        selectedMarker: '#000000',
+        hotspotDockless: '#9aa3ab',
+        hotspotLow: '#d62728',
+        hotspotMedium: '#ff7f0e',
+        hotspotPeak: '#2ca02c',
+        houseNear: '#1a9850',
+        houseMid: '#91cf60',
+        houseFar: '#fdae61',
+        houseVeryFar: '#d73027',
+        houseNone: '#7f8c8d',
+        housePolygonStroke: '#9aa7b4',
+        gradientBorder: '#999999',
+        legendSubtleText: '#555555'
+    },
+    dark: {
+        scaleZero: '#5b6670',
+        scaleBlue: '#8a949e',
+        scaleGreen: '#5ee38b',
+        scaleOrange: '#ffb454',
+        scaleRed: '#ff7373',
+        polygonStroke: '#e3ebf3',
+        hotspotPolygonFill: '#d7e4f1',
+        hotspotPolygonStroke: '#a7b8ca',
+        docklessMarker: '#d0dae4',
+        stationMarker: '#ff8fda',
+        selectedMarker: '#ffffff',
+        hotspotDockless: '#8f99a3',
+        hotspotLow: '#ff7373',
+        hotspotMedium: '#ffb454',
+        hotspotPeak: '#5ee38b',
+        houseNear: '#4fd889',
+        houseMid: '#a8e76d',
+        houseFar: '#ffc16b',
+        houseVeryFar: '#ff8a7d',
+        houseNone: '#8a99a8',
+        housePolygonStroke: '#6a7d90',
+        gradientBorder: '#c0ccd8',
+        legendSubtleText: '#c7d3df'
+    }
+};
 
-        var leftMapElement = document.getElementById('__LEFT_MAP_ID__');
+function isHotspotMode(mode) {
+    return mode === 'hotspot';
+}
+
+function isHouseMode(mode) {
+    return mode === 'house-proximity';
+}
+
+function isProportionalMode(mode) {
+    return mode === 'global' || mode === 'per-date' || mode === 'per-hour';
+}
+
+function lerpColor(a, b, t) {
+    return [
+        Math.round(a[0] + (b[0] - a[0]) * t),
+        Math.round(a[1] + (b[1] - a[1]) * t),
+        Math.round(a[2] + (b[2] - a[2]) * t)
+    ];
+}
+
+function hexToRgbArray(hex) {
+    var normalized = String(hex || '').replace('#', '');
+    if (normalized.length === 3) {
+        normalized = normalized[0] + normalized[0] +
+                     normalized[1] + normalized[1] +
+                     normalized[2] + normalized[2];
+    }
+    return [
+        parseInt(normalized.slice(0, 2), 16),
+        parseInt(normalized.slice(2, 4), 16),
+        parseInt(normalized.slice(4, 6), 16)
+    ];
+}
+
+function getThemeName() {
+    return document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+}
+
+function getThemePalette() {
+    return THEME_PALETTES[getThemeName()];
+}
+
+function themeColor(name) {
+    return getThemePalette()[name];
+}
+
+function getPolygonStrokeColor(mode) {
+    if (isHotspotMode(mode)) return themeColor('hotspotPolygonStroke');
+    if (isHouseMode(mode)) return themeColor('housePolygonStroke');
+    return themeColor('polygonStroke');
+}
+
+function getPolygonFillOpacity(mode) {
+    if (isHotspotMode(mode)) {
+        return getThemeName() === 'dark' ? 0.08 : 0.04;
+    }
+    if (isHouseMode(mode)) return 0.0;
+    return getThemeName() === 'dark' ? 0.72 : 0.6;
+}
+
+function stationColorForAvailability(avail) {
+    var count = Number(avail);
+    if (!isFinite(count) || count <= 0) return themeColor('scaleBlue');
+    if (count <= 3) return themeColor('scaleRed');
+    if (count <= 6) return themeColor('scaleOrange');
+    return themeColor('scaleGreen');
+}
+
+function ratioToGradient(ratio) {
+    var palette = getThemePalette();
+    var zero = hexToRgbArray(palette.scaleZero);
+    var red = hexToRgbArray(palette.scaleRed);
+    var orange = hexToRgbArray(palette.scaleOrange);
+    var green = hexToRgbArray(palette.scaleGreen);
+    var rgb;
+    if (ratio <= 0.33) {
+        rgb = lerpColor(zero, red, ratio / 0.33);
+    } else if (ratio <= 0.66) {
+        rgb = lerpColor(red, orange, (ratio - 0.33) / 0.33);
+    } else {
+        rgb = lerpColor(orange, green, (ratio - 0.66) / 0.34);
+    }
+    return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+}
+
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getVisualizationCounts(dateData) {
+    if (!dateData || !dateData.counts) return {};
+    var nestedCounts = dateData.counts[postcodeLevel];
+    if (nestedCounts && !nestedCounts.c) {
+        return nestedCounts;
+    }
+    return dateData.counts || {};
+}
+
+function getVisualizationDateMax(dateData) {
+    if (!dateData) return 1;
+    if (dateData.dateMaxByLevel && dateData.dateMaxByLevel[postcodeLevel] !== undefined) {
+        return dateData.dateMaxByLevel[postcodeLevel] || 1;
+    }
+    return dateData.dateMax || 1;
+}
+
+function getHourMax(allData, dateKey, hour) {
+    var dateData = allData[dateKey];
+    if (!dateData) return 1;
+    var dateCounts = getVisualizationCounts(dateData);
+    var mx = 0;
+    for (var pc in dateCounts) {
+        var v = dateCounts[pc].c[hour];
+        if (v !== undefined && v > mx) mx = v;
+    }
+    return mx || 1;
+}
+
+function getEffectiveMax(allData, globalMax, mode, dateKey, hour) {
+    if (mode === 'global') return globalMax || 1;
+    if (mode === 'per-date' || mode === 'gradient') {
+        var dateData = allData[dateKey];
+        return getVisualizationDateMax(dateData);
+    }
+    if (mode === 'per-hour') return getHourMax(allData, dateKey, hour);
+    return 1;
+}
+
+function proportionalColorForCount(count, allData, globalMax, mode, dateKey, hour) {
+    if (count === 0) return themeColor('scaleZero');
+    var ratio = Math.min(
+        count / getEffectiveMax(allData, globalMax, mode, dateKey, hour),
+        1.0
+    );
+    if (ratio <= 0.33) return themeColor('scaleRed');
+    if (ratio <= 0.66) return themeColor('scaleOrange');
+    return themeColor('scaleGreen');
+}
+
+function proportionalLegendHtml(allData, globalMax, mode, dateKey, hour) {
+    var mx = getEffectiveMax(allData, globalMax, mode, dateKey, hour);
+    var t1 = Math.round(mx * 0.33);
+    var t2 = Math.round(mx * 0.66);
+    var label = mode === 'global' ? 'global' :
+                mode === 'per-date' ? 'this date' : 'this hour';
+    return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
+           '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 1 &ndash; ' + t1 + '<br>' +
+           '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> ' + (t1 + 1) + ' &ndash; ' + t2 + '<br>' +
+           '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> ' + (t2 + 1) +
+           '+ (max ' + mx + ' ' + label + ')<br>';
+}
+
+function percentileValue(values, percentile) {
+    if (!values.length) return 1;
+    var sorted = values.slice().sort(function(a, b) {
+        return a - b;
+    });
+    var rank = Math.min(
+        sorted.length - 1,
+        Math.max(0, Math.ceil((percentile / 100) * sorted.length) - 1)
+    );
+    return sorted[rank] || 1;
+}
+
+function getGradientScaleMax(allData, globalMax, dateKey, hour) {
+    var dateData = allData[dateKey];
+    if (!dateData) {
+        return globalMax || 1;
+    }
+    var values = [];
+    var dateCounts = getVisualizationCounts(dateData);
+    for (var pc in dateCounts) {
+        if (!Object.prototype.hasOwnProperty.call(dateCounts, pc)) continue;
+        var count = dateCounts[pc].c[hour];
+        if (count !== undefined && count > 0) {
+            values.push(count);
+        }
+    }
+    if (!values.length) return 1;
+    return Math.max(1, percentileValue(values, 95));
+}
+
+function gradientColorForCount(count, allData, globalMax, mode, dateKey, hour) {
+    if (count === 0) return themeColor('scaleZero');
+    var mx = getGradientScaleMax(allData, globalMax, dateKey, hour);
+    var lowCut = Math.min(5, mx);
+    var cappedCount = Math.min(count, mx);
+    var ratio;
+    if (cappedCount <= lowCut) {
+        ratio = (cappedCount / Math.max(lowCut, 1)) * 0.4;
+    } else {
+        ratio = 0.4 + ((cappedCount - lowCut) / Math.max(mx - lowCut, 1)) * 0.6;
+    }
+    return ratioToGradient(Math.min(ratio, 1.0));
+}
+
+function gradientLegendHtml(allData, globalMax, mode, dateKey, hour) {
+    var mx = getGradientScaleMax(allData, globalMax, dateKey, hour);
+    return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0<br>' +
+           '<div style="height:14px;width:120px;border:1px solid ' + themeColor('gradientBorder') + ';border-radius:2px;' +
+           'background:linear-gradient(to right,' +
+           themeColor('scaleZero') + ',' +
+           themeColor('scaleRed') + ',' +
+           themeColor('scaleOrange') + ',' +
+           themeColor('scaleGreen') + ');' +
+           'margin:4px 0;"></div>' +
+           '1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ' +
+           mx + ' (p95 cap)<br>';
+}
+
+function fixedColorForCount(count) {
+    if (count === 0) return themeColor('scaleZero');
+    if (count <= 3) return themeColor('scaleRed');
+    if (count <= 6) return themeColor('scaleOrange');
+    return themeColor('scaleGreen');
+}
+
+function fixedLegendHtml() {
+    return '<span style="color:' + themeColor('scaleZero') + ';">&#9632;</span> 0 bikes<br>' +
+           '<span style="color:' + themeColor('scaleRed') + ';">&#9632;</span> 1 &ndash; 3<br>' +
+           '<span style="color:' + themeColor('scaleOrange') + ';">&#9632;</span> 4 &ndash; 6<br>' +
+           '<span style="color:' + themeColor('scaleGreen') + ';">&#9632;</span> 7+<br>';
+}
+
+var DOCKLESS_BASE_RADIUS_PX = 11;
+var DOCKLESS_MIN_RADIUS_PX = 7;
+var DOCKLESS_MAX_RADIUS_PX = 26;
+var STATION_BASE_RADIUS_PX = 12;
+var STATION_MAX_RADIUS_PX = 26;
+var STATION_MIN_RADIUS_PX = 10;
+var STATION_ABSOLUTE_MAX_RADIUS_PX = 42;
+var HOTSPOT_ZOOM_BASELINE = 13;
+var HOTSPOT_ZOOM_SCALE_STEP = 1.18;
+var HOTSPOT_MIN_ZOOM_SCALE = 0.72;
+var HOTSPOT_MAX_ZOOM_SCALE = 1.9;
+var HOTSPOT_MARKER_ZOOM_THRESHOLD = 15;
+
+function getHotspotHourData(allData, dateKey, hour) {
+    var dateData = allData[dateKey];
+    if (!dateData || !dateData.hotspot) {
+        return { stations: [], stationMax: 0 };
+    }
+    return dateData.hotspot[String(hour)] || {
+        stations: [],
+        stationMax: 0
+    };
+}
+
+function hotspotClamp(value, minValue, maxValue) {
+    return Math.max(minValue, Math.min(maxValue, value));
+}
+
+function hotspotZoomScale(zoom) {
+    var zoomDelta = zoom - HOTSPOT_ZOOM_BASELINE;
+    return hotspotClamp(
+        Math.pow(HOTSPOT_ZOOM_SCALE_STEP, zoomDelta),
+        HOTSPOT_MIN_ZOOM_SCALE,
+        HOTSPOT_MAX_ZOOM_SCALE
+    );
+}
+
+function hotspotDocklessRadius(zoom, hotspotRadiusScale) {
+    return hotspotClamp(
+        DOCKLESS_BASE_RADIUS_PX * hotspotZoomScale(zoom) * hotspotRadiusScale,
+        DOCKLESS_MIN_RADIUS_PX,
+        DOCKLESS_MAX_RADIUS_PX
+    );
+}
+
+function hotspotStationRadius(avail, stationMax, hotspotRadiusScale, zoom) {
+    if (stationMax <= 0) {
+        return hotspotClamp(
+            STATION_BASE_RADIUS_PX * hotspotZoomScale(zoom) * hotspotRadiusScale,
+            STATION_MIN_RADIUS_PX,
+            STATION_ABSOLUTE_MAX_RADIUS_PX
+        );
+    }
+    var scaled = Math.sqrt(avail / Math.max(stationMax, 1));
+    var baseRadius = STATION_BASE_RADIUS_PX +
+        scaled * (STATION_MAX_RADIUS_PX - STATION_BASE_RADIUS_PX);
+    return hotspotClamp(
+        baseRadius * hotspotZoomScale(zoom) * hotspotRadiusScale,
+        STATION_MIN_RADIUS_PX,
+        STATION_ABSOLUTE_MAX_RADIUS_PX
+    );
+}
+
+function hotspotStationOpacity(avail, stationMax) {
+    if (stationMax <= 0) return 0.28;
+    var ratio = Math.min(avail / Math.max(stationMax, 1), 1.0);
+    return 0.24 + (ratio * 0.24);
+}
+
+function hotspotLegendHtml() {
+    return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">Zoom-aware density circles</div>' +
+           '<span style="color:' + themeColor('hotspotLow') + ';">&#9632;</span> Low station availability<br>' +
+           '<span style="color:' + themeColor('hotspotPeak') + ';">&#9632;</span> High station availability';
+}
+
+function hotspotFillColor(avail, stationMax) {
+    var ratio = stationMax > 0 ? Math.min(avail / stationMax, 1.0) : 0;
+    if (ratio <= 0.33) return themeColor('hotspotLow');
+    if (ratio <= 0.75) return themeColor('hotspotMedium');
+    return themeColor('hotspotPeak');
+}
+
+var HOUSE_MODE_MIN_ZOOM = 13;
+var HOUSE_MODE_DETAIL_ZOOM = 16;
+var HOUSE_MODE_MAX_VISIBLE = 8000;
+var HOUSE_CLUSTER_PIXEL_SIZE_MIN = 50;
+var HOUSE_CLUSTER_PIXEL_SIZE_MAX = 76;
+
+function houseColorForDistance(distanceMeters) {
+    if (distanceMeters === null || !isFinite(distanceMeters)) {
+        return themeColor('houseNone');
+    }
+    if (distanceMeters <= 100) return themeColor('houseNear');
+    if (distanceMeters <= 250) return themeColor('houseMid');
+    if (distanceMeters <= 500) return themeColor('houseFar');
+    return themeColor('houseVeryFar');
+}
+
+function houseMarkerSvg(color, size) {
+    // Square SVG icon to distinguish houses from bike circle markers
+    var half = size / 2;
+    return '<svg width="' + size + '" height="' + size + '" ' +
+           'viewBox="0 0 ' + size + ' ' + size + '" ' +
+           'xmlns="http://www.w3.org/2000/svg">' +
+           '<rect x="1" y="1" width="' + (size - 2) + '" height="' + (size - 2) + '" ' +
+           'rx="1" ry="1" ' +
+           'fill="' + color + '" fill-opacity="0.7" ' +
+           'stroke="' + color + '" stroke-opacity="0.9" stroke-width="1"/>' +
+           '</svg>';
+}
+
+function houseClusterSvg(color, size, count) {
+    // Larger square with count label for clustered view
+    return '<svg width="' + size + '" height="' + size + '" ' +
+           'viewBox="0 0 ' + size + ' ' + size + '" ' +
+           'xmlns="http://www.w3.org/2000/svg">' +
+           '<rect x="1" y="1" width="' + (size - 2) + '" height="' + (size - 2) + '" ' +
+           'rx="2" ry="2" ' +
+           'fill="' + color + '" fill-opacity="0.6" ' +
+           'stroke="' + color + '" stroke-opacity="0.85" stroke-width="1.5"/>' +
+           '<text x="' + (size / 2) + '" y="' + (size / 2 + 1) + '" ' +
+           'text-anchor="middle" dominant-baseline="central" ' +
+           'fill="white" font-size="' + Math.max(9, size * 0.38) + 'px" ' +
+           'font-weight="bold" font-family="sans-serif">' +
+           count + '</text>' +
+           '</svg>';
+}
+
+function createHouseIcon(color, size) {
+    var html = houseMarkerSvg(color, size);
+    return L.divIcon({
+        html: html,
+        className: 'house-marker-icon',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+    });
+}
+
+function createHouseClusterIcon(color, size, count) {
+    var html = houseClusterSvg(color, size, count);
+    return L.divIcon({
+        html: html,
+        className: 'house-cluster-icon',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+    });
+}
+
+function houseClusterPixelSize(zoom) {
+    if (zoom <= HOUSE_MODE_MIN_ZOOM) return HOUSE_CLUSTER_PIXEL_SIZE_MAX;
+    if (zoom >= HOUSE_MODE_DETAIL_ZOOM) return HOUSE_CLUSTER_PIXEL_SIZE_MIN;
+    var ratio = (zoom - HOUSE_MODE_MIN_ZOOM) /
+                Math.max(HOUSE_MODE_DETAIL_ZOOM - HOUSE_MODE_MIN_ZOOM, 1);
+    return Math.round(
+        HOUSE_CLUSTER_PIXEL_SIZE_MAX -
+        (ratio * (HOUSE_CLUSTER_PIXEL_SIZE_MAX - HOUSE_CLUSTER_PIXEL_SIZE_MIN))
+    );
+}
+
+function clusterHousePoints(map, supplyPoints) {
+    // Aggregate houses into zoom-level pixel bins so clusters stay stable while panning.
+    var clusters = {};
+    var pixelSize = houseClusterPixelSize(map.getZoom());
+    var zoom = map.getZoom();
+    collectVisibleHousePoints(map, null, function(house) {
+        var lat = house[0];
+        var lon = house[1];
+        var addrs = house[2] || 1;
+        var point = map.project([lat, lon], zoom);
+        var cKey = Math.floor(point.x / pixelSize) + ':' +
+                   Math.floor(point.y / pixelSize);
+        if (!clusters[cKey]) {
+            clusters[cKey] = {
+                latSum: 0,
+                lonSum: 0,
+                totalAddresses: 0,
+                locationCount: 0
+            };
+        }
+        var c = clusters[cKey];
+        c.latSum += lat * addrs;
+        c.lonSum += lon * addrs;
+        c.totalAddresses += addrs;
+        c.locationCount += 1;
+    });
+    var result = [];
+    var keys = Object.keys(clusters);
+    for (var j = 0; j < keys.length; j++) {
+        var cl = clusters[keys[j]];
+        var weight = Math.max(cl.totalAddresses, 1);
+        var avgLat = cl.latSum / weight;
+        var avgLon = cl.lonSum / weight;
+        var avgDist = getClosestSupplyDistance(avgLat, avgLon, supplyPoints);
+        result.push({
+            lat: avgLat,
+            lon: avgLon,
+            totalAddresses: cl.totalAddresses,
+            locationCount: cl.locationCount,
+            avgDistance: avgDist
+        });
+    }
+    return result;
+}
+
+function houseLegendHtml() {
+    return '<div style="margin-bottom:4px;color:' + themeColor('legendSubtleText') + ';">' +
+           'Distance house to nearest sharing bike:' +
+           '</div>' +
+           '<span style="color:' + themeColor('houseNear') + ';">&#9632;</span> 0 &ndash; 100 m<br>' +
+           '<span style="color:' + themeColor('houseMid') + ';">&#9632;</span> 101 &ndash; 250 m<br>' +
+           '<span style="color:' + themeColor('houseFar') + ';">&#9632;</span> 251 &ndash; 500 m<br>' +
+           '<span style="color:' + themeColor('houseVeryFar') + ';">&#9632;</span> 500+ m';
+}
+
+function polygonStyleForCount(count, allData, globalMax, mode, dateKey, hour) {
+    if (mode === 'house-proximity') {
+        return {
+            fillColor: themeColor('houseNone'),
+            fillOpacity: getPolygonFillOpacity(mode),
+            color: getPolygonStrokeColor(mode)
+        };
+    }
+    if (mode === 'gradient') {
+        return {
+            fillColor: gradientColorForCount(
+                count,
+                allData,
+                globalMax,
+                mode,
+                dateKey,
+                hour
+            ),
+            fillOpacity: getPolygonFillOpacity(mode),
+            color: getPolygonStrokeColor(mode)
+        };
+    }
+    if (mode === 'fixed') {
+        return {
+            fillColor: fixedColorForCount(count),
+            fillOpacity: getPolygonFillOpacity(mode),
+            color: getPolygonStrokeColor(mode)
+        };
+    }
+    if (mode === 'hotspot') {
+        return {
+            fillColor: themeColor('hotspotPolygonFill'),
+            fillOpacity: getPolygonFillOpacity(mode),
+            color: getPolygonStrokeColor(mode)
+        };
+    }
+    return {
+        fillColor: proportionalColorForCount(
+            count,
+            allData,
+            globalMax,
+            mode,
+            dateKey,
+            hour
+        ),
+        fillOpacity: getPolygonFillOpacity(mode),
+        color: getPolygonStrokeColor(mode)
+    };
+}
+
+function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
+    if (mode === 'fixed') return fixedLegendHtml();
+    if (mode === 'gradient') {
+        return gradientLegendHtml(allData, globalMax, mode, dateKey, hour);
+    }
+    if (mode === 'hotspot') return hotspotLegendHtml();
+    if (mode === 'house-proximity') return houseLegendHtml();
+    return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
+}
+
+        var leftMapElement = document.getElementById('map_8b28ca77ad0bcaaebac20bb4fddcea0d');
         var leftMapSlot = document.getElementById('left-map-slot');
         if (leftMapElement && leftMapSlot && leftMapElement.parentNode !== leftMapSlot) {
             leftMapSlot.appendChild(leftMapElement);
@@ -1269,12 +1355,12 @@ def build_custom_js(
         var baseLayers = { left: null, right: null };
         var tileConfig = {
             light: {
-                url: '__LIGHT_MAP_TILE_URL__',
-                attribution: '__MAP_TILE_ATTRIBUTION__'
+                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             },
             dark: {
-                url: '__DARK_MAP_TILE_URL__',
-                attribution: '__MAP_TILE_ATTRIBUTION__'
+                url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             }
         };
         var syncSettings = {
@@ -1292,7 +1378,7 @@ def build_custom_js(
         }
 
         function getPostcodeConfig(level) {
-            return postcodeConfigs[level] || postcodeConfigs[__DEFAULT_POSTCODE_LEVEL__];
+            return postcodeConfigs[level] || postcodeConfigs["pc4"];
         }
 
         function getActivePostcodeConfig() {
@@ -1435,9 +1521,9 @@ def build_custom_js(
                 normalized = normalized.slice(1);
             }
             return normalized
-                .split('\\n')
+                .split('\n')
                 .map(function(line) {
-                    return line.endsWith('\\r') ? line.slice(0, -1) : line;
+                    return line.endsWith('\r') ? line.slice(0, -1) : line;
                 })
                 .filter(function(line) {
                     return line.trim().length > 0;
@@ -2169,7 +2255,7 @@ def build_custom_js(
         function setPostcodeLevel(nextLevel) {
             var level = Object.prototype.hasOwnProperty.call(postcodeConfigs, nextLevel)
                 ? nextLevel
-                : __DEFAULT_POSTCODE_LEVEL__;
+                : "pc4";
             if (postcodeLevelEl) {
                 postcodeLevelEl.value = level;
                 postcodeLevelEl.disabled = true;
@@ -3134,7 +3220,7 @@ def build_custom_js(
                                 '</div>';
                             marker.bindPopup(popupContent);
                             marker.bindTooltip(
-                                addrCount + ' addr \u00b7 ' +
+                                addrCount + ' addr · ' +
                                 escapeHtml(formatDistanceMeters(distanceMeters))
                             );
                             marker.addTo(this.houseLayer);
@@ -3164,7 +3250,7 @@ def build_custom_js(
                                 '</div>';
                             clMarker.bindPopup(clPopup);
                             clMarker.bindTooltip(
-                                cl.locationCount + ' buildings \u00b7 ' +
+                                cl.locationCount + ' buildings · ' +
                                 escapeHtml(formatDistanceMeters(cl.avgDistance))
                             );
                             clMarker.addTo(this.houseLayer);
@@ -3409,7 +3495,7 @@ def build_custom_js(
         if (postcodeLevelEl) {
             postcodeLevelEl.value = postcodeLevel;
             postcodeLevelEl.addEventListener('change', function() {
-                setPostcodeLevel(this.value || __DEFAULT_POSTCODE_LEVEL__);
+                setPostcodeLevel(this.value || "pc4");
             });
         }
 
@@ -3476,130 +3562,30 @@ def build_custom_js(
         }
     });
     </script>
-    """
-    return (
-        js_template.replace("__LEFT_MAP__", map_js)
-        .replace("__DEFAULT_VISUALIZATION_MODE__", default_visualization_json)
-        .replace("__DEFAULT_CENTER__", json.dumps(DEN_HAAG_CENTER))
-        .replace("__DEFAULT_ZOOM__", str(DEFAULT_ZOOM))
-        .replace("__ALL_PROVIDERS_VALUE__", json.dumps(ALL_PROVIDERS_VALUE))
-        .replace("__MAP_PROVIDER_INFO__", json.dumps(MAP_PROVIDER_INFO))
-        .replace("__MAP_PROVIDER_ORDER__", json.dumps(list(MAP_PROVIDER_INFO)))
-        .replace("__DEFAULT_PROVIDER__", json.dumps(ALL_PROVIDERS_VALUE))
-        .replace("__VISUALIZATION_JS__", visualization_js)
-        .replace("__LEFT_MAP_ID__", map_id)
-        .replace("__LIGHT_MAP_TILE_URL__", LIGHT_MAP_TILE_URL)
-        .replace("__DARK_MAP_TILE_URL__", DARK_MAP_TILE_URL)
-        .replace("__MAP_TILE_ATTRIBUTION__", MAP_TILE_ATTRIBUTION)
-        .replace("__ARTIFACTS_INDEX_PATH__", artifacts_index_path)
-        .replace("__POSTCODE_GEOJSON_PATHS__", postcode_geojson_paths_json)
-        .replace("__POSTCODE_CONFIGS__", postcode_configs_json)
-        .replace("__POSTCODE_LEVELS__", postcode_levels_json)
-        .replace("__DEFAULT_POSTCODE_LEVEL__", default_postcode_level_json)
-        .replace("__HOUSE_DATA_PATH__", house_data_path)
-        .replace("__DEN_HAAG_BBOX__", json.dumps(DEN_HAAG_BBOX))
-    )
+    
+    
+            <div class="folium-map" id="map_8b28ca77ad0bcaaebac20bb4fddcea0d" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_8b28ca77ad0bcaaebac20bb4fddcea0d = L.map(
+                "map_8b28ca77ad0bcaaebac20bb4fddcea0d",
+                {
+                    center: [52.075, 4.3],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 13,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
 
+                }
+            );
 
-def main():
-    ensure_output_dirs()
+            
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--data-dir",
-        default=str(DATA_DIR),
-        help="Directory with processed tables (default: output/data).",
-    )
-    parser.add_argument(
-        "--output",
-        default=str(MAPS_DIR / "den_haag_pc4.html"),
-    )
-    args = parser.parse_args()
-
-    data_dir = args.data_dir
-    if not os.path.exists(data_dir):
-        print(f"Processed data directory not found yet: {data_dir}")
-        print(
-            "Generating the map shell anyway. It will load data at runtime if files appear."
-        )
-
-    print("Step 1: Ensuring postcode polygon boundaries are cached...")
-    postcode_gdfs = {}
-    for level, cfg in POSTCODE_LEVEL_CONFIG.items():
-        postcode_gdfs[level] = download_postcode_polygons(
-            bbox=DEN_HAAG_BBOX,
-            cache_path=cfg["cache_path"],
-            endpoint_url=cfg["endpoint_url"],
-            area_property=cfg["property"],
-            area_label=cfg["label"],
-            query_params=cfg.get("query_params"),
-        )
-
-    print("\nStep 2: Ensuring house points are cached...")
-    house_points = download_house_points(DEN_HAAG_BBOX, HOUSE_POINTS_CACHE)
-
-    print("\nStep 3: Creating runtime-loading map shell...")
-    m = folium.Map(
-        location=DEN_HAAG_CENTER,
-        zoom_start=DEFAULT_ZOOM,
-        tiles=None,
-    )
-    map_js = m.get_name()
-    map_id = map_js
-
-    default_visualization_json = json.dumps(DEFAULT_VISUALIZATION_MODE)
-    visualization_options = build_visualization_options_html()
-    visualization_js = build_visualization_js()
-
-    m.get_root().header.add_child(folium.Element(build_page_styles(map_id)))
-    m.get_root().html.add_child(folium.Element(build_page_html(visualization_options)))
-    m.get_root().html.add_child(
-        folium.Element(
-            build_custom_js(
-                map_js=map_js,
-                map_id=map_id,
-                default_visualization_json=default_visualization_json,
-                visualization_js=visualization_js,
-                artifacts_index_path="../index/artifacts.json",
-                postcode_geojson_paths_json=json.dumps(
-                    {
-                        level: _build_runtime_geojson_resource(cfg["cache_path"])
-                        for level, cfg in POSTCODE_LEVEL_CONFIG.items()
-                    }
-                ),
-                postcode_configs_json=json.dumps(
-                    {
-                        level: {
-                            "label": cfg["label"],
-                            "property": cfg["property"],
-                        }
-                        for level, cfg in POSTCODE_LEVEL_CONFIG.items()
-                    }
-                ),
-                postcode_levels_json=json.dumps(list(POSTCODE_LEVELS)),
-                default_postcode_level_json=json.dumps(DEFAULT_POSTCODE_LEVEL),
-                house_data_path="../geodata/houses_den_haag.json",
-            )
-        )
-    )
-
-    os.makedirs(os.path.dirname(args.output), exist_ok=True)
-    m.save(args.output)
-    print(f"\nMap saved to: {args.output}")
-    print("\nSummary:")
-    for level in POSTCODE_LEVELS:
-        print(
-            f"  {POSTCODE_LEVEL_CONFIG[level]['label']} areas cached: "
-            f"{len(postcode_gdfs[level])}"
-        )
-    print(f"  Unique residential points cached: {house_points['count']}")
-    print(
-        "  Data is fetched at runtime from output/index, output/data, and output/geodata"
-    )
-
-    csv_path, json_path, _ = rebuild_artifact_index()
-    print(f"\nArtifact index updated: {csv_path} and {json_path}")
-
-
-if __name__ == "__main__":
-    main()
+        
+</script>
+</html>

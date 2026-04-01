@@ -1,4 +1,4 @@
-"""House-level proximity visualization for the Den Haag map."""
+"""House-level proximity visualization for the Den Haag area map."""
 
 from textwrap import dedent
 

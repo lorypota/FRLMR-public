@@ -1,4 +1,4 @@
-"""Hotspot preparation and JS helpers for Den Haag PC4 map."""
+"""Hotspot preparation and JS helpers for the Den Haag area map."""
 
 from __future__ import annotations
 

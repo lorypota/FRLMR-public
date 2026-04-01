@@ -1,4 +1,4 @@
-"""Visualization helpers for Den Haag PC4 map generation."""
+"""Visualization helpers for Den Haag area-map generation."""
 
 from .registry import (
     DEFAULT_VISUALIZATION_MODE,

@@ -1,4 +1,4 @@
-"""Shared helpers for Den Haag PC4 map visualizations."""
+"""Shared helpers for Den Haag area-map visualizations."""
 
 from textwrap import dedent
 

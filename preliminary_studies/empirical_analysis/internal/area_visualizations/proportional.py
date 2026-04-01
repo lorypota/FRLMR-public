@@ -1,4 +1,4 @@
-"""Proportional polygon visualizations for Den Haag PC4 map."""
+"""Proportional polygon visualizations for the Den Haag area map."""
 
 from textwrap import dedent
 

@@ -10,7 +10,7 @@ empirical_analysis/
 ├── build_data_tables.py         # Parse tar snapshots into CSV tables
 │
 ├── map_den_haag_stations.py     # Den Haag station map
-├── map_den_haag_pc4.py          # Den Haag interactive area map
+├── map_den_haag.py              # Den Haag interactive area map
 ├── map_amsterdam_pc4.py         # Amsterdam PC4 map
 │
 ├── analysis_statistics.py       # Statistical coverage analysis
@@ -25,7 +25,7 @@ empirical_analysis/
 │   ├── paths.py                 # Output directory paths
 │   ├── coverage_utils.py        # Coverage computation (nearest-bike distances, aggregation)
 │   ├── cbs_income.py            # CBS StatLine income/WOZ data fetcher
-│   └── pc4_visualizations/      # Map visualization mode modules
+│   └── area_visualizations/     # Map visualization mode modules
 │
 ├── output/
 │   ├── data/                    # Processed CSV tables (docked, dockless, stations)
@@ -54,7 +54,7 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 ### Maps
 
 - `map_den_haag_stations.py`: build a Den Haag station map.
-- `map_den_haag_pc4.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
+- `map_den_haag.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
 - `map_amsterdam_pc4.py`: build Amsterdam PC4 map with date/hour controls.
 
 ### Statistical analysis
@@ -83,7 +83,7 @@ These are used by the runnable scripts above and do not need to be run directly.
 - `internal/paths.py`: shared output folder paths.
 - `internal/coverage_utils.py`: coverage computation (house/buurt loading, coordinate conversion, nearest-bike distances, buurt aggregation).
 - `internal/cbs_income.py`: CBS StatLine income/WOZ data fetcher (table 85618NED) with local caching.
-- `internal/pc4_visualizations/`: modules per visualization type (`gradient`, `fixed`, `hotspot`, `house_proximity`).
+- `internal/area_visualizations/`: modules per visualization type (`gradient`, `fixed`, `hotspot`, `house_proximity`).
 
 ## How To Run
 
@@ -91,7 +91,7 @@ The workflow is (skip first two steps to just run visualization with already sav
 
 1. **stage** raw data from the network share
 2. **build** CSV tables into `output/data/`
-3. open or refresh the Den Haag PC4 map over HTTP
+3. open or refresh the Den Haag map over HTTP
 
 ### 1. Stage raw data
 
@@ -118,7 +118,7 @@ uv run preliminary_studies/empirical_analysis/build_data_tables.py `
 
 ### 3. Open the Den Haag map
 
-Do not open `den_haag_pc4.html` via `file://`. Browser fetches for the runtime-loaded data need a local HTTP server.
+Do not open `den_haag.html` via `file://`. Browser fetches for the runtime-loaded data need a local HTTP server.
 
 The map starts on `PC4`. `PC6`, `CBS buurten`, and `CBS wijken` can be selected in the area-level control. The visualization control supports `gradient`, `fixed`, `hotspot`, and `house_proximity`.
 
@@ -128,4 +128,4 @@ Run a local server from the repo root:
 uv run python -m http.server 8000
 ```
 
-Then open: <http://localhost:8000/preliminary_studies/empirical_analysis/output/maps/den_haag_pc4.html>
+Then open: <http://localhost:8000/preliminary_studies/empirical_analysis/output/maps/den_haag.html>

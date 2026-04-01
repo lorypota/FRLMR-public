@@ -1,4 +1,4 @@
-"""Fixed-threshold polygon visualization for Den Haag PC4 map."""
+"""Fixed-threshold polygon visualization for the Den Haag area map."""
 
 from textwrap import dedent
 

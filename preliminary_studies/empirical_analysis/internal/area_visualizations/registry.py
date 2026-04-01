@@ -1,4 +1,4 @@
-"""Registry-backed assembly for Den Haag PC4 visualization modes."""
+"""Registry-backed assembly for Den Haag area-map visualization modes."""
 
 from textwrap import dedent
 
