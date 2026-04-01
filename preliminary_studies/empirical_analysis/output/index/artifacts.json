@@ -63126,15 +63126,6 @@
     "modified_at_utc": "2026-04-01T09:15:11Z"
   },
   {
-    "artifact_type": "map",
-    "provider": "",
-    "city": "den_haag",
-    "date": "",
-    "path": "maps/den_haag_stations.html",
-    "size_bytes": 663682,
-    "modified_at_utc": "2026-03-16T15:19:14Z"
-  },
-  {
     "artifact_type": "other",
     "provider": "",
     "city": "",

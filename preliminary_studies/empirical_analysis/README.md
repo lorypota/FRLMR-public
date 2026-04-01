@@ -9,7 +9,6 @@ empirical_analysis/
 ├── stage_gbfs_subset.py         # Stage raw data from TNO network share
 ├── build_data_tables.py         # Parse tar snapshots into CSV tables
 │
-├── map_den_haag_stations.py     # Den Haag station map
 ├── map_den_haag.py              # Den Haag interactive area map
 ├── map_amsterdam_pc4.py         # Amsterdam PC4 map
 │
@@ -53,7 +52,6 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 
 ### Maps
 
-- `map_den_haag_stations.py`: build a Den Haag station map.
 - `map_den_haag.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
 - `map_amsterdam_pc4.py`: build Amsterdam PC4 map with date/hour controls.
 

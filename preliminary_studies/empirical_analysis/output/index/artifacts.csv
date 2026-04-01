@@ -7013,7 +7013,6 @@ geodata,,den_haag,,geodata/pc4_den_haag.geojson,1994929,2026-03-05T09:32:32Z
 geodata,,den_haag,,geodata/wijken_den_haag.geojson,2277465,2026-03-20T10:51:22Z
 map,,amsterdam,,maps/amsterdam_pc4.html,1081992,2026-03-16T10:23:20Z
 map,,den_haag,,maps/den_haag.html,135985,2026-04-01T09:15:11Z
-map,,den_haag,,maps/den_haag_stations.html,663682,2026-03-16T15:19:14Z
 other,,,,analysis/20211001_20211231/figures/spatial_choropleth.png,342493,2026-04-01T08:55:44Z
 other,,,,analysis/20211001_20211231/figures/spatial_grouped_boxplot_cars.png,44606,2026-04-01T08:55:44Z
 other,,,,analysis/20211001_20211231/figures/spatial_scatter_cars.png,93659,2026-04-01T08:55:44Z
