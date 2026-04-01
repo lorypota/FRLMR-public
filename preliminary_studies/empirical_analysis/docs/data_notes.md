@@ -4,9 +4,7 @@ This file records findings about the meaning and quality of the processed GBFS d
 
 ## Den Haag provider context
 
-The current focus is Den Haag. Older Amsterdam files are still present, but the active analysis in this folder is centered on Den Haag.
-
-Shared-mobility operators of interest:
+Shared-mobility operators of interest for Den Haag:
 
 | Operator            | Vehicle type                     | In GBFS feed?          | Notes                                                        |
 | ------------------- | -------------------------------- | ---------------------- | ------------------------------------------------------------ |
