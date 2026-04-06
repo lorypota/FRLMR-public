@@ -11,7 +11,7 @@ empirical_analysis/
 │
 ├── map_den_haag.py              # Den Haag interactive area map
 │
-├── analysis_statistics.py       # Statistical coverage analysis
+├── statistical_analysis.py      # Script for tables and figures
 │
 ├── docs/
 │   └── data_notes.md            # Notes on data feed and interpretation
@@ -30,12 +30,7 @@ empirical_analysis/
 │   ├── maps/                    # Interactive HTML maps
 │   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
 │   ├── index/                   # Artifact indexing
-│   └── analysis/                # Statistical analysis outputs by date range
-│       └── <run_tag>/           #   One folder per temporal date filter
-│           ├── figures/         #   PNG plots
-│           ├── tables/          #   CSV/JSON summary outputs
-│           └── buurt_hour_coverage/  #   Per-day buurt-hour coverage used by spatial step
-│
+│   ├── statistical_analysis/    # CSVs and generated figures
 ├── AGENTS.md                    # Development guidelines
 └── README.md
 ```
@@ -52,22 +47,6 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 ### Maps
 
 - `map_den_haag.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
-
-### Statistical analysis
-
-`uv run preliminary_studies/empirical_analysis/analysis_statistics.py` runs statistical analysis scripts in sequence.
-
-Step-wise runs:
-
-1. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step temporal`: a raw daily-hour table, year-month-hour summaries, weekday/weekend comparison by year and month, and covered addresses within 500m per bike. Produces per-buurt-per-hour coverage used by the spatial step.
-2. `uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step spatial`: per-buurt mean docked-bike coverage correlated with demographic variables, plus Gini and Theil inequality metrics. Also includes comparisons after splitting neighborhoods into low, middle, and high thirds for a demographic variable. Produces summary tables, a car-ownership scatter plot, a choropleth map, grouped comparison tables, and one grouped boxplot.
-
-Options for temporal step:
-
-- `--start-date YYYY-MM-DD` and `--end-date YYYY-MM-DD`: restrict analysis to a specific date range.
-- `--max-workers N`: process daily temporal files in parallel.
-
-Each run writes to its own folder under `output/analysis/`, based on the date filter. For example, `--start-date 2026-01-01 --end-date 2026-12-31` writes to `output/analysis/20260101_20261231/`. The processed dates used in that run are recorded in `tables/processed_dates.json`.
 
 ## Internal Helper Modules
 

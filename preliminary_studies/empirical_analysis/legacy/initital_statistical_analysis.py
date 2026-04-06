@@ -1,24 +1,27 @@
-"""Statistical coverage analysis for docked-bike access in Den Haag.
+"""Legacy statistical coverage analysis for docked-bike access in Den Haag.
+
+Archived broad analysis pipeline kept for reference. The main entry point in this
+folder is now `statistical_analysis.py`.
 
 Runs one or more analysis steps:
 - temporal: hourly city-wide coverage summaries and cache generation
 - spatial: buurt-level inequality, demographic correlations, and grouped comparisons
 
 Run:
-    uv run preliminary_studies/empirical_analysis/analysis_statistics.py
-    uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step temporal
-    uv run preliminary_studies/empirical_analysis/analysis_statistics.py --step temporal --start-date 2026-01-01 --end-date 2026-12-31
+    uv run preliminary_studies/empirical_analysis/legacy/analysis_statistics_legacy.py
+    uv run preliminary_studies/empirical_analysis/legacy/analysis_statistics_legacy.py --step temporal
+    uv run preliminary_studies/empirical_analysis/legacy/analysis_statistics_legacy.py --step temporal --start-date 2026-01-01 --end-date 2026-12-31
 """
 
 import argparse
 import concurrent.futures
 import json
 import logging
-import os
 import sys
 from datetime import date
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import matplotlib.pyplot as plt
 import numpy as np
