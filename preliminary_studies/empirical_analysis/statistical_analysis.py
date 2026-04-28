@@ -4,35 +4,31 @@ Usage:
     uv run preliminary_studies/empirical_analysis/statistical_analysis.py
 """
 
-import json
-import logging
-import os
-import sys
 from pathlib import Path
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from internal.coverage_utils import load_buurten
-from internal.paths import OUTPUT_DIR, ensure_output_dirs
-from matplotlib import ticker
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from preliminary_studies.cmdp_adapted_data.cmdp_adapted_story import (  # noqa: E402
-    run_cmdp_adapted_data_step,
-    run_cmdp_adapted_figures_step,
+from internal.coverage_utils import load_buurten, load_houses, wgs84_to_rd
+from internal.paths import DATA_DIR, GEODATA_DIR, OUTPUT_DIR, ensure_output_dirs
+from internal.processed_data_utils import (
+    discover_docked_dates,
+    discover_station_dates,
+    latest_date,
+    load_docked_day,
+    load_station_day,
 )
+from matplotlib import ticker
+from scipy.spatial import cKDTree
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-logger = logging.getLogger(__name__)
-
-STORY_DIR = OUTPUT_DIR / "statistical_analysis"
-STORY_DATA_DIR = STORY_DIR / "data"
-STORY_FIGURES_DIR = STORY_DIR / "figures"
+STAT_ANALYSIS_DIR = OUTPUT_DIR / "statistical_analysis"
+STAT_DATA_DIR = STAT_ANALYSIS_DIR / "data"
+STAT_FIGURES_DIR = STAT_ANALYSIS_DIR / "figures"
 LEGACY_ANALYSIS_DIR = Path(__file__).resolve().parent / "legacy" / "output" / "analysis"
+PROVIDER = "donkey_denHaag"
+RECENT_WINDOW_DAYS = 15
+COVERAGE_RADIUS_M = 500
 
 FULL_YEAR_RUNS = {
     2022: "20220101_20221231",
@@ -100,23 +96,6 @@ def _load_temporal_daily(run_tag: str) -> pd.DataFrame:
             "covered_addresses_per_bike_500m",
         ],
         parse_dates=["date"],
-    )
-
-
-def _load_spatial_summary(run_tag: str) -> pd.DataFrame:
-    path = _analysis_tables_dir(run_tag) / "spatial_buurt_summary.csv"
-    return pd.read_csv(
-        path,
-        usecols=[
-            "buurt_idx",
-            "buurtnaam",
-            "mean_distance",
-            "mean_pct_500m",
-            "total_addresses",
-            "bevolkingsdichtheid_inwoners_per_km2",
-            "personenautos_per_huishouden",
-            "gemiddeld_inkomen_per_inwoner",
-        ],
     )
 
 
@@ -201,9 +180,81 @@ def _load_coverage_snapshots(run_tag: str) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def _ensure_story_dirs() -> None:
+def _load_latest_station_snapshot() -> tuple[tuple[int, int, int], pd.DataFrame]:
+    latest_station = latest_date(discover_station_dates(DATA_DIR, PROVIDER))
+    if latest_station is None:
+        raise FileNotFoundError(f"No station snapshots found for {PROVIDER}")
+
+    stations = load_station_day(DATA_DIR, PROVIDER, *latest_station)
+    if stations is None:
+        raise FileNotFoundError(f"Failed to load station snapshot for {latest_station}")
+
+    stations = stations.copy()
+    stations["station_id_str"] = stations["station_id"].astype(str)
+    return latest_station, stations
+
+
+def _load_recent_common_docked_station_ids(
+    window_days: int = RECENT_WINDOW_DAYS,
+) -> tuple[list[tuple[int, int, int]], list[str]]:
+    all_dates = discover_docked_dates(DATA_DIR, PROVIDER)
+    if len(all_dates) < window_days:
+        raise ValueError(
+            f"Need at least {window_days} docked days, found {len(all_dates)}"
+        )
+
+    selected_dates = all_dates[-window_days:]
+    common_cols: set[str] | None = None
+    loaded_dates = []
+
+    for year, month, day in selected_dates:
+        day_df = load_docked_day(DATA_DIR, PROVIDER, year, month, day)
+        if day_df is None:
+            continue
+        cols = set(day_df.columns.astype(str))
+        common_cols = cols if common_cols is None else common_cols & cols
+        loaded_dates.append((year, month, day))
+
+    if not loaded_dates or common_cols is None:
+        raise FileNotFoundError(
+            f"No docked snapshots found for recent window of {PROVIDER}"
+        )
+
+    return loaded_dates, sorted(common_cols)
+
+
+def _load_houses_rd() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    houses = load_houses()
+    houses_rd = wgs84_to_rd(houses[:, :2])
+    house_weights = houses[:, 2]
+    return houses, houses_rd, house_weights
+
+
+def _load_area_layer(name: str) -> gpd.GeoDataFrame:
+    if name == "pc4":
+        paths = [GEODATA_DIR / "pc4_den_haag.geojson"]
+    elif name == "pc6":
+        paths = sorted((GEODATA_DIR / "pc6_den_haag").glob("*.geojson"))
+    elif name == "buurten":
+        paths = [GEODATA_DIR / "buurten_den_haag.geojson"]
+    elif name == "wijken":
+        paths = [GEODATA_DIR / "wijken_den_haag.geojson"]
+    else:
+        raise ValueError(f"Unsupported area layer: {name}")
+
+    if not paths:
+        raise FileNotFoundError(f"No geodata files found for {name}")
+
+    gdfs = [gpd.read_file(path) for path in paths]
+    area = pd.concat(gdfs, ignore_index=True)
+    return gpd.GeoDataFrame(area, geometry="geometry", crs=gdfs[0].crs).to_crs(
+        "EPSG:28992"
+    )
+
+
+def _ensure_statistical_analysis_dirs() -> None:
     ensure_output_dirs()
-    for path in (STORY_DIR, STORY_DATA_DIR, STORY_FIGURES_DIR):
+    for path in (STAT_ANALYSIS_DIR, STAT_DATA_DIR, STAT_FIGURES_DIR):
         path.mkdir(parents=True, exist_ok=True)
 
 
@@ -285,8 +336,8 @@ def build_annual_access_trend() -> None:
         )
 
     out = pd.DataFrame(rows).sort_values("year")
-    out.to_csv(STORY_DATA_DIR / "annual_access_trend.csv", index=False)
-    logger.info("Wrote %s", STORY_DATA_DIR / "annual_access_trend.csv")
+    out.to_csv(STAT_DATA_DIR / "annual_access_trend.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / 'annual_access_trend.csv'}")
 
 
 def build_quarterly_access_trend() -> None:
@@ -349,8 +400,8 @@ def build_quarterly_access_trend() -> None:
     rows.append(grouped_2026)
 
     out = pd.concat(rows, ignore_index=True).sort_values(["year", "quarter"])
-    out.to_csv(STORY_DATA_DIR / "quarterly_access_trend.csv", index=False)
-    logger.info("Wrote %s", STORY_DATA_DIR / "quarterly_access_trend.csv")
+    out.to_csv(STAT_DATA_DIR / "quarterly_access_trend.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / 'quarterly_access_trend.csv'}")
 
 
 def _write_density_outputs(
@@ -364,13 +415,10 @@ def _write_density_outputs(
         coverage = _load_coverage_snapshots(run_tag)
         coverage["quarter"] = coverage["date"].dt.quarter
 
-        buurt_quarter = (
-            coverage.groupby(["quarter", "buurt_idx"], as_index=False)
-            .agg(
-                mean_distance=("mean_distance", "mean"),
-                mean_pct_500m=("pct_within_500m", "mean"),
-                total_addresses=("total_addresses", "first"),
-            )
+        buurt_quarter = coverage.groupby(["quarter", "buurt_idx"], as_index=False).agg(
+            mean_distance=("mean_distance", "mean"),
+            mean_pct_500m=("pct_within_500m", "mean"),
+            total_addresses=("total_addresses", "first"),
         )
         buurt_quarter["bevolkingsdichtheid_inwoners_per_km2"] = buurten.loc[
             buurt_quarter["buurt_idx"], "bevolkingsdichtheid_inwoners_per_km2"
@@ -378,14 +426,18 @@ def _write_density_outputs(
         buurt_quarter["density_quartile"] = buurt_quarter[
             "bevolkingsdichtheid_inwoners_per_km2"
         ].apply(lambda value: _density_label(value, t1_max, t2_max))
-        buurt_quarter["density_quartile_label"] = buurt_quarter["density_quartile"].apply(
+        buurt_quarter["density_quartile_label"] = buurt_quarter[
+            "density_quartile"
+        ].apply(
             lambda label: (
                 _density_label_with_range(label, t1_max, t2_max)
                 if label is not None
                 else None
             )
         )
-        valid = buurt_quarter.dropna(subset=["density_quartile", "mean_distance"]).copy()
+        valid = buurt_quarter.dropna(
+            subset=["density_quartile", "mean_distance"]
+        ).copy()
 
         grouped = (
             valid.groupby(
@@ -408,39 +460,167 @@ def _write_density_outputs(
 
     summary = pd.concat(summary_rows, ignore_index=True)
     summary = summary.sort_values(["year", "quarter", "density_quartile"])
-    summary.to_csv(STORY_DATA_DIR / "quarterly_density_gap.csv", index=False)
-    logger.info("Wrote %s", STORY_DATA_DIR / "quarterly_density_gap.csv")
+    summary.to_csv(STAT_DATA_DIR / "quarterly_density_gap.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / 'quarterly_density_gap.csv'}")
 
 
-def build_density_story_data() -> None:
+def build_density_gap_data() -> None:
     t1_max, t2_max = _density_thresholds()
     _write_density_outputs(t1_max, t2_max)
 
-    metadata = {
-        "density_tercile_thresholds": {
-            "t1_max": round(t1_max, 6),
-            "t2_max": round(t2_max, 6),
-        },
-        "files": [
-            "annual_access_trend.csv",
-            "quarterly_access_trend.csv",
-            "quarterly_density_gap.csv",
-        ],
+
+def build_boundary_leakage_data() -> None:
+    _, latest_stations = _load_latest_station_snapshot()
+    _, recent_station_ids = _load_recent_common_docked_station_ids()
+    _, houses_rd, house_weights = _load_houses_rd()
+
+    latest_stations = latest_stations[
+        latest_stations["station_id_str"].isin(recent_station_ids)
+    ]
+    latest_stations = (
+        latest_stations.set_index("station_id_str")
+        .loc[recent_station_ids]
+        .reset_index(drop=False)
+    )
+    if latest_stations.empty:
+        raise ValueError("No latest stations match recent docked availability columns")
+
+    station_coords = wgs84_to_rd(latest_stations[["lat", "lon"]].to_numpy())
+    station_tree = cKDTree(station_coords)
+    nearest_dist, nearest_idx = station_tree.query(houses_rd, k=1)
+    candidate_lists = station_tree.query_ball_point(houses_rd, r=COVERAGE_RADIUS_M)
+    candidate_counts = np.fromiter(
+        (len(candidates) for candidates in candidate_lists), dtype=np.int32
+    )
+
+    house_points = gpd.GeoDataFrame(
+        {"weight": house_weights},
+        geometry=gpd.points_from_xy(houses_rd[:, 0], houses_rd[:, 1]),
+        crs="EPSG:28992",
+    )
+    nearest_station_points = gpd.GeoDataFrame(
+        {"station_id": latest_stations.iloc[nearest_idx]["station_id"].to_numpy()},
+        geometry=gpd.points_from_xy(
+            station_coords[nearest_idx, 0], station_coords[nearest_idx, 1]
+        ),
+        crs="EPSG:28992",
+    )
+    all_station_points = gpd.GeoDataFrame(
+        {"station_id": latest_stations["station_id"].to_numpy()},
+        geometry=gpd.points_from_xy(station_coords[:, 0], station_coords[:, 1]),
+        crs="EPSG:28992",
+    )
+
+    rows = []
+    for area_name in ("pc4", "pc6", "buurten", "wijken"):
+        area = _load_area_layer(area_name).reset_index(drop=True)
+        house_join = gpd.sjoin(
+            house_points, area[["geometry"]], how="left", predicate="within"
+        )
+        nearest_station_join = gpd.sjoin(
+            nearest_station_points, area[["geometry"]], how="left", predicate="within"
+        )
+        station_join = gpd.sjoin(
+            all_station_points, area[["geometry"]], how="left", predicate="within"
+        )
+        house_area = house_join["index_right"].to_numpy()
+        nearest_station_area = nearest_station_join["index_right"].to_numpy()
+        station_area = station_join["index_right"].to_numpy()
+        valid = ~pd.isna(house_area) & ~pd.isna(nearest_station_area)
+        valid_500 = valid & (nearest_dist <= COVERAGE_RADIUS_M)
+        mismatch = house_area[valid] != nearest_station_area[valid]
+        mismatch_500 = house_area[valid_500] != nearest_station_area[valid_500]
+        covered = candidate_counts > 0
+        any_cross = np.zeros(len(candidate_lists), dtype=bool)
+        no_same_area = np.zeros(len(candidate_lists), dtype=bool)
+        nearest_outside = np.zeros(len(candidate_lists), dtype=bool)
+
+        for house_idx, station_indices in enumerate(candidate_lists):
+            if not station_indices or pd.isna(house_area[house_idx]):
+                continue
+            candidate_areas = station_area[station_indices]
+            candidate_areas = candidate_areas[~pd.isna(candidate_areas)]
+            if len(candidate_areas) == 0:
+                continue
+            any_cross[house_idx] = np.any(candidate_areas != house_area[house_idx])
+            no_same_area[house_idx] = np.all(candidate_areas != house_area[house_idx])
+            if (
+                not pd.isna(nearest_station_area[house_idx])
+                and nearest_station_area[house_idx] != house_area[house_idx]
+            ):
+                nearest_outside[house_idx] = True
+
+        rows.append(
+            {
+                "area_level": area_name,
+                "n_areas": int(len(area)),
+                "pct_addresses_house_vs_nearest_station_area_mismatch": float(
+                    house_weights[valid][mismatch].sum()
+                    / house_weights[valid].sum()
+                    * 100
+                ),
+                "pct_addresses_mismatch_within_500m_nearest_station": float(
+                    house_weights[valid_500][mismatch_500].sum()
+                    / house_weights[valid_500].sum()
+                    * 100
+                ),
+                "pct_covered_addresses_with_any_cross_boundary_station_500m": float(
+                    house_weights[covered & any_cross].sum()
+                    / house_weights[covered].sum()
+                    * 100
+                ),
+                "pct_covered_addresses_with_no_same_area_station_500m": float(
+                    house_weights[covered & no_same_area].sum()
+                    / house_weights[covered].sum()
+                    * 100
+                ),
+                "pct_covered_addresses_with_nearest_station_outside_area_500m": float(
+                    house_weights[covered & nearest_outside].sum()
+                    / house_weights[covered].sum()
+                    * 100
+                ),
+            }
+        )
+
+    out = pd.DataFrame(rows)
+    out.to_csv(STAT_DATA_DIR / "boundary_leakage_by_area.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / 'boundary_leakage_by_area.csv'}")
+
+    area_labels = {
+        "pc4": "PC4",
+        "pc6": "PC6",
+        "buurten": "CBS buurten",
+        "wijken": "CBS wijken",
     }
-    with open(STORY_DATA_DIR / "story_metadata.json", "w", encoding="utf-8") as f:
-        json.dump(metadata, f, indent=2)
-    logger.info("Wrote %s", STORY_DATA_DIR / "story_metadata.json")
+    plot_out = pd.DataFrame(
+        {
+            "area_level": out["area_level"],
+            "area_label": out["area_level"].map(area_labels),
+            "pct_has_outside_area_option": out[
+                "pct_covered_addresses_with_any_cross_boundary_station_500m"
+            ],
+            "pct_only_outside_area_options": out[
+                "pct_covered_addresses_with_no_same_area_station_500m"
+            ],
+            "pct_nearest_station_outside_area": out[
+                "pct_covered_addresses_with_nearest_station_outside_area_500m"
+            ],
+        }
+    )
+    plot_out.to_csv(STAT_DATA_DIR / "boundary_leakage_plot.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / 'boundary_leakage_plot.csv'}")
 
 
 def run_data_step() -> None:
-    _ensure_story_dirs()
+    _ensure_statistical_analysis_dirs()
     build_annual_access_trend()
     build_quarterly_access_trend()
-    build_density_story_data()
+    build_density_gap_data()
+    build_boundary_leakage_data()
 
 
-def _load_story_data(name: str) -> pd.DataFrame:
-    return pd.read_csv(STORY_DATA_DIR / name)
+def _load_output_data(name: str) -> pd.DataFrame:
+    return pd.read_csv(STAT_DATA_DIR / name)
 
 
 def _style_axis(ax, grid_axis: str = "y") -> None:
@@ -455,14 +635,14 @@ def _style_axis(ax, grid_axis: str = "y") -> None:
 
 
 def _save_figure(fig: plt.Figure, filename: str) -> None:
-    path = STORY_FIGURES_DIR / filename
+    path = STAT_FIGURES_DIR / filename
     fig.savefig(path, dpi=180, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
-    logger.info("Wrote %s", path)
+    print(f"Wrote {path}")
 
 
 def plot_annual_access_trend() -> None:
-    quarterly_df = _load_story_data("quarterly_access_trend.csv")
+    quarterly_df = _load_output_data("quarterly_access_trend.csv")
     quarter_ticks = quarterly_df["x_position"].to_numpy()
     quarter_labels = quarterly_df["quarter_label"].tolist()
     year_centers = (
@@ -473,7 +653,7 @@ def plot_annual_access_trend() -> None:
 
     panels = [
         ("mean_n_bikes", "Mean docked bikes available", "{:,.0f}"),
-        ("mean_pct_500m", "Addresses within 500 m", "{:.1f}%"),
+        ("mean_pct_500m", "Addresses within 500m of a bike", "{:.1f}%"),
         ("mean_distance", "Mean nearest-bike distance", "{:,.0f} m"),
         (
             "gini_mean_distance",
@@ -582,7 +762,7 @@ def plot_annual_access_trend() -> None:
     fig.text(
         0.08,
         0.98,
-        "Access improved sharply from 2021 Q4 to early 2026",
+        "Access improved from 2021 to 2026",
         fontsize=16,
         fontweight="bold",
         ha="left",
@@ -591,20 +771,17 @@ def plot_annual_access_trend() -> None:
     _save_figure(fig, "annual_access_trend.png")
 
 
-def _direct_label_last_point(ax, x: float, y: float, text: str, color: str) -> None:
-    ax.text(
-        x + 0.1,
-        y,
-        text.upper(),
-        color=color,
-        fontsize=9,
-        va="center",
-        ha="left",
-    )
+def _density_range_label(group: str, df: pd.DataFrame) -> str:
+    label = df.loc[df["density_quartile"] == group, "density_quartile_label"].iloc[0]
+    if "<=" in label:
+        return f"<= {label.split('<= ', 1)[1].split('/km2', 1)[0]}"
+    if ">" in label:
+        return f"> {label.split('> ', 1)[1].split('/km2', 1)[0]}"
+    return label.split("(", 1)[1].split("/km2", 1)[0]
 
 
 def plot_annual_density_gap() -> None:
-    df = _load_story_data("quarterly_density_gap.csv")
+    df = _load_output_data("quarterly_density_gap.csv")
     quarter_ticks = (
         df[["year", "quarter", "quarter_label", "x_position"]]
         .drop_duplicates()
@@ -618,16 +795,16 @@ def plot_annual_density_gap() -> None:
     fig, axes = plt.subplots(
         2,
         1,
-        figsize=(12.2, 8.6),
+        figsize=(12.2, 7.4),
         sharex=True,
-        gridspec_kw={"hspace": 0.18},
+        gridspec_kw={"hspace": 0.22},
     )
     fig.patch.set_facecolor(BACKGROUND)
-    fig.subplots_adjust(top=0.86, bottom=0.16)
+    fig.subplots_adjust(top=0.82, bottom=0.18)
 
     panels = [
         ("mean_distance", "Mean nearest-bike distance"),
-        ("mean_pct_500m", "Addresses within 500 m"),
+        ("mean_pct_500m", "Addresses within 500m of a bike"),
     ]
     order = [
         "T3 highest density",
@@ -640,8 +817,15 @@ def plot_annual_density_gap() -> None:
         for group in order:
             sub = df[df["density_quartile"] == group].sort_values("x_position")
             color = DENSITY_COLORS[group]
-            label = group.split(" ", 1)[1]
-            ax.plot(sub["x_position"], sub[column], color=color, linewidth=2.2, zorder=2)
+            label = _density_range_label(group, df)
+            ax.plot(
+                sub["x_position"],
+                sub[column],
+                color=color,
+                linewidth=2.2,
+                zorder=2,
+                label=label,
+            )
             ax.scatter(
                 sub["x_position"],
                 sub[column],
@@ -650,13 +834,6 @@ def plot_annual_density_gap() -> None:
                 edgecolor=PANEL_BACKGROUND,
                 linewidth=0.8,
                 zorder=3,
-            )
-            _direct_label_last_point(
-                ax,
-                float(sub["x_position"].iloc[-1]),
-                float(sub[column].iloc[-1]),
-                label,
-                color,
             )
 
         for year in year_centers["year"].to_numpy()[:-1]:
@@ -681,10 +858,28 @@ def plot_annual_density_gap() -> None:
             ha="left",
         )
 
+    handles, labels = axes[0].get_legend_handles_labels()
+    legend = fig.legend(
+        handles,
+        labels,
+        title="People/km2",
+        bbox_to_anchor=(0.58, 0.975),
+        loc="upper left",
+        ncol=1,
+        frameon=True,
+        facecolor=PANEL_BACKGROUND,
+        edgecolor=GRID,
+        fontsize=9,
+        title_fontsize=9,
+    )
+    legend.get_title().set_color(TEXT)
+    for text in legend.get_texts():
+        text.set_color(TEXT)
+
     axes[-1].set_xticks([])
     axes[-1].set_xlim(
         float(quarter_ticks["x_position"].min()) - 0.15,
-        float(quarter_ticks["x_position"].max()) + 0.9,
+        float(quarter_ticks["x_position"].max()) + 0.15,
     )
     axes[-1].set_xlabel("")
     for _, row in quarter_ticks.iterrows():
@@ -722,31 +917,77 @@ def plot_annual_density_gap() -> None:
         ha="left",
         va="top",
     )
-    fig.text(
-        0.08,
-        0.948,
-        "Density here means CBS buurt population density, measured in inhabitants per km2 and split into fixed low, middle, and high groups.",
-        fontsize=10,
-        color=SUBTLE_TEXT,
-        ha="left",
-        va="top",
-    )
 
     _save_figure(fig, "annual_density_gap.png")
 
 
+def plot_boundary_leakage() -> None:
+    df = _load_output_data("boundary_leakage_plot.csv")
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+    fig.patch.set_facecolor(BACKGROUND)
+    _style_axis(ax)
+
+    x = np.arange(len(df))
+    width = 0.34
+    ax.bar(
+        x - width / 2,
+        df["pct_has_outside_area_option"],
+        width=width,
+        color=BLUE,
+        label="Has outside-area option",
+    )
+    ax.bar(
+        x + width / 2,
+        df["pct_nearest_station_outside_area"],
+        width=width,
+        color=TEAL,
+        label="Nearest option is outside",
+    )
+    ax.bar(
+        x + width / 2,
+        df["pct_only_outside_area_options"],
+        width=width,
+        color=ORANGE,
+        label="Only outside-area options",
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(df["area_label"])
+    ax.set_ylabel("Share of covered addresses (%)")
+    ax.set_title("Coverage often depends on stations across area boundaries")
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter())
+    handles, labels = ax.get_legend_handles_labels()
+    order = [0, 2, 1]
+    ax.legend(
+        [handles[idx] for idx in order],
+        [labels[idx] for idx in order],
+        frameon=False,
+        loc="upper right",
+    )
+    fig.text(
+        0.125,
+        0.02,
+        "Covered addresses have at least one station within 500m.",
+        ha="left",
+        va="bottom",
+        fontsize=9,
+        color=SUBTLE_TEXT,
+    )
+    _save_figure(fig, "boundary_leakage.png")
+
+
 def run_figures_step() -> None:
-    _ensure_story_dirs()
+    _ensure_statistical_analysis_dirs()
     _configure_theme()
     plot_annual_access_trend()
     plot_annual_density_gap()
+    plot_boundary_leakage()
 
 
 def main() -> None:
     run_data_step()
     run_figures_step()
-    run_cmdp_adapted_data_step()
-    run_cmdp_adapted_figures_step()
 
 
 if __name__ == "__main__":

@@ -42,9 +42,13 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 - `stage_gbfs_subset.py`: stage selected providers and snapshots from TNO server into a local folder.
 - `build_data_tables.py`: parse raw tar snapshots into docked/dockless/stations CSV tables.
 
-### Maps
+### Map
 
-- `map_den_haag.py`: build Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
+`map_den_haag.py` builds Den Haag area map with date/hour controls, visualization modes (`gradient`, `fixed`, `hotspot`, `house_proximity`), an area-level toggle (`PC4`, `PC6`, `CBS buurten`, `CBS wijken`), and an optional side-by-side compare view.
+
+### Statistical analysis
+
+`statistical_analysis.py` elaborates data to capture trends and to create plots to justify the research direction.
 
 ## Internal Helper Modules
 
