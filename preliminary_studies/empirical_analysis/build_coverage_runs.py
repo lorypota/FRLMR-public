@@ -1,16 +1,13 @@
-"""Legacy statistical coverage analysis for docked-bike access in Den Haag.
-
-Archived broad analysis pipeline kept for reference. The main entry point in this
-folder is now `statistical_analysis.py`.
+"""Build cached inputs for statistical analysis.
 
 Runs one or more analysis steps:
 - temporal: hourly city-wide coverage summaries and cache generation
 - spatial: buurt-level inequality, demographic correlations, and grouped comparisons
 
 Run:
-    uv run preliminary_studies/empirical_analysis/legacy/analysis_statistics_legacy.py
-    uv run preliminary_studies/empirical_analysis/legacy/analysis_statistics_legacy.py --step temporal
-    uv run preliminary_studies/empirical_analysis/legacy/analysis_statistics_legacy.py --step temporal --start-date 2026-01-01 --end-date 2026-12-31
+    uv run preliminary_studies/empirical_analysis/build_coverage_runs.py
+    uv run preliminary_studies/empirical_analysis/build_coverage_runs.py --step temporal
+    uv run preliminary_studies/empirical_analysis/build_coverage_runs.py --step temporal --start-date 2026-01-01 --end-date 2026-12-31
 """
 
 import argparse
@@ -19,11 +16,7 @@ import json
 import logging
 import sys
 from datetime import date
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from internal.cbs_income import fetch_income_data
@@ -42,8 +35,8 @@ from internal.coverage_utils import (
 from internal.paths import (
     DATA_DIR,
     GEODATA_DIR,
-    analysis_run_paths,
-    ensure_output_dirs,
+    OUTPUT_DIR,
+    analysis_run_tag,
 )
 from internal.processed_data_utils import (
     discover_docked_dates,
@@ -54,6 +47,9 @@ from scipy import stats
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
+
+STAT_ANALYSIS_DIR = OUTPUT_DIR / "statistical_analysis"
+COVERAGE_RUNS_DIR = STAT_ANALYSIS_DIR / "coverage_runs"
 
 DEMO_VARS_BUURTEN = {
     "percentage_met_herkomstland_buiten_europa": "% non-European background",
@@ -94,6 +90,22 @@ CLASSIFICATION_VARS = {
         "tercile_labels": ["Low WOZ", "Medium WOZ", "High WOZ"],
     },
 }
+
+
+def coverage_run_paths(start_date: date | None, end_date: date | None) -> dict:
+    run_tag = analysis_run_tag(start_date, end_date)
+    run_dir = COVERAGE_RUNS_DIR / run_tag
+    tables_dir = run_dir / "tables"
+    coverage_dir = run_dir / "buurt_hour_coverage"
+    for path in (run_dir, tables_dir, coverage_dir):
+        path.mkdir(parents=True, exist_ok=True)
+    return {
+        "tag": run_tag,
+        "run_dir": run_dir,
+        "tables_dir": tables_dir,
+        "coverage_dir": coverage_dir,
+        "processed_dates_path": tables_dir / "processed_dates.json",
+    }
 
 
 def _load_cached_coverage(run_paths) -> pd.DataFrame:
@@ -266,8 +278,7 @@ def _process_temporal_day_task(task):
 
 
 def run_temporal(start_date: date | None, end_date: date | None, max_workers: int):
-    ensure_output_dirs()
-    run_paths = analysis_run_paths(start_date, end_date)
+    run_paths = coverage_run_paths(start_date, end_date)
     logger.info("Loading house and buurt data...")
     houses = load_houses()
     houses_rd = wgs84_to_rd(houses[:, :2])
@@ -405,8 +416,7 @@ def run_temporal(start_date: date | None, end_date: date | None, max_workers: in
 
 
 def run_spatial(start_date: date | None, end_date: date | None):
-    ensure_output_dirs()
-    run_paths = analysis_run_paths(start_date, end_date)
+    run_paths = coverage_run_paths(start_date, end_date)
     logger.info("Loading buurt data...")
     buurten = load_buurten()
     coverage_df = _load_cached_coverage(run_paths)
@@ -497,10 +507,10 @@ def run_spatial(start_date: date | None, end_date: date | None):
             }
         )
 
-    corr_df = pd.DataFrame(corr_results)
-    corr_df.to_csv(run_paths["tables_dir"] / "spatial_correlations.csv", index=False)
-    _plot_scatter_cars(buurt_summary, corr_df, run_paths)
-    _plot_choropleth(buurt_summary, buurten, run_paths)
+    pd.DataFrame(corr_results).to_csv(
+        run_paths["tables_dir"] / "spatial_correlations.csv",
+        index=False,
+    )
     _run_spatial_grouped_comparisons(buurten, coverage_df, income_df, run_paths)
 
 
@@ -603,16 +613,6 @@ def _run_spatial_grouped_comparisons(buurten, coverage_df, income_df, run_paths)
             }
         )
 
-        if var == "personenautos_per_huishouden":
-            _plot_boxplot(
-                coverage_with_class,
-                buurt_features,
-                var,
-                tercile_col,
-                info,
-                run_paths,
-            )
-
     if all_test_results:
         pd.DataFrame(all_test_results).to_csv(
             run_paths["tables_dir"] / "spatial_grouped_tests.csv",
@@ -623,138 +623,6 @@ def _run_spatial_grouped_comparisons(buurten, coverage_df, income_df, run_paths)
             run_paths["tables_dir"] / "spatial_grouped_summary.csv",
             index=False,
         )
-
-
-def _plot_scatter_cars(buurt_summary, corr_df, run_paths):
-    var = "personenautos_per_huishouden"
-    if var not in buurt_summary.columns:
-        return
-    mask = buurt_summary["mean_distance"].notna() & buurt_summary[var].notna()
-    if mask.sum() < 5:
-        return
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.scatter(
-        buurt_summary.loc[mask, var],
-        buurt_summary.loc[mask, "mean_distance"],
-        s=buurt_summary.loc[mask, "total_addresses"] / 50,
-        alpha=0.6,
-        edgecolors="k",
-        linewidths=0.3,
-    )
-    corr_row = corr_df[corr_df["variable"] == var]
-    if not corr_row.empty:
-        row = corr_row.iloc[0]
-        ax.annotate(
-            f"Spearman rho = {row['spearman_rho']:.3f}\np = {row['p_value']:.4f}",
-            xy=(0.05, 0.95),
-            xycoords="axes fraction",
-            va="top",
-            fontsize=10,
-            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
-        )
-    ax.set_xlabel("Cars per household")
-    ax.set_ylabel("Mean distance to nearest bike (m)")
-    ax.set_title("Coverage vs Cars per household")
-    plt.tight_layout()
-    plt.savefig(run_paths["figures_dir"] / "spatial_scatter_cars.png", dpi=150)
-    plt.close()
-
-
-def _plot_choropleth(buurt_summary, buurten, run_paths):
-    gdf = buurten.copy().merge(
-        buurt_summary[["buurt_idx", "mean_distance", "mean_pct_500m"]],
-        left_index=True,
-        right_on="buurt_idx",
-        how="left",
-    )
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
-    gdf.plot(
-        column="mean_distance",
-        ax=ax1,
-        legend=True,
-        cmap="RdYlGn_r",
-        missing_kwds={"color": "lightgrey"},
-        legend_kwds={"label": "Mean distance (m)"},
-    )
-    ax1.set_title("Mean distance to nearest bike")
-    ax1.set_axis_off()
-    gdf.plot(
-        column="mean_pct_500m",
-        ax=ax2,
-        legend=True,
-        cmap="RdYlGn",
-        missing_kwds={"color": "lightgrey"},
-        legend_kwds={"label": "% within 500m"},
-    )
-    ax2.set_title("% addresses within 500m of a bike")
-    ax2.set_axis_off()
-    plt.suptitle("Bike coverage by neighborhood (buurt)")
-    plt.tight_layout()
-    plt.savefig(run_paths["figures_dir"] / "spatial_choropleth.png", dpi=150)
-    plt.close()
-
-
-def _plot_boxplot(
-    coverage_with_class,
-    buurt_features,
-    var,
-    tercile_col,
-    info,
-    run_paths,
-):
-    data = coverage_with_class[coverage_with_class[tercile_col].notna()].copy()
-    if data.empty:
-        return
-
-    valid_vals = buurt_features[var].dropna()
-    t1_max = valid_vals.quantile(1 / 3)
-    t2_max = valid_vals.quantile(2 / 3)
-    range_strs = [
-        f"(<={t1_max:.2f})",
-        f"({t1_max:.2f} to {t2_max:.2f})",
-        f"(>{t2_max:.2f})",
-    ]
-    buurt_means = (
-        data.groupby(["buurt_idx", tercile_col])["mean_distance"].mean().reset_index()
-    )
-
-    fig, ax = plt.subplots(figsize=(8, 5))
-    groups = []
-    labels = []
-    for tercile in [1, 2, 3]:
-        values = buurt_means[buurt_means[tercile_col] == tercile][
-            "mean_distance"
-        ].dropna()
-        if len(values) > 0:
-            groups.append(values)
-            labels.append(
-                f"{info['tercile_labels'][int(tercile) - 1]}\n{range_strs[int(tercile) - 1]}"
-            )
-    if groups:
-        bp = ax.boxplot(groups, tick_labels=labels, patch_artist=True)
-        for patch, color in zip(
-            bp["boxes"],
-            ["#4CAF50", "#FFC107", "#F44336"][: len(groups)],
-            strict=True,
-        ):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.6)
-
-    ax.set_ylabel("Mean distance to nearest bike (m)")
-    ax.set_title(f"Coverage by {info['label']} tercile")
-    plt.tight_layout()
-    safe_name = (
-        var.replace("percentage_met_herkomstland_buiten_europa", "migration")
-        .replace("personenautos_per_huishouden", "cars")
-        .replace("gemiddeld_inkomen_per_inwoner", "income")
-        .replace("gemiddelde_woz_waarde", "woz")
-    )
-    plt.savefig(
-        run_paths["figures_dir"] / f"spatial_grouped_boxplot_{safe_name}.png",
-        dpi=150,
-    )
-    plt.close()
 
 
 def parse_args():

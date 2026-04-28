@@ -8,10 +8,11 @@ This folder contains scripts for inspecting GBFS snapshots (TNO internal data), 
 empirical_analysis/
 ├── stage_gbfs_subset.py         # Stage raw data from TNO network share
 ├── build_data_tables.py         # Parse tar snapshots into CSV tables
+|
 ├── map_den_haag.py              # Generate Den Haag interactive area map
+|
+├── build_coverage_runs.py       # Build cached statistical-analysis input tables
 ├── statistical_analysis.py      # Main tables and figures
-│
-├── data_notes.md                # Notes on data feed and interpretation
 │
 ├── internal/
 │   ├── data_utils.py            # Raw snapshot parsing and extraction
@@ -27,8 +28,9 @@ empirical_analysis/
 │   ├── maps/                    # Interactive HTML maps
 │   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
 │   ├── index/                   # Artifact indexing
-│   └── statistical_analysis/    # CSVs and generated figures
+│   └── statistical_analysis/    # Coverage runs, summary CSVs, and generated figures
 │
+├── data_notes.md                # Notes on available data and interpretation
 ├── AGENTS.md                    # Development guidelines
 └── README.md
 ```
@@ -48,7 +50,8 @@ Operational context on Den Haag providers and GBFS coverage is documented in [do
 
 ### Statistical analysis
 
-`statistical_analysis.py` elaborates data to capture trends and to create plots to justify the research direction.
+- `build_coverage_runs.py`: build coverage runs under `output/statistical_analysis/coverage_runs/`.
+- `statistical_analysis.py`: use coverage runs, current processed data, and geodata to create summary CSVs and figures.
 
 ## Internal Helper Modules
 

@@ -23,9 +23,9 @@ from matplotlib import ticker
 from scipy.spatial import cKDTree
 
 STAT_ANALYSIS_DIR = OUTPUT_DIR / "statistical_analysis"
-STAT_DATA_DIR = STAT_ANALYSIS_DIR / "data"
+STAT_DATA_DIR = STAT_ANALYSIS_DIR / "summary_data"
 STAT_FIGURES_DIR = STAT_ANALYSIS_DIR / "figures"
-LEGACY_ANALYSIS_DIR = Path(__file__).resolve().parent / "legacy" / "output" / "analysis"
+COVERAGE_RUNS_DIR = STAT_ANALYSIS_DIR / "coverage_runs"
 PROVIDER = "donkey_denHaag"
 RECENT_WINDOW_DAYS = 15
 COVERAGE_RADIUS_M = 500
@@ -76,11 +76,11 @@ DENSITY_COLORS = {
 
 
 def _analysis_tables_dir(run_tag: str) -> Path:
-    return LEGACY_ANALYSIS_DIR / run_tag / "tables"
+    return COVERAGE_RUNS_DIR / run_tag / "tables"
 
 
 def _coverage_dir(run_tag: str) -> Path:
-    return LEGACY_ANALYSIS_DIR / run_tag / "buurt_hour_coverage"
+    return COVERAGE_RUNS_DIR / run_tag / "buurt_hour_coverage"
 
 
 def _load_temporal_daily(run_tag: str) -> pd.DataFrame:
