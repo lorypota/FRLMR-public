@@ -8,13 +8,10 @@ This folder contains scripts for inspecting GBFS snapshots (TNO internal data), 
 empirical_analysis/
 ├── stage_gbfs_subset.py         # Stage raw data from TNO network share
 ├── build_data_tables.py         # Parse tar snapshots into CSV tables
+├── map_den_haag.py              # Generate Den Haag interactive area map
+├── statistical_analysis.py      # Main tables and figures
 │
-├── map_den_haag.py              # Den Haag interactive area map
-│
-├── statistical_analysis.py      # Script for tables and figures
-│
-├── docs/
-│   └── data_notes.md            # Notes on data feed and interpretation
+├── data_notes.md                # Notes on data feed and interpretation
 │
 ├── internal/
 │   ├── data_utils.py            # Raw snapshot parsing and extraction
@@ -30,7 +27,8 @@ empirical_analysis/
 │   ├── maps/                    # Interactive HTML maps
 │   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
 │   ├── index/                   # Artifact indexing
-│   ├── statistical_analysis/    # CSVs and generated figures
+│   └── statistical_analysis/    # CSVs and generated figures
+│
 ├── AGENTS.md                    # Development guidelines
 └── README.md
 ```
