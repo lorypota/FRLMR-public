@@ -1,0 +1,6 @@
+metric,value
+pct_addresses_zero_station_500m,12.110653407296024
+pct_addresses_single_station_500m,11.779906240917878
+pct_addresses_multi_station_500m,76.10944035178609
+n_stations_with_unique_coverage,77.0
+weighted_empty_share_for_unique_coverage_addresses,24.49277017836883

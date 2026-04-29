@@ -101,8 +101,8 @@ def _load_temporal_daily(run_tag: str) -> pd.DataFrame:
 
 def _load_spatial_inequality(run_tag: str) -> dict[str, float]:
     path = _analysis_tables_dir(run_tag) / "spatial_inequality.csv"
-    df = pd.read_csv(path)
-    return {row["metric"]: float(row["value"]) for _, row in df.iterrows()}
+    df = pd.read_csv(path, usecols=["metric", "value"])
+    return dict(zip(df["metric"], df["value"].astype(float), strict=True))
 
 
 def _gini_coefficient(values: np.ndarray, weights: np.ndarray) -> float:
@@ -223,6 +223,41 @@ def _load_recent_common_docked_station_ids(
     return loaded_dates, sorted(common_cols)
 
 
+def _load_recent_common_docked_window(
+    window_days: int = RECENT_WINDOW_DAYS,
+) -> tuple[list[tuple[int, int, int]], pd.DataFrame]:
+    all_dates = discover_docked_dates(DATA_DIR, PROVIDER)
+    if len(all_dates) < window_days:
+        raise ValueError(
+            f"Need at least {window_days} docked days, found {len(all_dates)}"
+        )
+
+    selected_dates = all_dates[-window_days:]
+    frames: list[pd.DataFrame] = []
+    common_cols: set[str] | None = None
+    loaded_dates = []
+
+    for year, month, day in selected_dates:
+        day_df = load_docked_day(DATA_DIR, PROVIDER, year, month, day)
+        if day_df is None:
+            continue
+        day_df = day_df.copy()
+        day_df.columns = day_df.columns.astype(str)
+        cols = set(day_df.columns)
+        common_cols = cols if common_cols is None else common_cols & cols
+        frames.append(day_df)
+        loaded_dates.append((year, month, day))
+
+    if not frames or common_cols is None:
+        raise FileNotFoundError(
+            f"No docked snapshots found for recent window of {PROVIDER}"
+        )
+
+    ordered_cols = sorted(common_cols)
+    wide = pd.concat([frame[ordered_cols] for frame in frames]).sort_index()
+    return loaded_dates, wide
+
+
 def _load_houses_rd() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     houses = load_houses()
     houses_rd = wgs84_to_rd(houses[:, :2])
@@ -336,8 +371,8 @@ def build_annual_access_trend() -> None:
         )
 
     out = pd.DataFrame(rows).sort_values("year")
-    out.to_csv(STAT_DATA_DIR / "annual_access_trend.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / 'annual_access_trend.csv'}")
+    out.to_csv(STAT_DATA_DIR / "1_access_trend_annual.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '1_access_trend_annual.csv'}")
 
 
 def build_quarterly_access_trend() -> None:
@@ -400,8 +435,8 @@ def build_quarterly_access_trend() -> None:
     rows.append(grouped_2026)
 
     out = pd.concat(rows, ignore_index=True).sort_values(["year", "quarter"])
-    out.to_csv(STAT_DATA_DIR / "quarterly_access_trend.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / 'quarterly_access_trend.csv'}")
+    out.to_csv(STAT_DATA_DIR / "1_access_trend_quarterly.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '1_access_trend_quarterly.csv'}")
 
 
 def _write_density_outputs(
@@ -460,8 +495,8 @@ def _write_density_outputs(
 
     summary = pd.concat(summary_rows, ignore_index=True)
     summary = summary.sort_values(["year", "quarter", "density_quartile"])
-    summary.to_csv(STAT_DATA_DIR / "quarterly_density_gap.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / 'quarterly_density_gap.csv'}")
+    summary.to_csv(STAT_DATA_DIR / "2_density_divider.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '2_density_divider.csv'}")
 
 
 def build_density_gap_data() -> None:
@@ -583,8 +618,8 @@ def build_boundary_leakage_data() -> None:
         )
 
     out = pd.DataFrame(rows)
-    out.to_csv(STAT_DATA_DIR / "boundary_leakage_by_area.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / 'boundary_leakage_by_area.csv'}")
+    out.to_csv(STAT_DATA_DIR / "4_area_coverage_by_area.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '4_area_coverage_by_area.csv'}")
 
     area_labels = {
         "pc4": "PC4",
@@ -607,8 +642,109 @@ def build_boundary_leakage_data() -> None:
             ],
         }
     )
-    plot_out.to_csv(STAT_DATA_DIR / "boundary_leakage_plot.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / 'boundary_leakage_plot.csv'}")
+    plot_out.to_csv(STAT_DATA_DIR / "4_area_coverage_plot.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '4_area_coverage_plot.csv'}")
+
+
+def build_coverage_geometry_data() -> None:
+    _, latest_stations = _load_latest_station_snapshot()
+    _, recent_wide = _load_recent_common_docked_window()
+    _, houses_rd, house_weights = _load_houses_rd()
+    total_addresses = float(house_weights.sum())
+
+    latest_stations = latest_stations[
+        latest_stations["station_id_str"].isin(recent_wide.columns)
+    ].copy()
+    latest_stations = latest_stations.set_index("station_id_str").loc[
+        recent_wide.columns
+    ]
+    station_coords = wgs84_to_rd(latest_stations[["lat", "lon"]].to_numpy())
+    station_tree = cKDTree(station_coords)
+    nearest_dist, _ = station_tree.query(houses_rd, k=1)
+    candidate_lists = station_tree.query_ball_point(houses_rd, r=COVERAGE_RADIUS_M)
+    candidate_counts = np.fromiter(
+        (len(candidates) for candidates in candidate_lists), dtype=np.int32
+    )
+
+    distance_rows = []
+    for threshold in range(50, 1251, 50):
+        pct = float(
+            house_weights[nearest_dist <= threshold].sum() / total_addresses * 100
+        )
+        distance_rows.append(
+            {
+                "distance_threshold_m": threshold,
+                "pct_addresses_within_threshold": pct,
+            }
+        )
+    distance_out = pd.DataFrame(distance_rows)
+    distance_out.to_csv(STAT_DATA_DIR / "3_station_coverage_distance.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '3_station_coverage_distance.csv'}")
+
+    overlap_rows = []
+    for label, mask in (
+        ("0 stations", candidate_counts == 0),
+        ("1 station", candidate_counts == 1),
+        ("2-4 stations", (candidate_counts >= 2) & (candidate_counts <= 4)),
+        ("5-9 stations", (candidate_counts >= 5) & (candidate_counts <= 9)),
+        ("10+ stations", candidate_counts >= 10),
+    ):
+        overlap_rows.append(
+            {
+                "band": label,
+                "pct_addresses_in_band": float(
+                    house_weights[mask].sum() / total_addresses * 100
+                ),
+            }
+        )
+    overlap_out = pd.DataFrame(overlap_rows)
+    overlap_out.to_csv(STAT_DATA_DIR / "3_station_coverage_500m.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '3_station_coverage_500m.csv'}")
+
+    empty_share = (recent_wide == 0).mean(axis=0)
+    unique_weight = np.zeros(len(recent_wide.columns), dtype=float)
+    for house_idx, station_indices in enumerate(candidate_lists):
+        if len(station_indices) == 1:
+            unique_weight[station_indices[0]] += house_weights[house_idx]
+
+    unique_mask = unique_weight > 0
+    unique_weighted_empty = float(
+        np.sum(unique_weight * empty_share.to_numpy()) / unique_weight.sum() * 100
+    )
+    annotation_out = pd.DataFrame(
+        [
+            {
+                "metric": "pct_addresses_zero_station_500m",
+                "value": float(
+                    house_weights[candidate_counts == 0].sum() / total_addresses * 100
+                ),
+            },
+            {
+                "metric": "pct_addresses_single_station_500m",
+                "value": float(
+                    house_weights[candidate_counts == 1].sum() / total_addresses * 100
+                ),
+            },
+            {
+                "metric": "pct_addresses_multi_station_500m",
+                "value": float(
+                    house_weights[candidate_counts >= 2].sum() / total_addresses * 100
+                ),
+            },
+            {
+                "metric": "n_stations_with_unique_coverage",
+                "value": int(unique_mask.sum()),
+            },
+            {
+                "metric": "weighted_empty_share_for_unique_coverage_addresses",
+                "value": unique_weighted_empty,
+            },
+        ]
+    )
+    annotation_out.to_csv(
+        STAT_DATA_DIR / "3_station_coverage_annotation_values.csv", index=False
+    )
+    print(f"Wrote {STAT_DATA_DIR / '3_station_coverage_annotation_values.csv'}")
 
 
 def run_data_step() -> None:
@@ -617,6 +753,7 @@ def run_data_step() -> None:
     build_quarterly_access_trend()
     build_density_gap_data()
     build_boundary_leakage_data()
+    build_coverage_geometry_data()
 
 
 def _load_output_data(name: str) -> pd.DataFrame:
@@ -642,7 +779,7 @@ def _save_figure(fig: plt.Figure, filename: str) -> None:
 
 
 def plot_annual_access_trend() -> None:
-    quarterly_df = _load_output_data("quarterly_access_trend.csv")
+    quarterly_df = _load_output_data("1_access_trend_quarterly.csv")
     quarter_ticks = quarterly_df["x_position"].to_numpy()
     quarter_labels = quarterly_df["quarter_label"].tolist()
     year_centers = (
@@ -768,7 +905,7 @@ def plot_annual_access_trend() -> None:
         ha="left",
         va="top",
     )
-    _save_figure(fig, "annual_access_trend.png")
+    _save_figure(fig, "1_access_trend.png")
 
 
 def _density_range_label(group: str, df: pd.DataFrame) -> str:
@@ -781,7 +918,7 @@ def _density_range_label(group: str, df: pd.DataFrame) -> str:
 
 
 def plot_annual_density_gap() -> None:
-    df = _load_output_data("quarterly_density_gap.csv")
+    df = _load_output_data("2_density_divider.csv")
     quarter_ticks = (
         df[["year", "quarter", "quarter_label", "x_position"]]
         .drop_duplicates()
@@ -911,18 +1048,18 @@ def plot_annual_density_gap() -> None:
     fig.text(
         0.08,
         0.975,
-        "Density is a persistent divider in access",
+        "Density is a divider in access",
         fontsize=16,
         fontweight="bold",
         ha="left",
         va="top",
     )
 
-    _save_figure(fig, "annual_density_gap.png")
+    _save_figure(fig, "2_density_divider.png")
 
 
 def plot_boundary_leakage() -> None:
-    df = _load_output_data("boundary_leakage_plot.csv")
+    df = _load_output_data("4_area_coverage_plot.csv")
 
     fig, ax = plt.subplots(figsize=(9.0, 5.0))
     fig.patch.set_facecolor(BACKGROUND)
@@ -968,13 +1105,85 @@ def plot_boundary_leakage() -> None:
     fig.text(
         0.125,
         0.02,
-        "Covered addresses have at least one station within 500m.",
+        "Covered = At least one station within 500m.",
         ha="left",
         va="bottom",
         fontsize=9,
         color=SUBTLE_TEXT,
     )
-    _save_figure(fig, "boundary_leakage.png")
+    _save_figure(fig, "4_area_coverage.png")
+
+
+def plot_coverage_geometry() -> None:
+    distance_df = _load_output_data("3_station_coverage_distance.csv")
+    overlap_df = _load_output_data("3_station_coverage_500m.csv")
+    annotation_df = _load_output_data("3_station_coverage_annotation_values.csv")
+    annotation_values = dict(
+        zip(annotation_df["metric"], annotation_df["value"], strict=True)
+    )
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.6))
+    fig.patch.set_facecolor(BACKGROUND)
+    axes[0].plot(
+        distance_df["distance_threshold_m"],
+        distance_df["pct_addresses_within_threshold"],
+        color=BLUE,
+        marker="o",
+        linewidth=2,
+    )
+    axes[0].set_xlabel("Distance to nearest station (m)")
+    axes[0].set_ylabel("Addresses within threshold (%)")
+    axes[0].set_title("Coverage rises quickly up to about 500 m")
+    axes[0].yaxis.set_major_formatter(ticker.PercentFormatter())
+    axes[0].yaxis.set_major_locator(ticker.MultipleLocator(10))
+    axes[0].grid(color=GRID, alpha=0.6)
+
+    bar_x = np.arange(len(overlap_df))
+    axes[1].bar(
+        bar_x,
+        overlap_df["pct_addresses_in_band"],
+        color=[RUST, GOLD, TEAL, BLUE, SLATE],
+        edgecolor=GRID,
+    )
+    axes[1].set_xticks(bar_x)
+    axes[1].set_xticklabels(overlap_df["band"])
+    axes[1].set_ylabel("Address share (%)")
+    axes[1].set_title("Almost 90% addresses have station(s) within 500m")
+    axes[1].yaxis.set_major_formatter(ticker.PercentFormatter())
+    axes[1].tick_params(axis="x", rotation=18)
+    axes[1].grid(axis="y", color=GRID, alpha=0.6)
+    one_station_pct = float(
+        overlap_df.loc[overlap_df["band"] == "1 station", "pct_addresses_in_band"].iloc[
+            0
+        ]
+    )
+    axes[1].annotate(
+        "Current risk of such station\nbeing empty: "
+        f"{annotation_values['weighted_empty_share_for_unique_coverage_addresses']:.1f}%",
+        xy=(1, one_station_pct),
+        xycoords="data",
+        xytext=(0.02, 0.96),
+        textcoords="axes fraction",
+        ha="left",
+        va="top",
+        fontsize=9,
+        color=TEXT,
+        bbox={
+            "boxstyle": "square,pad=0.25",
+            "facecolor": PANEL_BACKGROUND,
+            "edgecolor": GRID,
+            "linewidth": 0.8,
+        },
+        arrowprops={
+            "arrowstyle": "-",
+            "color": TEXT,
+            "linewidth": 1.0,
+            "shrinkA": 2,
+            "shrinkB": 2,
+        },
+    )
+
+    _save_figure(fig, "3_station_coverage.png")
 
 
 def run_figures_step() -> None:
@@ -983,6 +1192,7 @@ def run_figures_step() -> None:
     plot_annual_access_trend()
     plot_annual_density_gap()
     plot_boundary_leakage()
+    plot_coverage_geometry()
 
 
 def main() -> None:
