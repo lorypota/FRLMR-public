@@ -15,6 +15,7 @@ Output:
 import argparse
 import json
 import os
+import shutil
 import sys
 import urllib.parse
 import urllib.request
@@ -41,7 +42,13 @@ from internal.data_utils import (
     PROVIDER,
     filter_by_bbox,
 )
-from internal.paths import DATA_DIR, GEODATA_DIR, MAPS_DIR, ensure_output_dirs
+from internal.paths import (
+    DATA_DIR,
+    GEODATA_DIR,
+    MAPS_DIR,
+    PROJECT_ROOT,
+    ensure_output_dirs,
+)
 from internal.processed_data_utils import (
     load_docked_day,
     load_station_day,
@@ -90,6 +97,18 @@ AREA_LEVEL_CONFIG = {
         ),
         "property": "wijkcode",
         "cache_path": str(GEODATA_DIR / "wijken_den_haag.geojson"),
+    },
+    "service_zone": {
+        "label": "CMDP service zones",
+        "property": "service_zone",
+        "cache_path": str(GEODATA_DIR / "cmdp_service_zones_k20.geojson"),
+        "local_source": str(
+            PROJECT_ROOT
+            / "preliminary_studies"
+            / "cmdp_adapted_data"
+            / "plot_data"
+            / "service_zone_boundaries_k20.geojson"
+        ),
     },
 }
 AREA_LEVELS = tuple(AREA_LEVEL_CONFIG)
@@ -341,6 +360,51 @@ def _build_runtime_geojson_resource(cache_path: str) -> str | list[str]:
     if len(rel_paths) == 1:
         return rel_paths[0]
     return rel_paths
+
+
+def _ensure_local_geojson_cache(
+    *, source_path: str, cache_path: str, area_label: str
+) -> None:
+    """Copy a generated local GeoJSON into the map geodata cache."""
+    source = Path(source_path)
+    cache = Path(cache_path)
+    if not source.exists():
+        raise FileNotFoundError(
+            f"{area_label} local source not found: {source}. "
+            "Run cmdp_adapted_story.py first."
+        )
+
+    if cache.exists() and cache.stat().st_mtime >= source.stat().st_mtime:
+        return
+
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, cache)
+    print(f"  Cached local {area_label} polygons to {cache}")
+
+
+def load_area_polygons(*, bbox: dict[str, float], cfg: dict) -> gpd.GeoDataFrame:
+    """Load one area subdivision, either from PDOK or from a generated local file."""
+    if cfg.get("local_source"):
+        _ensure_local_geojson_cache(
+            source_path=cfg["local_source"],
+            cache_path=cfg["cache_path"],
+            area_label=cfg["label"],
+        )
+        cached_gdf = _load_geojson_cache(cfg["cache_path"], cfg["label"])
+        if cached_gdf is None:
+            raise FileNotFoundError(
+                f"Failed to load cached {cfg['label']} polygons from {cfg['cache_path']}"
+            )
+        return cached_gdf
+
+    return download_postcode_polygons(
+        bbox=bbox,
+        cache_path=cfg["cache_path"],
+        endpoint_url=cfg["endpoint_url"],
+        area_property=cfg["property"],
+        area_label=cfg["label"],
+        query_params=cfg.get("query_params"),
+    )
 
 
 def download_postcode_polygons(
@@ -1084,8 +1148,16 @@ def build_page_styles(left_map_id: str) -> str:
     ).strip()
 
 
+def build_area_level_options_html() -> str:
+    return "\n".join(
+        f'                        <option value="{level}">{cfg["label"]}</option>'
+        for level, cfg in POSTCODE_LEVEL_CONFIG.items()
+    )
+
+
 def build_page_html(
     visualization_options: str,
+    area_level_options: str,
 ) -> str:
     """Return the compare-mode page chrome."""
     left_controls = build_panel_controls_html(
@@ -1153,10 +1225,7 @@ def build_page_html(
                 <div class="legend-select-filter">
                     <label for="postcode-level-toggle">Area level</label>
                     <select id="postcode-level-toggle">
-                        <option value="pc4">PC4</option>
-                        <option value="pc6">PC6</option>
-                        <option value="buurt">CBS buurten</option>
-                        <option value="wijk">CBS wijken</option>
+{area_level_options}
                     </select>
                 </div>
                 Station bikes available:<br>
@@ -1774,10 +1843,7 @@ def build_custom_js(
                         lat: lat,
                         lon: lon,
                         capacity: parseInt(fields[idxCapacity], 10) || 0,
-                        pc4: areaCodes.pc4 || '',
-                        pc6: areaCodes.pc6 || '',
-                        buurt: areaCodes.buurt || '',
-                        wijk: areaCodes.wijk || ''
+                        pc: areaCodes
                     });
                 }
                 return {
@@ -1902,16 +1968,18 @@ def build_custom_js(
                         }
                     }
                 }
+                var stationAreaCodes = Object.create(null);
+                for (var pcLevelIdx = 0; pcLevelIdx < postcodeLevels.length; pcLevelIdx += 1) {
+                    var pcLevel = postcodeLevels[pcLevelIdx];
+                    stationAreaCodes[pcLevel] = normalizeAreaCode(
+                        station.pc && station.pc[pcLevel]
+                    );
+                }
                 stationsJs.push({
                     ll: [round6(station.lat), round6(station.lon)],
                     n: station.name,
                     cap: station.capacity,
-                    pc: {
-                        pc4: normalizeAreaCode(station.pc4),
-                        pc6: normalizeAreaCode(station.pc6),
-                        buurt: normalizeAreaCode(station.buurt),
-                        wijk: normalizeAreaCode(station.wijk)
-                    },
+                    pc: stationAreaCodes,
                     av: hourlyAvail,
                     pr: providerKey
                 });
@@ -2094,7 +2162,7 @@ def build_custom_js(
             for (var i = 0; i < stations.length; i += 1) {
                 var station = stations[i];
                 if (!station.pc) {
-                    station.pc = { pc4: '', pc6: '', buurt: '', wijk: '' };
+                    station.pc = Object.create(null);
                 }
                 var areaCode = getStationAreaCode(station, level);
                 if (!areaCode) {
@@ -3526,14 +3594,7 @@ def main():
     print("Step 1: Ensuring postcode polygon boundaries are cached...")
     postcode_gdfs = {}
     for level, cfg in POSTCODE_LEVEL_CONFIG.items():
-        postcode_gdfs[level] = download_postcode_polygons(
-            bbox=DEN_HAAG_BBOX,
-            cache_path=cfg["cache_path"],
-            endpoint_url=cfg["endpoint_url"],
-            area_property=cfg["property"],
-            area_label=cfg["label"],
-            query_params=cfg.get("query_params"),
-        )
+        postcode_gdfs[level] = load_area_polygons(bbox=DEN_HAAG_BBOX, cfg=cfg)
 
     print("\nStep 2: Ensuring house points are cached...")
     house_points = download_house_points(DEN_HAAG_BBOX, HOUSE_POINTS_CACHE)
@@ -3549,10 +3610,13 @@ def main():
 
     default_visualization_json = json.dumps(DEFAULT_VISUALIZATION_MODE)
     visualization_options = build_visualization_options_html()
+    area_level_options = build_area_level_options_html()
     visualization_js = build_visualization_js()
 
     m.get_root().header.add_child(folium.Element(build_page_styles(map_id)))
-    m.get_root().html.add_child(folium.Element(build_page_html(visualization_options)))
+    m.get_root().html.add_child(
+        folium.Element(build_page_html(visualization_options, area_level_options))
+    )
     m.get_root().html.add_child(
         folium.Element(
             build_custom_js(

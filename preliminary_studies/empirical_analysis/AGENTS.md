@@ -6,7 +6,7 @@ This file is in part a duplication of AGENTS.md in root because some agents migh
 
 Read `README.md` first before making changes in this folder. It is the source of truth for folder structure, scripts, workflow, outputs, and run commands. Do not repeat README content here.
 
-This file should only hold guidance that helps with editing or reviewing code.
+This file should only hold guidance that helps with understanding, editing or reviewing code.
 
 ### IMPORTANT NOTES - DO NOT EDIT THIS
 

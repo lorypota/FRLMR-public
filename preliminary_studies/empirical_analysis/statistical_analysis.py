@@ -26,7 +26,9 @@ STAT_ANALYSIS_DIR = OUTPUT_DIR / "statistical_analysis"
 STAT_DATA_DIR = STAT_ANALYSIS_DIR / "summary_data"
 STAT_FIGURES_DIR = STAT_ANALYSIS_DIR / "figures"
 COVERAGE_RUNS_DIR = STAT_ANALYSIS_DIR / "coverage_runs"
-PROVIDER = "donkey_denHaag"
+PROVIDERS = ["donkey_denHaag", "ns_ov_fiets"]
+DEN_HAAG_BBOX_LAT = (52.00, 52.13)
+DEN_HAAG_BBOX_LON = (4.20, 4.42)
 RECENT_WINDOW_DAYS = 15
 COVERAGE_RADIUS_M = 500
 
@@ -180,82 +182,163 @@ def _load_coverage_snapshots(run_tag: str) -> pd.DataFrame:
     return pd.concat(frames, ignore_index=True)
 
 
-def _load_latest_station_snapshot() -> tuple[tuple[int, int, int], pd.DataFrame]:
-    latest_station = latest_date(discover_station_dates(DATA_DIR, PROVIDER))
-    if latest_station is None:
-        raise FileNotFoundError(f"No station snapshots found for {PROVIDER}")
+def _filter_to_den_haag(stations: pd.DataFrame) -> pd.DataFrame:
+    return stations[
+        stations["lat"].between(*DEN_HAAG_BBOX_LAT)
+        & stations["lon"].between(*DEN_HAAG_BBOX_LON)
+    ].copy()
 
-    stations = load_station_day(DATA_DIR, PROVIDER, *latest_station)
+
+def _den_haag_station_ids_for_provider(provider: str) -> set[str] | None:
+    latest = latest_date(discover_station_dates(DATA_DIR, provider))
+    if latest is None:
+        return None
+    stations = load_station_day(DATA_DIR, provider, *latest)
     if stations is None:
-        raise FileNotFoundError(f"Failed to load station snapshot for {latest_station}")
+        return None
+    stations = _filter_to_den_haag(stations)
+    return set(stations["station_id"].astype(str))
 
-    stations = stations.copy()
-    stations["station_id_str"] = stations["station_id"].astype(str)
-    return latest_station, stations
+
+def _load_latest_station_snapshot() -> tuple[tuple[int, int, int], pd.DataFrame]:
+    primary_provider = PROVIDERS[0]
+    latest_station = latest_date(discover_station_dates(DATA_DIR, primary_provider))
+    if latest_station is None:
+        raise FileNotFoundError(f"No station snapshots found for {primary_provider}")
+
+    frames = []
+    for provider in PROVIDERS:
+        provider_latest = (
+            latest_station
+            if provider == primary_provider
+            else latest_date(discover_station_dates(DATA_DIR, provider))
+        )
+        if provider_latest is None:
+            continue
+        stations = load_station_day(DATA_DIR, provider, *provider_latest)
+        if stations is None:
+            if provider == primary_provider:
+                raise FileNotFoundError(
+                    f"Failed to load station snapshot for {latest_station}"
+                )
+            continue
+        if provider != primary_provider:
+            stations = _filter_to_den_haag(stations)
+        if stations.empty:
+            continue
+        stations = stations.copy()
+        stations["station_id_str"] = stations["station_id"].astype(str)
+        stations["provider"] = provider
+        frames.append(stations)
+
+    combined = pd.concat(frames, ignore_index=True)
+    return latest_station, combined
 
 
 def _load_recent_common_docked_station_ids(
     window_days: int = RECENT_WINDOW_DAYS,
 ) -> tuple[list[tuple[int, int, int]], list[str]]:
-    all_dates = discover_docked_dates(DATA_DIR, PROVIDER)
-    if len(all_dates) < window_days:
-        raise ValueError(
-            f"Need at least {window_days} docked days, found {len(all_dates)}"
-        )
+    primary_provider = PROVIDERS[0]
+    primary_dates: list[tuple[int, int, int]] = []
+    all_ids: set[str] = set()
 
-    selected_dates = all_dates[-window_days:]
-    common_cols: set[str] | None = None
-    loaded_dates = []
-
-    for year, month, day in selected_dates:
-        day_df = load_docked_day(DATA_DIR, PROVIDER, year, month, day)
-        if day_df is None:
+    for provider in PROVIDERS:
+        provider_dates = discover_docked_dates(DATA_DIR, provider)
+        if len(provider_dates) < window_days:
+            if provider == primary_provider:
+                raise ValueError(
+                    f"Need at least {window_days} docked days for {primary_provider}, "
+                    f"found {len(provider_dates)}"
+                )
             continue
-        cols = set(day_df.columns.astype(str))
-        common_cols = cols if common_cols is None else common_cols & cols
-        loaded_dates.append((year, month, day))
 
-    if not loaded_dates or common_cols is None:
-        raise FileNotFoundError(
-            f"No docked snapshots found for recent window of {PROVIDER}"
+        bbox_ids = (
+            None
+            if provider == primary_provider
+            else _den_haag_station_ids_for_provider(provider)
         )
 
-    return loaded_dates, sorted(common_cols)
+        selected_dates = provider_dates[-window_days:]
+        common_cols: set[str] | None = None
+        for year, month, day in selected_dates:
+            day_df = load_docked_day(DATA_DIR, provider, year, month, day)
+            if day_df is None:
+                continue
+            cols = set(day_df.columns.astype(str))
+            if bbox_ids is not None:
+                cols &= bbox_ids
+            common_cols = cols if common_cols is None else common_cols & cols
+            if provider == primary_provider:
+                primary_dates.append((year, month, day))
+
+        if common_cols:
+            all_ids.update(common_cols)
+
+    if not primary_dates or not all_ids:
+        raise FileNotFoundError(
+            f"No docked snapshots found for recent window of {primary_provider}"
+        )
+
+    return primary_dates, sorted(all_ids)
 
 
 def _load_recent_common_docked_window(
     window_days: int = RECENT_WINDOW_DAYS,
 ) -> tuple[list[tuple[int, int, int]], pd.DataFrame]:
-    all_dates = discover_docked_dates(DATA_DIR, PROVIDER)
-    if len(all_dates) < window_days:
-        raise ValueError(
-            f"Need at least {window_days} docked days, found {len(all_dates)}"
-        )
+    primary_provider = PROVIDERS[0]
+    primary_dates: list[tuple[int, int, int]] = []
+    provider_wides: list[pd.DataFrame] = []
 
-    selected_dates = all_dates[-window_days:]
-    frames: list[pd.DataFrame] = []
-    common_cols: set[str] | None = None
-    loaded_dates = []
-
-    for year, month, day in selected_dates:
-        day_df = load_docked_day(DATA_DIR, PROVIDER, year, month, day)
-        if day_df is None:
+    for provider in PROVIDERS:
+        provider_dates = discover_docked_dates(DATA_DIR, provider)
+        if len(provider_dates) < window_days:
+            if provider == primary_provider:
+                raise ValueError(
+                    f"Need at least {window_days} docked days for {primary_provider}, "
+                    f"found {len(provider_dates)}"
+                )
             continue
-        day_df = day_df.copy()
-        day_df.columns = day_df.columns.astype(str)
-        cols = set(day_df.columns)
-        common_cols = cols if common_cols is None else common_cols & cols
-        frames.append(day_df)
-        loaded_dates.append((year, month, day))
 
-    if not frames or common_cols is None:
-        raise FileNotFoundError(
-            f"No docked snapshots found for recent window of {PROVIDER}"
+        bbox_ids = (
+            None
+            if provider == primary_provider
+            else _den_haag_station_ids_for_provider(provider)
         )
 
-    ordered_cols = sorted(common_cols)
-    wide = pd.concat([frame[ordered_cols] for frame in frames]).sort_index()
-    return loaded_dates, wide
+        selected_dates = provider_dates[-window_days:]
+        frames: list[pd.DataFrame] = []
+        common_cols: set[str] | None = None
+
+        for year, month, day in selected_dates:
+            day_df = load_docked_day(DATA_DIR, provider, year, month, day)
+            if day_df is None:
+                continue
+            day_df = day_df.copy()
+            day_df.columns = day_df.columns.astype(str)
+            if bbox_ids is not None:
+                day_df = day_df[[c for c in day_df.columns if c in bbox_ids]]
+            cols = set(day_df.columns)
+            common_cols = cols if common_cols is None else common_cols & cols
+            frames.append(day_df)
+            if provider == primary_provider:
+                primary_dates.append((year, month, day))
+
+        if not frames or not common_cols:
+            continue
+
+        ordered_cols = sorted(common_cols)
+        provider_wide = pd.concat(
+            [frame[ordered_cols] for frame in frames]
+        ).sort_index()
+        provider_wides.append(provider_wide)
+
+    if not primary_dates or not provider_wides:
+        raise FileNotFoundError(
+            f"No docked snapshots found for recent window of {primary_provider}"
+        )
+
+    wide = pd.concat(provider_wides, axis=1, join="inner").sort_index()
+    return primary_dates, wide
 
 
 def _load_houses_rd() -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -274,6 +357,8 @@ def _load_area_layer(name: str) -> gpd.GeoDataFrame:
         paths = [GEODATA_DIR / "buurten_den_haag.geojson"]
     elif name == "wijken":
         paths = [GEODATA_DIR / "wijken_den_haag.geojson"]
+    elif name == "k20_zones":
+        paths = [GEODATA_DIR / "cmdp_service_zones_k20.geojson"]
     else:
         raise ValueError(f"Unsupported area layer: {name}")
 
@@ -547,7 +632,7 @@ def build_boundary_leakage_data() -> None:
     )
 
     rows = []
-    for area_name in ("pc4", "pc6", "buurten", "wijken"):
+    for area_name in ("pc4", "pc6", "buurten", "wijken", "k20_zones"):
         area = _load_area_layer(area_name).reset_index(drop=True)
         house_join = gpd.sjoin(
             house_points, area[["geometry"]], how="left", predicate="within"
@@ -585,6 +670,7 @@ def build_boundary_leakage_data() -> None:
             ):
                 nearest_outside[house_idx] = True
 
+        same_area_covered = covered & ~no_same_area
         rows.append(
             {
                 "area_level": area_name,
@@ -614,6 +700,9 @@ def build_boundary_leakage_data() -> None:
                     / house_weights[covered].sum()
                     * 100
                 ),
+                "pct_addresses_with_same_area_station_500m": float(
+                    house_weights[same_area_covered].sum() / house_weights.sum() * 100
+                ),
             }
         )
 
@@ -626,11 +715,15 @@ def build_boundary_leakage_data() -> None:
         "pc6": "PC6",
         "buurten": "CBS buurten",
         "wijken": "CBS wijken",
+        "k20_zones": "Service zones (K=20)",
     }
     plot_out = pd.DataFrame(
         {
             "area_level": out["area_level"],
             "area_label": out["area_level"].map(area_labels),
+            "pct_covered_by_same_area_station": out[
+                "pct_addresses_with_same_area_station_500m"
+            ],
             "pct_has_outside_area_option": out[
                 "pct_covered_addresses_with_any_cross_boundary_station_500m"
             ],
@@ -937,7 +1030,7 @@ def plot_annual_density_gap() -> None:
         gridspec_kw={"hspace": 0.22},
     )
     fig.patch.set_facecolor(BACKGROUND)
-    fig.subplots_adjust(top=0.82, bottom=0.18)
+    fig.subplots_adjust(top=0.78, bottom=0.18)
 
     panels = [
         ("mean_distance", "Mean nearest-bike distance"),
@@ -1000,7 +1093,7 @@ def plot_annual_density_gap() -> None:
         handles,
         labels,
         title="People/km2",
-        bbox_to_anchor=(0.58, 0.975),
+        bbox_to_anchor=(0.72, 0.975),
         loc="upper left",
         ncol=1,
         frameon=True,
@@ -1054,6 +1147,33 @@ def plot_annual_density_gap() -> None:
         ha="left",
         va="top",
     )
+    fig.text(
+        0.08,
+        0.94,
+        "Distance is to the nearest available bike (not just station) from address",
+        fontsize=9,
+        color=SUBTLE_TEXT,
+        ha="left",
+        va="top",
+    )
+    fig.text(
+        0.08,
+        0.912,
+        "Mean distance is address-weighted within each CBS buurt,",
+        fontsize=9,
+        color=SUBTLE_TEXT,
+        ha="left",
+        va="top",
+    )
+    fig.text(
+        0.08,
+        0.89,
+        "then averaged across buurten in the same density group",
+        fontsize=9,
+        color=SUBTLE_TEXT,
+        ha="left",
+        va="top",
+    )
 
     _save_figure(fig, "2_density_divider.png")
 
@@ -1061,28 +1181,35 @@ def plot_annual_density_gap() -> None:
 def plot_boundary_leakage() -> None:
     df = _load_output_data("4_area_coverage_plot.csv")
 
-    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+    fig, ax = plt.subplots(figsize=(11.0, 7.5))
     fig.patch.set_facecolor(BACKGROUND)
     _style_axis(ax)
 
     x = np.arange(len(df))
-    width = 0.34
+    width = 0.27
     ax.bar(
-        x - width / 2,
+        x - width,
+        df["pct_covered_by_same_area_station"],
+        width=width,
+        color=GOLD,
+        label="Covered by same-area station",
+    )
+    ax.bar(
+        x,
         df["pct_has_outside_area_option"],
         width=width,
         color=BLUE,
         label="Has outside-area option",
     )
     ax.bar(
-        x + width / 2,
+        x + width,
         df["pct_nearest_station_outside_area"],
         width=width,
         color=TEAL,
         label="Nearest option is outside",
     )
     ax.bar(
-        x + width / 2,
+        x + width,
         df["pct_only_outside_area_options"],
         width=width,
         color=ORANGE,
@@ -1091,25 +1218,32 @@ def plot_boundary_leakage() -> None:
 
     ax.set_xticks(x)
     ax.set_xticklabels(df["area_label"])
-    ax.set_ylabel("Share of covered addresses (%)")
-    ax.set_title("Coverage often depends on stations across area boundaries")
+    ax.set_ylabel("Share of addresses (%)")
+    fig.suptitle(
+        "Coverage often depends on stations across area boundaries",
+        fontsize=12,
+        fontweight="bold",
+        y=0.98,
+    )
     ax.yaxis.set_major_formatter(ticker.PercentFormatter())
     handles, labels = ax.get_legend_handles_labels()
-    order = [0, 2, 1]
+    order = [0, 1, 3, 2]
     ax.legend(
         [handles[idx] for idx in order],
         [labels[idx] for idx in order],
         frameon=False,
-        loc="upper right",
+        loc="upper left",
+        bbox_to_anchor=(0.0, 1.22),
     )
+    fig.subplots_adjust(top=0.78)
     fig.text(
-        0.125,
-        0.02,
-        "Covered = At least one station within 500m.",
+        0.55,
+        0.91,
+        "Covered = At least one station within 500m (of address).\n\nGold uses all addresses;\nblue/teal/orange use covered addresses as denominator.",
         ha="left",
-        va="bottom",
+        va="top",
         fontsize=9,
-        color=SUBTLE_TEXT,
+        color=TEXT,
     )
     _save_figure(fig, "4_area_coverage.png")
 

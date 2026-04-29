@@ -45,7 +45,7 @@ FairMSS/
 
 ## Beta formulation
 
-### Training
+### Beta Training
 
 ```bash
 # Train a single configuration
@@ -55,7 +55,7 @@ uv run beta/training.py --beta 0.5 --categories 3 --seed 100
 uv run beta/run_training.py
 ```
 
-### Evaluation
+### Beta Evaluation
 
 ```bash
 # Evaluate a scenario (uses pre-trained Q-tables from beta/q_tables/)
@@ -65,7 +65,7 @@ uv run beta/evaluation.py --categories 3
 uv run beta/evaluation.py --categories 5 --seeds 100 110 --save-detailed
 ```
 
-### Plotting
+### Beta Plotting
 
 ```bash
 uv run beta/plots/generate_all.py --categories 5
@@ -78,7 +78,7 @@ uv run beta/plots/learning_curves.py --categories 5 --save
 
 Replaces the fixed beta fairness weight with adaptive Lagrange multipliers that enforce explicit failure-rate constraints.
 
-### Training
+### CMDP Training
 
 ```bash
 # Train a single configuration (r_max = max allowed failure rate percentage)
@@ -88,7 +88,7 @@ uv run cmdp/training.py --r-max 0.15 --categories 2 --seed 100
 uv run cmdp/run_training.py
 ```
 
-### Evaluation
+### CMDP Evaluation
 
 ```bash
 # Evaluate a scenario
@@ -98,7 +98,7 @@ uv run cmdp/evaluation.py --categories 2
 uv run cmdp/evaluation.py --categories 2 --r-max-values 0.05 0.10 0.15 0.20 0.25
 ```
 
-### Plotting
+### CMDP Plotting
 
 ```bash
 uv run cmdp/plots/generate_all.py --categories 5

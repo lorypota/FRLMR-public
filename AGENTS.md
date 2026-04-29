@@ -2,33 +2,45 @@
 
 ## First section - DO NOT EDIT THIS
 
+Read `README.md` first before making changes in this folder. It is the source of truth for folder structure, scripts, workflow, outputs, and run commands. Do not repeat README content here.
+
+This file should only hold guidance that helps with understanding, editing or reviewing code.
+
 ### IMPORTANT NOTES - DO NOT EDIT THIS
 
 Ask for clarification whenever you're unsure, your goal is to communicate and iterate, there will never be a perfect response, but it's important to keep improving it as much as possible. Try to be straightforward, concise but not overly. Avoid using an excessive amount of adjectives and use simple words instead of overly complex ones unless necessary. Never use dashes (—) for parenthetical statements and use ":" only if necessary, not to add emphasis. Try not to be sensationalistic but instead try to generally be humble.
 
-I want targeted and concise changes, always look for trimmings to simplify things. Feel free to edit other sections of this document if necessary, but always tell me in chat before doing so. NEVER EDIT THIS FIRST SECTION. Before making or asking for changes, ask yourself: Why would this edit be useful to an agent working on the code?
+I want targeted and concise changes, always look for trimmings to simplify things. Feel free to edit other sections of this document if necessary, but always tell me in chat before doing so. NEVER EDIT THIS FIRST SECTION. Before making or asking for changes, ask yourself: Why would this edit be useful to an agent working on the code or is it just repetitive and understandable from the code at first glance?
+
+Try to understand fully requests by user and ask clarifying questions. Aim for small targeted changes ONLY ONCE you understand the final goal of user and if what you're doing would specifically answer the user question concretely.
 
 ### WRITING TIPS - DO NOT EDIT THIS
 
 When the user makes an error or misunderstands something:
 
-- Correct directly and clearly without being overly supportive
+- Correct directly and clearly without being overly supportive ("No, that's incorrect" and explain the correct interpretation)
 - Don't use phrases like "Good catch!", "Great question!", "You're right to question this"
-- Simply state "No, that's incorrect" and explain the correct interpretation
 
 Do NOT use these words unless extremely necessary and try to use simpler terms without adjectives: delve, delves, delved, delving, intricate, intricacies, underscore, underscores, underscoring, showcasing, showcases, realm, pivotal, crucial, comprehensive, meticulous, meticulously, groundbreaking, advancements, aligns, boasts, comprehending, surpassing, surpasses, emphasizing, garnered, noteworthy, notable, commendable, innovative, invaluable, versatile, potent, ingenious, landscape, unparalleled, multifaceted, nuanced, robust, streamline, transformative, leverage, harness, utilize, navigate, foster, enhance, facilitate, Furthermore, Moreover, Additionally, Notably, Importantly, tapestry, interplay, paradigm, cornerstone, holistic, synergy, ever-evolving.
 
 For Writing Structure:
+w1. State your main point first - what's your argument or finding?
+w2. Put your thesis in the opening paragraph, not after background information
+w3. Skip the "throughout history" or "in recent years" openings
 
-1. State your main point first - what's your argument or finding?
-2. Put your thesis in the opening paragraph, not after background information
-3. Skip the "throughout history" or "in recent years" openings
+For Supporting Arguments:
+s1. Signal your evidence clearly with phrases like "This is supported by..." or "The evidence shows..."
+s2. Preview your main evidence points in your introduction
+s3. Your supporting points should build on each other, not stand alone as separate justifications -> VERY IMPORTANT!
+s4. Avoid listing multiple independent lines of evidence that don't connect -> VERY IMPORTANT! (stems from s2.)
 
-For Supporting Arguments: 4. Signal your evidence clearly with phrases like "This is supported by..." or "The evidence shows..." 5. Preview your main evidence points in your introduction 6. Your supporting points should build on each other, not stand alone as separate justifications -> VERY IMPORTANT! 7. Avoid listing multiple independent lines of evidence that don't connect -> VERY IMPORTANT! (stems from 6.)
+For Evidence and Citations:
+e1. Each claim needs backing. When you cite something, explain why it matters to your argument
+e2. Define specialized terms when you introduce them. If there's debate about a definition, state which one you're using and why
 
-For Evidence and Citations: 8. Each claim needs backing. When you cite something, explain why it matters to your argument 9. Define specialized terms when you introduce them. If there's debate about a definition, state which one you're using and why
-
-For Counterarguments: 10. Address real challenges to your argument, not weak strawman versions 11. Counterarguments should target your evidence or reasoning, not just restate an opposing view
+For Counterarguments:
+c1. Address real challenges to your argument, not weak strawman versions
+c2. Counterarguments should target your evidence or reasoning, not just restate an opposing view
 
 Writing examples:
 Bad Opening:
@@ -56,11 +68,6 @@ Use `uv` for anything related to this project.
 - Do not introduce ad hoc `pip install`, bare `python script.py`.
 
 ## Project Overview
-
-`FairMSS` is a thesis/research codebase for fairness-aware control of shared micromobility systems. The repo models a synthetic shared-bike network, trains tabular Q-learning rebalancing policies, and compares two formulations:
-
-- `beta/`: a weighted-objective MDP where fairness enters the reward through a scalar `beta`
-- `cmdp/`: a constrained MDP trained with Lagrangian dual updates to enforce failure-rate limits
 
 The project is not a general-purpose library. It is an experiment repository with code, generated arrays, pickled Q-tables, plots, and empirical-analysis utilities all living together. Most changes should preserve reproducibility and filename conventions rather than chase heavy abstraction.
 
@@ -94,8 +101,6 @@ The Q-learning design is intentionally simple:
 - Q-values keyed by `((bikes, period), action)`
 - epsilon-greedy exploration during training
 - greedy evaluation by forcing epsilon to `0.0`
-
-This simplicity is part of the experiment design. Avoid replacing it with function approximation or a different RL stack unless the research question explicitly changes.
 
 ## Fairness Formulations
 
@@ -172,15 +177,13 @@ If you change filenames, tokens, or directory layouts, expect downstream evaluat
 
 ## Preliminary Studies
 
-`preliminary_studies/` is not dead code. It holds earlier work that supports the thesis narrative and data exploration.
+`preliminary_studies/` is not dead code. It holds work that supports the thesis narrative and data exploration.
 
 Subareas currently visible in the repo:
 
 - `baseline/`: earlier baseline reproduction outputs and scripts
 - `failure_rate_analysis/`: scripts and arrays for comparing failure-rate behavior
-- `empirical_analysis/`: utilities for inspecting Donkey GBFS snapshots, building processed tables, and generating Amsterdam/Den Haag maps
-
-The empirical-analysis scripts also use `uv run` and expect either repo-local raw data or a `DONKEY_DATA_ROOT` override. Generated outputs live under `preliminary_studies/empirical_analysis/output/`.
+- `empirical_analysis/`: utilities for inspecting data snapshots, generating maps to visualize available data and generating useful statistics on this data to ground the research approach. This folder tries to justify and guide the research approach with the available TNO data.
 
 ## Conventions To Preserve
 
@@ -195,6 +198,3 @@ The empirical-analysis scripts also use `uv run` and expect either repo-local ra
 - The repo is optimized for local research iteration, not packaging or deployment.
 - Existing generated outputs may represent expensive prior runs.
 - Some directories are large; avoid operations that rescan or rewrite them unnecessarily.
-- The workspace may be dirty because experiment outputs and exploratory scripts change frequently.
-
-When in doubt, favor reproducibility, stable filenames, and minimal disturbance to prior results.

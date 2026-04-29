@@ -58,7 +58,7 @@ body.compare-on #panel-right {
     inset: 0;
 }
 
-#map_8b28ca77ad0bcaaebac20bb4fddcea0d,
+#map_70506efd9b0145b5699efab585b9ae7f,
 #compare-map-right {
     position: absolute !important;
     inset: 0;
@@ -542,7 +542,7 @@ body.theme-dark .leaflet-popup-content {
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_8b28ca77ad0bcaaebac20bb4fddcea0d {
+                #map_70506efd9b0145b5699efab585b9ae7f {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -707,6 +707,7 @@ body.theme-dark .leaflet-popup-content {
                 <option value="pc6">PC6</option>
                 <option value="buurt">CBS buurten</option>
                 <option value="wijk">CBS wijken</option>
+                <option value="service_zone">CMDP service zones</option>
             </select>
         </div>
         Station bikes available:<br>
@@ -732,7 +733,7 @@ body.theme-dark .leaflet-popup-content {
         document.body.classList.add('compare-off');
         document.body.classList.add('theme-light');
 
-        var leftMap = map_8b28ca77ad0bcaaebac20bb4fddcea0d;
+        var leftMap = map_70506efd9b0145b5699efab585b9ae7f;
         var allData = Object.create(null);
         var dates = [];
         var globalMax = 0;
@@ -752,9 +753,9 @@ body.theme-dark .leaflet-popup-content {
         var defaultCenter = [52.075, 4.3];
         var defaultZoom = 13;
         var artifactsIndexPath = '../index/artifacts.json';
-        var postcodeGeojsonPaths = {"pc4": "../geodata/pc4_den_haag.geojson", "pc6": ["../geodata/pc6_den_haag/part_01.geojson", "../geodata/pc6_den_haag/part_02.geojson"], "buurt": "../geodata/buurten_den_haag.geojson", "wijk": "../geodata/wijken_den_haag.geojson"};
-        var postcodeConfigs = {"pc4": {"label": "PC4", "property": "postcode"}, "pc6": {"label": "PC6", "property": "postcode6"}, "buurt": {"label": "CBS buurten", "property": "buurtcode"}, "wijk": {"label": "CBS wijken", "property": "wijkcode"}};
-        var postcodeLevels = ["pc4", "pc6", "buurt", "wijk"];
+        var postcodeGeojsonPaths = {"pc4": "../geodata/pc4_den_haag.geojson", "pc6": ["../geodata/pc6_den_haag/part_01.geojson", "../geodata/pc6_den_haag/part_02.geojson"], "buurt": "../geodata/buurten_den_haag.geojson", "wijk": "../geodata/wijken_den_haag.geojson", "service_zone": "../geodata/cmdp_service_zones_k20.geojson"};
+        var postcodeConfigs = {"pc4": {"label": "PC4", "property": "postcode"}, "pc6": {"label": "PC6", "property": "postcode6"}, "buurt": {"label": "CBS buurten", "property": "buurtcode"}, "wijk": {"label": "CBS wijken", "property": "wijkcode"}, "service_zone": {"label": "CMDP service zones", "property": "service_zone"}};
+        var postcodeLevels = ["pc4", "pc6", "buurt", "wijk", "service_zone"];
         var postcodeLevel = "pc4";
         var houseDataPath = '../geodata/houses_den_haag.json';
         var denHaagBBox = {"lat_min": 52.03, "lat_max": 52.12, "lon_min": 4.22, "lon_max": 4.38};
@@ -1331,7 +1332,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     return proportionalLegendHtml(allData, globalMax, mode, dateKey, hour);
 }
 
-        var leftMapElement = document.getElementById('map_8b28ca77ad0bcaaebac20bb4fddcea0d');
+        var leftMapElement = document.getElementById('map_70506efd9b0145b5699efab585b9ae7f');
         var leftMapSlot = document.getElementById('left-map-slot');
         if (leftMapElement && leftMapSlot && leftMapElement.parentNode !== leftMapSlot) {
             leftMapSlot.appendChild(leftMapElement);
@@ -1860,10 +1861,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         lat: lat,
                         lon: lon,
                         capacity: parseInt(fields[idxCapacity], 10) || 0,
-                        pc4: areaCodes.pc4 || '',
-                        pc6: areaCodes.pc6 || '',
-                        buurt: areaCodes.buurt || '',
-                        wijk: areaCodes.wijk || ''
+                        pc: areaCodes
                     });
                 }
                 return {
@@ -1988,16 +1986,18 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
                         }
                     }
                 }
+                var stationAreaCodes = Object.create(null);
+                for (var pcLevelIdx = 0; pcLevelIdx < postcodeLevels.length; pcLevelIdx += 1) {
+                    var pcLevel = postcodeLevels[pcLevelIdx];
+                    stationAreaCodes[pcLevel] = normalizeAreaCode(
+                        station.pc && station.pc[pcLevel]
+                    );
+                }
                 stationsJs.push({
                     ll: [round6(station.lat), round6(station.lon)],
                     n: station.name,
                     cap: station.capacity,
-                    pc: {
-                        pc4: normalizeAreaCode(station.pc4),
-                        pc6: normalizeAreaCode(station.pc6),
-                        buurt: normalizeAreaCode(station.buurt),
-                        wijk: normalizeAreaCode(station.wijk)
-                    },
+                    pc: stationAreaCodes,
                     av: hourlyAvail,
                     pr: providerKey
                 });
@@ -2180,7 +2180,7 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
             for (var i = 0; i < stations.length; i += 1) {
                 var station = stations[i];
                 if (!station.pc) {
-                    station.pc = { pc4: '', pc6: '', buurt: '', wijk: '' };
+                    station.pc = Object.create(null);
                 }
                 var areaCode = getStationAreaCode(station, level);
                 if (!areaCode) {
@@ -3564,14 +3564,14 @@ function legendHtmlForMode(allData, globalMax, mode, dateKey, hour) {
     </script>
     
     
-            <div class="folium-map" id="map_8b28ca77ad0bcaaebac20bb4fddcea0d" ></div>
+            <div class="folium-map" id="map_70506efd9b0145b5699efab585b9ae7f" ></div>
         
 </body>
 <script>
     
     
-            var map_8b28ca77ad0bcaaebac20bb4fddcea0d = L.map(
-                "map_8b28ca77ad0bcaaebac20bb4fddcea0d",
+            var map_70506efd9b0145b5699efab585b9ae7f = L.map(
+                "map_70506efd9b0145b5699efab585b9ae7f",
                 {
                     center: [52.075, 4.3],
                     crs: L.CRS.EPSG3857,
