@@ -7,7 +7,7 @@ The goal is to replace administrative areas with generated service zones that ar
 The current reference setup uses:
 
 - 20 generated service zones
-- 5 ordered service categories
+- 5 ordered service categories going from remote (= cat. 0) to central (= cat. 4)
 - address density to rank zones from lower-density to higher-density areas
 - Den Haag docked-bike station data from Donkey Republic and NS OV-fiets
 
