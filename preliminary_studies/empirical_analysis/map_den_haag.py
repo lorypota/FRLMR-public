@@ -105,8 +105,8 @@ AREA_LEVEL_CONFIG = {
         "local_source": str(
             PROJECT_ROOT
             / "preliminary_studies"
-            / "cmdp_adapted_data"
-            / "plot_data"
+            / "service_zone_calculation"
+            / "output"
             / "service_zone_boundaries_k20.geojson"
         ),
     },
@@ -371,7 +371,7 @@ def _ensure_local_geojson_cache(
     if not source.exists():
         raise FileNotFoundError(
             f"{area_label} local source not found: {source}. "
-            "Run cmdp_adapted_story.py first."
+            "Run calculate_service_zones.py first."
         )
 
     if cache.exists() and cache.stat().st_mtime >= source.stat().st_mtime:
