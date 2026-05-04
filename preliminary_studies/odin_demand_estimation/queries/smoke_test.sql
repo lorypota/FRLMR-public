@@ -5,7 +5,7 @@
 --   table can be read before running the full demand-estimation query.
 --
 -- Template fields:
---   {year}  -> ODiN year, for example 2024 for odin.odin2024.
+--   {year}  -> ODiN year, for example 2023 for odin.odin2023.
 --   {limit} -> maximum number of rows to return.
 --
 -- Filter:

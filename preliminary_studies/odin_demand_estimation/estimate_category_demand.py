@@ -15,18 +15,16 @@ import pandas as pd
 
 try:
     import psycopg
+    from psycopg import sql
     from psycopg.rows import dict_row
 except ImportError as exc:  # pragma: no cover - gives a clear CLI error
     raise SystemExit("Missing PostgreSQL dependency.") from exc
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[1]
+OUTPUT_PATH = SCRIPT_DIR / "output" / "pc4_period_demand_rates.csv"
 
-OUTPUT_DIR = SCRIPT_DIR / "output"
-OUTPUT_PATH = OUTPUT_DIR / "pc4_period_demand_rates.csv"
-
-SUPPORTED_YEARS = (2022, 2023, 2024)
+SUPPORTED_YEARS = (2022, 2023)
 REQUIRED_COLUMNS = {
     "opid",
     "verplid",
@@ -75,8 +73,7 @@ def parse_args() -> argparse.Namespace:
         "--years",
         nargs="+",
         type=int,
-        default=[2024],
-        help="ODiN years to query. Supported: 2022, 2023, 2024.",
+        help="ODiN years to query. Supported: 2022, 2023.",
     )
     parser.add_argument(
         "--limit",
@@ -145,16 +142,20 @@ def normalize_pc4(value: object) -> str | None:
     return pc4.zfill(4)
 
 
-def get_table_columns(conn: psycopg.Connection, year: int) -> set[str]:
-    query = """
-        SELECT lower(column_name) AS column_name
-        FROM information_schema.columns
-        WHERE table_schema = 'odin'
-          AND table_name = %(table_name)s
-    """
-    with conn.cursor(row_factory=dict_row) as cur:
-        cur.execute(query, {"table_name": f"odin{year}"})
-        return {row["column_name"] for row in cur.fetchall()}
+def get_table_columns(conn: psycopg.Connection, year: int) -> dict[str, str]:
+    """Return lowercase column lookup -> actual database column name."""
+    query = sql.SQL("SELECT * FROM {}.{} LIMIT 0").format(
+        sql.Identifier("odin"),
+        sql.Identifier(f"odin{year}"),
+    )
+    with conn.cursor() as cur:
+        try:
+            cur.execute(query)
+        except psycopg.errors.UndefinedTable as exc:
+            raise SystemExit(
+                f"Table odin.odin{year} does not exist in this database. "
+            ) from exc
+        return {column.name.lower(): column.name for column in cur.description}
 
 
 def resolve_columns(conn: psycopg.Connection, year: int) -> dict[str, str]:
@@ -168,11 +169,15 @@ def resolve_columns(conn: psycopg.Connection, year: int) -> dict[str, str]:
         if match is None:
             missing.append(f"{logical_name} ({', '.join(candidates)})")
         else:
-            resolved[logical_name] = match
+            resolved[logical_name] = available[match]
 
     if missing:
         joined = "; ".join(missing)
-        raise SystemExit(f"odin.odin{year} is missing required columns: {joined}")
+        available_cols = ", ".join(sorted(available.values()))
+        raise SystemExit(
+            f"odin.odin{year} is missing required columns: {joined}\n"
+            f"Available columns: {available_cols}"
+        )
     return resolved
 
 
@@ -182,27 +187,44 @@ def fetch_year(conn: psycopg.Connection, year: int, limit: int | None) -> pd.Dat
         raise SystemExit(f"Unsupported year {year}. Supported years: {supported}")
 
     columns = resolve_columns(conn, year)
-    limit_clause = "" if limit is None else "LIMIT %(limit)s"
-    query = f"""
+    query = sql.SQL(
+        """
         SELECT
-            {columns["opid"]} AS opid,
-            {columns["verplid"]} AS verplid,
-            {columns["verpl"]} AS verpl,
-            {columns["vertpc"]} AS vertpc,
-            {columns["aankpc"]} AS aankpc,
-            {columns["vertgem"]} AS vertgem,
-            {columns["aankgem"]} AS aankgem,
-            {columns["afstv"]} AS afstv,
-            {columns["khvm"]} AS khvm,
-            {columns["vertuur"]} AS vertuur,
-            {columns["factorv"]} AS factorv
-        FROM odin.odin{year}
-        WHERE {columns["verpl"]} = 1
-          AND {columns["afstv"]} BETWEEN 5 AND 100
-          AND ({columns["vertgem"]} = 518 OR {columns["aankgem"]} = 518)
-        {limit_clause}
-    """
-    params = {"limit": limit} if limit is not None else None
+            {opid} AS opid,
+            {verplid} AS verplid,
+            {verpl} AS verpl,
+            {vertpc} AS vertpc,
+            {aankpc} AS aankpc,
+            {vertgem} AS vertgem,
+            {aankgem} AS aankgem,
+            {afstv} AS afstv,
+            {khvm} AS khvm,
+            {vertuur} AS vertuur,
+            {factorv} AS factorv
+        FROM {schema}.{table}
+        WHERE {verpl} = 1
+          AND {afstv} BETWEEN 5 AND 100
+          AND ({vertgem} = 518 OR {aankgem} = 518)
+        """
+    ).format(
+        schema=sql.Identifier("odin"),
+        table=sql.Identifier(f"odin{year}"),
+        opid=sql.Identifier(columns["opid"]),
+        verplid=sql.Identifier(columns["verplid"]),
+        verpl=sql.Identifier(columns["verpl"]),
+        vertpc=sql.Identifier(columns["vertpc"]),
+        aankpc=sql.Identifier(columns["aankpc"]),
+        vertgem=sql.Identifier(columns["vertgem"]),
+        aankgem=sql.Identifier(columns["aankgem"]),
+        afstv=sql.Identifier(columns["afstv"]),
+        khvm=sql.Identifier(columns["khvm"]),
+        vertuur=sql.Identifier(columns["vertuur"]),
+        factorv=sql.Identifier(columns["factorv"]),
+    )
+    params = None
+    if limit is not None:
+        query += sql.SQL(" LIMIT {limit}").format(limit=sql.Placeholder("limit"))
+        params = {"limit": limit}
     with conn.cursor(row_factory=dict_row) as cur:
         cur.execute(query, params)
         rows = cur.fetchall()

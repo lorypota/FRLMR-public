@@ -22,9 +22,8 @@ ODIN_DB_USER=ddddddd
 ODIN_DB_PASSWORD=eeeeeee
 ```
 
-The expected table names are `odin.odin2022`, `odin.odin2023`, and
-`odin.odin2024`. The script accepts both older geography column names such as
-`vertpc` and 2024 DANS-style names such as `vertpc_pram`.
+The inspected database currently exposes `odin.odin2022` and `odin.odin2023`.
+It does not currently expose `odin.odin2024`. The script accepts both older geography column names such as`vertpc` and 2024 DANS-style names such as `vertpc_pram`.
 
 ## Demand Definition
 
@@ -70,13 +69,13 @@ To do later:
 Run a small smoke test first:
 
 ```bash
-uv run preliminary_studies/odin_demand_estimation/estimate_category_demand.py --years 2024 --limit 1000
+uv run preliminary_studies/odin_demand_estimation/estimate_category_demand.py --years 2023 --limit 1000
 ```
 
 Then run the full supported set:
 
 ```bash
-uv run preliminary_studies/odin_demand_estimation/estimate_category_demand.py --years 2022 2023 2024
+uv run preliminary_studies/odin_demand_estimation/estimate_category_demand.py --years 2022 2023
 ```
 
 The main output is:

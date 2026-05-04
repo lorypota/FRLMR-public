@@ -5,7 +5,7 @@
 --   arrival and departure rates for a Donkey-only Den Haag CMDP.
 --
 -- Template fields:
---   {year}         -> ODiN year, for example 2024 for odin.odin2024.
+--   {year}         -> ODiN year, for example 2023 for odin.odin2023.
 --   {limit_clause} -> empty for a full run, or LIMIT n.
 --
 -- Selected columns:
