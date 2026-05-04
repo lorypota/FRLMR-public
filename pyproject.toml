@@ -13,6 +13,7 @@ dependencies = [
     "networkx>=3.6",
     "numpy>=2.3.5",
     "psutil>=7.2.2",
+    "psycopg[binary]>=3.2.13",
     "scipy>=1.16.3",
     "seaborn>=0.13.2",
     "shapely>=2.1.2",
