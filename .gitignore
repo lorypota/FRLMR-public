@@ -4,6 +4,5 @@ __pycache__/
 .idea/
 wandb/
 preliminary_studies/empirical_analysis/output/raw_staging/
-preliminary_studies/odin_demand_estimation/output/
 preliminary_studies/odin_demand_estimation/.env
 preliminary_studies/empirical_analysis/output/analysis/cache/
