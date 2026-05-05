@@ -1,0 +1,46 @@
+year,column_name,description
+2023,aankcorop,Coropgebied aankomstpunt
+2023,aankgem,Aankomstgemeente
+2023,aankmra,Metropoolregio Amsterdam aankomstpunt
+2023,aankmrdh,Metropoolregio Rotterdam Den Haag aankomstpunt
+2023,aankpc,Postcode aankomstpunt
+2023,aankpcbl,Postcode aankomstpunt in het buitenland
+2023,aankprov,Aankomstprovincie
+2023,aardwerk,Aard werkzaamheden
+2023,buurtadam,Wijk Amsterdam
+2023,corop,Coropgebied woongemeente
+2023,gemg,Nederlandse gemeente grensovergang
+2023,gemgr,Inwoneraantalklasse woongemeente
+2023,mra,Metropoolregio Amsterdam
+2023,mrdh,Metropoolregio Rotterdam Den Haag
+2023,pcblg,Buitenlandse postcode grensovergang
+2023,pcg,Nederlandse postcode grensovergang
+2023,prov,Provincie woongemeente
+2023,rdartsa,Reden A huisarts niet altijd kunnen bereiken
+2023,rdartsb,Reden B huisarts niet altijd kunnen bereiken
+2023,rdfama,Reden A familie en vrienden niet altijd kunnen bereiken
+2023,rdfamb,Reden B familie en vrienden niet altijd kunnen bereiken
+2023,rdhaltea,"Reden A halte bus, tram of metro niet altijd kunnen bereiken"
+2023,rdhalteb,"Reden B halte bus, tram of metro niet altijd kunnen bereiken"
+2023,rdonda,Reden A onderwijslocatie niet altijd kunnen bereiken
+2023,rdondb,Reden B onderwijslocatie niet altijd kunnen bereiken
+2023,rdsporta,Reden A sportlocatie of hobbyvereniging niet altijd kunnen bereiken
+2023,rdsportb,Reden B sportlocatie of hobbyvereniging niet altijd kunnen bereiken
+2023,rdstata,Reden A treinstation niet altijd kunnen bereiken
+2023,rdstatb,Reden B treinstation niet altijd kunnen bereiken
+2023,rdsupa,Reden A supermarkt niet altijd kunnen bereiken
+2023,rdsupb,Reden B supermarkt niet altijd kunnen bereiken
+2023,rdwrka,Reden A werklocatie niet altijd kunnen bereiken
+2023,rdwrkb,Reden B werklocatie niet altijd kunnen bereiken
+2023,rdzieka,Reden A ziekenhuis niet altijd kunnen bereiken
+2023,rdziekb,Reden B ziekenhuis niet altijd kunnen bereiken
+2023,sted,Stedelijkheidsklasse woongemeente
+2023,vertcorop,Coropgebied vertrekpunt
+2023,vertgem,Vertrekgemeente
+2023,vertmra,Metropoolregio Amsterdam vertrekpunt
+2023,vertmrdh,Metropoolregio Rotterdam Den Haag vertrekpunt
+2023,vertpc,Postcode vertrekpunt
+2023,vertpcbl,Postcode vertrekpunt in het buitenland
+2023,vertprov,Vertrekprovincie
+2023,wogem,Woongemeente
+2023,wopc,Postcode woonadres

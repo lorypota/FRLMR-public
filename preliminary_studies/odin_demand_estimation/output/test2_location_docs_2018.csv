@@ -1,0 +1,22 @@
+year,column_name,description
+2018,aankcorop,Coropgebied aankomstpunt
+2018,aankgem,Aankomstgemeente
+2018,aankmra,Metropoolregio Amsterdam aankomstpunt
+2018,aankpc,Postcode aankomstpunt
+2018,aankpcbl,Postcode aankomstpunt in het buitenland
+2018,aankprov,Aankomstprovincie
+2018,aardwerk,Aard werkzaamheden
+2018,buurtadam,Buurtcombinatie Amsterdam
+2018,corop,Coropgebied woongemeente
+2018,gemgr,Inwoneraantalklasse woongemeente
+2018,mra,Metropoolregio Amsterdam
+2018,prov,Provincie woongemeente
+2018,sted,Stedelijkheidsklasse woongemeente
+2018,vertcorop,Coropgebied vertrekpunt
+2018,vertgem,Vertrekgemeente
+2018,vertmra,Metropoolregio Amsterdam vertrekpunt
+2018,vertpc,Postcode vertrekpunt
+2018,vertpcbl,Postcode vertrekpunt in het buitenland
+2018,vertprov,Vertrekprovincie
+2018,wogem,Woongemeente
+2018,wopc,Postcode woonadres
