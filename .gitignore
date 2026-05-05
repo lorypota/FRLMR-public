@@ -1,8 +1,9 @@
+*.env
 __pycache__/
 .DS_Store
 .old/
 .idea/
 wandb/
-preliminary_studies/empirical_analysis/output/raw_staging/
-preliminary_studies/odin_demand_estimation/.env
-preliminary_studies/empirical_analysis/output/analysis/cache/
+research_support/empirical_analysis/output/raw_staging/
+research_support/empirical_analysis/output/analysis/cache/
+empirical_analysis/empirical_analysis/output/analysis/cache/
