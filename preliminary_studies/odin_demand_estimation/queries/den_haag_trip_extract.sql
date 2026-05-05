@@ -1,8 +1,9 @@
--- Base query for ODiN potential bike-suitable Den Haag trips.
+-- Base query for ODiN Den Haag trip extraction.
 --
 -- Purpose:
---   Select the minimum ODiN fields needed to estimate category-period
---   arrival and departure rates for a Donkey-only Den Haag CMDP.
+--   Select the minimum ODiN fields needed to build PC4 OD demand, map those
+--   PC4s to service zones, and estimate category-period arrival/departure
+--   rates for the CMDP.
 --
 -- Template fields:
 --   {year}         -> ODiN year, for example 2023 for odin.odin2023.
@@ -12,12 +13,12 @@
 --   opid     respondent id, used for unique-person reliability counts.
 --   verplid  trip id, used for unique-trip counts.
 --   verpl    trip-record type. The filter below keeps regular trips only.
---   vertpc   origin PC4, used to map departures to service categories.
---   aankpc   destination PC4, used to map arrivals to service categories.
+--   vertpc   origin PC4, used as the intermediate origin geography.
+--   aankpc   destination PC4, used as the intermediate destination geography.
 --   vertgem  origin municipality. Code 518 is 's-Gravenhage / Den Haag.
 --   aankgem  destination municipality. Code 518 is 's-Gravenhage / Den Haag.
 --   afstv    trip distance in hectometers. 5..100 means 0.5..10 km.
---   khvm     grouped main mode, used for all-modes, car-driver, and bike scenarios.
+--   khvm     grouped main mode, kept for later diagnostics or sensitivity checks.
 --   vertuur  departure hour, mapped to morning/evening periods.
 --   factorv  ODiN trip expansion weight, used for weighted demand totals.
 --
@@ -32,15 +33,6 @@
 --
 --   vertgem = 518 OR aankgem = 518
 --     Keeps trips with a Den Haag origin or destination.
---
--- The Python script applies the scenario filters after this base query:
---   bike_suitable_all_modes     no extra khvm filter
---   bike_suitable_car_driver    khvm = 1
---   bike_suitable_current_bike  khvm = 5
---
--- Note:
---   The Python script dynamically handles 2024 DANS-style geography names
---   such as vertpc_pram/aankpc_pram and vertgem_dans24/aankgem_dans24.
 
 SELECT
     opid,
