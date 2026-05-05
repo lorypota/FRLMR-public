@@ -73,6 +73,28 @@ When multiple years are selected, the outputs also include a pooled row group su
 
 Rows with fewer than 50 unique respondents are flagged with `low_unique_person_count = true`. These cells should be treated carefully, following the ODiN manual's warning about small filtered samples.
 
+## Outputs interpretation
+
+The outputs are meant for different levels of the modeling study:
+
+- `category_period_demand_rates.csv`: main CMDP input. It gives departures and arrivals by service category and period, matching the current Skellam-style setup with one demand profile per category-period pair.
+- `service_zone_period_demand_rates.csv`: richer spatial input. It gives departures and arrivals by service zone and period, useful if the real-data CMDP is later moved from category-level demand to zone-level demand.
+- `pc4_period_demand_rates.csv`: intermediate diagnostic output. It shows the PC4-level demand before spatial aggregation, but PC4 cells are often too sparse for direct CMDP training.
+- `service_zone_od_demand_rates.csv`: directional movement output between service zones. It is useful for describing OD patterns, but many OD cells are too sparse for the first transition model.
+- `pc4_od_demand_rates.csv`: finest OD output. It is mainly diagnostic because PC4-to-PC4 OD demand is highly fragmented.
+
+The full `2018-2023` run showed the following low-count pattern:
+
+```text
+category_period_demand_rates.csv:       70 rows, 0 low-count rows
+service_zone_period_demand_rates.csv:  280 rows, 27 low-count rows
+pc4_period_demand_rates.csv:          2003 rows, 1681 low-count rows
+service_zone_od_demand_rates.csv:     4473 rows, 4308 low-count rows
+pc4_od_demand_rates.csv:             23347 rows, 23285 low-count rows
+```
+
+This means the category-period output is the safest first input for the real-data CMDP. The service-zone-period output is also promising, especially for pooled years. The OD outputs should be treated as descriptive evidence of movement direction unless further aggregation is introduced.
+
 ## References
 
 <a id="ref-1"></a>[1] KiM, [Cycling Facts 2023](https://english.kimnet.nl/documents/publications/2024/01/10/cycling-facts-2023)
