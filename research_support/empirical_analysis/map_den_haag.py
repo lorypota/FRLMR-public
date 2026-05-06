@@ -15,7 +15,6 @@ Output:
 import argparse
 import json
 import os
-import shutil
 import sys
 import urllib.parse
 import urllib.request
@@ -64,6 +63,13 @@ HOUSE_DOWNLOAD_TILE_COUNT = 6
 HOUSE_BBOX_BUFFER = 0.005  # ~500m buffer to catch edge houses
 PDOK_API_PAGE_SIZE = 500
 PDOK_JAARCODE = 2024
+SERVICE_ZONE_BOUNDARIES_PATH = (
+    PROJECT_ROOT
+    / "research_support"
+    / "service_zone_calculation"
+    / "output"
+    / "service_zone_boundaries_k20.geojson"
+)
 
 AREA_LEVEL_CONFIG = {
     "pc4": {
@@ -101,14 +107,7 @@ AREA_LEVEL_CONFIG = {
     "service_zone": {
         "label": "CMDP service zones",
         "property": "service_zone",
-        "cache_path": str(GEODATA_DIR / "cmdp_service_zones_k20.geojson"),
-        "local_source": str(
-            PROJECT_ROOT
-            / "research_support"
-            / "service_zone_calculation"
-            / "output"
-            / "service_zone_boundaries_k20.geojson"
-        ),
+        "source_path": str(SERVICE_ZONE_BOUNDARIES_PATH),
     },
 }
 AREA_LEVELS = tuple(AREA_LEVEL_CONFIG)
@@ -362,40 +361,33 @@ def _build_runtime_geojson_resource(cache_path: str) -> str | list[str]:
     return rel_paths
 
 
-def _ensure_local_geojson_cache(
-    *, source_path: str, cache_path: str, area_label: str
-) -> None:
-    """Copy a generated local GeoJSON into the map geodata cache."""
+def _geojson_resource_path(cfg: dict) -> str:
+    """Return the GeoJSON path used by the runtime map."""
+    if cfg.get("source_path"):
+        return cfg["source_path"]
+    return cfg["cache_path"]
+
+
+def _load_local_geojson_source(*, source_path: str, area_label: str) -> gpd.GeoDataFrame:
+    """Load a generated local GeoJSON file without copying it into geodata."""
     source = Path(source_path)
-    cache = Path(cache_path)
     if not source.exists():
         raise FileNotFoundError(
             f"{area_label} local source not found: {source}. "
             "Run calculate_service_zones.py first."
         )
 
-    if cache.exists() and cache.stat().st_mtime >= source.stat().st_mtime:
-        return
-
-    cache.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, cache)
-    print(f"  Cached local {area_label} polygons to {cache}")
+    print(f"  Loading generated {area_label} polygons from {source}")
+    return gpd.read_file(source)
 
 
 def load_area_polygons(*, bbox: dict[str, float], cfg: dict) -> gpd.GeoDataFrame:
     """Load one area subdivision, either from PDOK or from a generated local file."""
-    if cfg.get("local_source"):
-        _ensure_local_geojson_cache(
-            source_path=cfg["local_source"],
-            cache_path=cfg["cache_path"],
+    if cfg.get("source_path"):
+        return _load_local_geojson_source(
+            source_path=cfg["source_path"],
             area_label=cfg["label"],
         )
-        cached_gdf = _load_geojson_cache(cfg["cache_path"], cfg["label"])
-        if cached_gdf is None:
-            raise FileNotFoundError(
-                f"Failed to load cached {cfg['label']} polygons from {cfg['cache_path']}"
-            )
-        return cached_gdf
 
     return download_postcode_polygons(
         bbox=bbox,
@@ -3627,7 +3619,9 @@ def main():
                 artifacts_index_path="../index/artifacts.json",
                 postcode_geojson_paths_json=json.dumps(
                     {
-                        level: _build_runtime_geojson_resource(cfg["cache_path"])
+                        level: _build_runtime_geojson_resource(
+                            _geojson_resource_path(cfg)
+                        )
                         for level, cfg in POSTCODE_LEVEL_CONFIG.items()
                     }
                 ),
@@ -3658,7 +3652,8 @@ def main():
         )
     print(f"  Unique residential points cached: {house_points['count']}")
     print(
-        "  Data is fetched at runtime from output/index, output/data, and output/geodata"
+        "  Data is fetched at runtime from output/index, output/data, output/geodata, "
+        "and service_zone_calculation/output"
     )
 
     csv_path, json_path, _ = rebuild_artifact_index()

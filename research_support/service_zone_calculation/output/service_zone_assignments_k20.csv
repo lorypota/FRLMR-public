@@ -1,503 +1,497 @@
 station_id_str,provider,station_id,station_id_raw,name,lat,lon,capacity,service_zone,service_category
-donkey_denHaag::18860,donkey_denHaag,18860,18860,Stamkartstraat,52.0676108,4.3216707,4,18,4
-donkey_denHaag::18863,donkey_denHaag,18863,18863,Bontoekstraat,52.0702538,4.3263082,3,18,4
-donkey_denHaag::18865,donkey_denHaag,18865,18865,AH Zuylichemstraat,52.0708313,4.3225854,8,18,4
-donkey_denHaag::18867,donkey_denHaag,18867,18867,Van Maanenkade,52.0714197,4.325112,3,18,4
-donkey_denHaag::18868,donkey_denHaag,18868,18868,Oranjelaan,52.0716342,4.3220415,3,18,4
-donkey_denHaag::18869,donkey_denHaag,18869,18869,Trekvietplein,52.0722482,4.3261949,12,18,4
-donkey_denHaag::18878,donkey_denHaag,18878,18878,Scheldestraat,52.0744381,4.3239685,6,18,4
-donkey_denHaag::18881,donkey_denHaag,18881,18881,Spui 300,52.0752072,4.3199492,6,18,4
-donkey_denHaag::18882,donkey_denHaag,18882,18882,Bierkade,52.0745643,4.3184421,8,18,4
-donkey_denHaag::18887,donkey_denHaag,18887,18887,Theater aan het Spui (Donkey in rack),52.076334,4.3167128,6,18,4
-donkey_denHaag::18889,donkey_denHaag,18889,18889,Ammunitiehaven II,52.0781024,4.3225396,3,18,4
-donkey_denHaag::18891,donkey_denHaag,18891,18891,WTC The Hague I,52.0788986,4.3374599,14,12,3
-donkey_denHaag::18892,donkey_denHaag,18892,18892,WTC The Hague II,52.0786305,4.3360611,3,12,3
-donkey_denHaag::18893,donkey_denHaag,18893,18893,WTC The Hague III,52.0791561,4.3358734,12,12,3
-donkey_denHaag::18915,donkey_denHaag,18915,18915,De Vriesstraat,52.0836125,4.3444116,3,12,3
-donkey_denHaag::18917,donkey_denHaag,18917,18917,Stuyvesantplein,52.0842277,4.3431771,12,12,3
-donkey_denHaag::18918,donkey_denHaag,18918,18918,Loudonstraat,52.0857485,4.3458531,8,12,3
-donkey_denHaag::18919,donkey_denHaag,18919,18919,De Eerensplein,52.0891537,4.3444034,8,12,3
-donkey_denHaag::18925,donkey_denHaag,18925,18925,Theresiastraat I (Donkey in rack),52.0860425,4.3365402,8,12,3
-donkey_denHaag::18937,donkey_denHaag,18937,18937,Emmastraat I,52.0838888,4.3322031,6,12,3
-donkey_denHaag::18943,donkey_denHaag,18943,18943,Unicef (L),52.0864489,4.3321903,3,12,3
-donkey_denHaag::18945,donkey_denHaag,18945,18945,Bezuidenhoutseweg II,52.0848467,4.329004,3,12,3
-donkey_denHaag::18948,donkey_denHaag,18948,18948,Malietoren I (Donkey in rack),52.0839911,4.3263549,3,12,3
-donkey_denHaag::18949,donkey_denHaag,18949,18949,Wagenstraat,52.074111,4.3165014,3,18,4
-donkey_denHaag::18950,donkey_denHaag,18950,18950,Dunne Bierkade,52.0734656,4.3157072,3,18,4
-donkey_denHaag::18953,donkey_denHaag,18953,18953,Stille Veerkade I,52.0744182,4.3148488,6,18,4
-donkey_denHaag::18954,donkey_denHaag,18954,18954,Paviljoensgracht,52.0745081,4.3108949,6,18,4
-donkey_denHaag::18955,donkey_denHaag,18955,18955,Gedempte Burgwal,52.0754489,4.3122149,6,18,4
-donkey_denHaag::18956,donkey_denHaag,18956,18956,Gedempte Gracht,52.0760486,4.3133663,6,18,4
-donkey_denHaag::18958,donkey_denHaag,18958,18958,Muzenplein,52.0796179,4.319758,12,18,4
-donkey_denHaag::18959,donkey_denHaag,18959,18959,Muzenstraat,52.0806941,4.3204349,10,18,4
-donkey_denHaag::18960,donkey_denHaag,18960,18960,Herengracht,52.0806916,4.3189241,3,18,4
-donkey_denHaag::18961,donkey_denHaag,18961,18961,KABK,52.0817733,4.3195256,16,18,4
-donkey_denHaag::18962,donkey_denHaag,18962,18962,KJ Basement (Park underground),52.0815393,4.3228549,30,18,4
-donkey_denHaag::18964,donkey_denHaag,18964,18964,Paviljoen Malieveld,52.0837158,4.3182908,20,18,4
-donkey_denHaag::18966,donkey_denHaag,18966,18966,Schouwburgstraat,52.0822684,4.3157216,10,18,4
-donkey_denHaag::18968,donkey_denHaag,18968,18968,Het Plein,52.080295,4.3158875,8,18,4
-donkey_denHaag::18969,donkey_denHaag,18969,18969,Lange Houtstraat,52.0811044,4.3156179,6,18,4
-donkey_denHaag::18971,donkey_denHaag,18971,18971,Escher,52.0834482,4.3135295,6,18,4
-donkey_denHaag::18973,donkey_denHaag,18973,18973,Prinsessengracht II,52.0854396,4.3153853,3,2,0
-donkey_denHaag::18974,donkey_denHaag,18974,18974,Hofweg,52.0783327,4.3131101,6,18,4
-donkey_denHaag::18975,donkey_denHaag,18975,18975,Buitenhof,52.0789563,4.3108922,16,18,4
-donkey_denHaag::18976,donkey_denHaag,18976,18976,Kettingstraat,52.0782088,4.3100395,6,18,4
-donkey_denHaag::18977,donkey_denHaag,18977,18977,Visbanken,52.0770551,4.3079689,6,3,4
-donkey_denHaag::18979,donkey_denHaag,18979,18979,Lange Vijverberg,52.0806848,4.3107433,6,3,4
-donkey_denHaag::18980,donkey_denHaag,18980,18980,Heulstraat,52.0808291,4.3078686,6,3,4
-donkey_denHaag::18981,donkey_denHaag,18981,18981,Lange Voorhout I,52.0816365,4.3103206,6,3,4
-donkey_denHaag::18987,donkey_denHaag,18987,18987,Willem Witsenplein,52.0927728,4.3296922,12,2,0
-donkey_denHaag::18991,donkey_denHaag,18991,18991,Van Hoytemastraat I,52.0918961,4.3252678,3,2,0
-donkey_denHaag::18999,donkey_denHaag,18999,18999,Spaces,52.0879427,4.3197895,3,2,0
-donkey_denHaag::19004,donkey_denHaag,19004,19004,Groenhovenstraat I,52.0943835,4.3130506,4,2,0
-donkey_denHaag::19007,donkey_denHaag,19007,19007,Bachmanstraat,52.0928183,4.3119103,16,2,0
-donkey_denHaag::19010,donkey_denHaag,19010,19010,Madurodam,52.0991058,4.2995375,12,2,0
-donkey_denHaag::19015,donkey_denHaag,19015,19015,Koningskade,52.0884964,4.3140632,3,2,0
-donkey_denHaag::19018,donkey_denHaag,19018,19018,Koninginnegracht,52.0879374,4.3133565,6,2,0
-donkey_denHaag::19021,donkey_denHaag,19021,19021,Denneweg II,52.0851569,4.3125148,3,2,0
-donkey_denHaag::19022,donkey_denHaag,19022,19022,Denneweg I,52.0862835,4.3111202,3,2,0
-donkey_denHaag::19024,donkey_denHaag,19024,19024,Frederikstraat II,52.0882218,4.3100457,6,2,0
-donkey_denHaag::19026,donkey_denHaag,19026,19026,Balistraat I,52.0893786,4.310559,3,2,0
-donkey_denHaag::19031,donkey_denHaag,19031,19031,Javastraat I,52.0880644,4.3037014,3,3,4
-donkey_denHaag::19034,donkey_denHaag,19034,19034,Mauritskade,52.0852892,4.3090442,3,3,4
-donkey_denHaag::19038,donkey_denHaag,19038,19038,Parkstraat,52.0831823,4.3080534,4,3,4
-donkey_denHaag::19043,donkey_denHaag,19043,19043,Bankastraat I,52.0918222,4.3043504,3,2,0
-donkey_denHaag::19044,donkey_denHaag,19044,19044,Batjanstraat,52.0944885,4.3049663,3,2,0
-donkey_denHaag::19050,donkey_denHaag,19050,19050,Burgemeester Kolfschotenlaan I,52.0903905,4.3038493,3,2,0
-donkey_denHaag::19060,donkey_denHaag,19060,19060,Laan van Meerdervoort I,52.0866226,4.3004453,3,3,4
-donkey_denHaag::19061,donkey_denHaag,19061,19061,Zeestraat I,52.0862909,4.3016585,14,3,4
-donkey_denHaag::19062,donkey_denHaag,19062,19062,Sophialaan bis,52.085532,4.3024017,6,3,4
-donkey_denHaag::19064,donkey_denHaag,19064,19064,Mauritskade I,52.0841165,4.3053649,3,3,4
-donkey_denHaag::19065,donkey_denHaag,19065,19065,Scheveningseveer,52.0839001,4.3045794,2,3,4
-donkey_denHaag::19066,donkey_denHaag,19066,19066,Oranjestraat,52.0824277,4.3060758,6,3,4
-donkey_denHaag::19068,donkey_denHaag,19068,19068,Vredespaleis,52.0867759,4.2974597,6,3,4
-donkey_denHaag::19069,donkey_denHaag,19069,19069,Trompstraat,52.0857222,4.297682,6,3,4
-donkey_denHaag::19070,donkey_denHaag,19070,19070,Anna Paulowna,52.0847924,4.2998039,6,3,4
-donkey_denHaag::19071,donkey_denHaag,19071,19071,De Ruijterstraat,52.0834312,4.3021265,6,3,4
-donkey_denHaag::19072,donkey_denHaag,19072,19072,Jacob van der Doesstraat II,52.0841134,4.2974077,3,3,4
-donkey_denHaag::19074,donkey_denHaag,19074,19074,Elandstraat II,52.0819843,4.3001892,4,3,4
-donkey_denHaag::19076,donkey_denHaag,19076,19076,2e de Riemerstraat,52.0815146,4.2985568,3,3,4
-donkey_denHaag::19078,donkey_denHaag,19078,19078,Veenkade,52.0797092,4.3022427,6,3,4
-donkey_denHaag::19079,donkey_denHaag,19079,19079,Molenstraat,52.0794112,4.3048099,6,3,4
-donkey_denHaag::19080,donkey_denHaag,19080,19080,Prinsestraat,52.0783801,4.3068089,6,3,4
-donkey_denHaag::19081,donkey_denHaag,19081,19081,Kerkplein,52.0776795,4.3059342,4,3,4
-donkey_denHaag::19082,donkey_denHaag,19082,19082,Grote Markt (tram stop Prinsengracht),52.074915,4.3074949,45,18,4
-donkey_denHaag::19083,donkey_denHaag,19083,19083,Prinsegracht (Donkey in rack),52.0748048,4.3068075,12,18,4
-donkey_denHaag::19084,donkey_denHaag,19084,19084,Brouwersgracht (Donkey in rack),52.0740517,4.3046397,6,16,4
-donkey_denHaag::19085,donkey_denHaag,19085,19085,Assendelftstraat (Donkey in rack),52.0752839,4.3051167,3,3,4
-donkey_denHaag::19086,donkey_denHaag,19086,19086,Vleerstraat,52.0770853,4.3033975,3,3,4
-donkey_denHaag::19087,donkey_denHaag,19087,19087,Torenstraat,52.0785462,4.3044445,12,3,4
-donkey_denHaag::19088,donkey_denHaag,19088,19088,Snoekstraat,52.0786004,4.3022682,3,3,4
-donkey_denHaag::19094,donkey_denHaag,19094,19094,Zusterstraat,52.0736445,4.296692,6,16,4
-donkey_denHaag::19095,donkey_denHaag,19095,19095,Halte Loosduinseweg,52.0731868,4.291639,6,16,4
-donkey_denHaag::19097,donkey_denHaag,19097,19097,Fahrenheitstraat I,52.069657,4.2792467,6,0,4
-donkey_denHaag::19098,donkey_denHaag,19098,19098,Halte Valkenboslaan,52.0690004,4.2765784,6,0,4
-donkey_denHaag::19099,donkey_denHaag,19099,19099,Valkenboskade I,52.0705042,4.2738462,3,0,4
-donkey_denHaag::19100,donkey_denHaag,19100,19100,Johnny Loco,52.0714234,4.2695323,3,15,2
-donkey_denHaag::19101,donkey_denHaag,19101,19101,Valkenboskade II,52.0717273,4.2727135,3,0,4
-donkey_denHaag::19103,donkey_denHaag,19103,19103,Valkenboskade III,52.0742812,4.270115,3,15,2
-donkey_denHaag::19105,donkey_denHaag,19105,19105,Valkenboskade IV,52.0752238,4.2691887,3,15,2
-donkey_denHaag::19108,donkey_denHaag,19108,19108,Halte Cartesiusstraat,52.073192,4.2818801,6,0,4
-donkey_denHaag::19110,donkey_denHaag,19110,19110,Weimarstraat III,52.0723306,4.2749336,6,0,4
-donkey_denHaag::19112,donkey_denHaag,19112,19112,Valkenboslaan,52.0739481,4.2753289,3,0,4
-donkey_denHaag::19115,donkey_denHaag,19115,19115,Weimarstraat II,52.0754445,4.2803775,6,0,4
-donkey_denHaag::19117,donkey_denHaag,19117,19117,Regentesseplein,52.0769991,4.2831016,8,0,4
-donkey_denHaag::19119,donkey_denHaag,19119,19119,Weimarstraat,52.0782841,4.2858063,3,0,4
-donkey_denHaag::19125,donkey_denHaag,19125,19125,Da Costastraat,52.0793751,4.294557,3,3,4
-donkey_denHaag::19126,donkey_denHaag,19126,19126,Elandstraat I,52.0784854,4.2926203,3,3,4
-donkey_denHaag::19127,donkey_denHaag,19127,19127,De Perponcherstraat,52.0783245,4.2897573,3,3,4
-donkey_denHaag::19129,donkey_denHaag,19129,19129,Koningsplein I,52.0797609,4.2889328,3,3,4
-donkey_denHaag::19130,donkey_denHaag,19130,19130,Prins Hendrikstraat II,52.0814804,4.2921574,3,3,4
-donkey_denHaag::19131,donkey_denHaag,19131,19131,Prins Hendrikstraat I,52.0821399,4.2939437,6,3,4
-donkey_denHaag::19132,donkey_denHaag,19132,19132,Halte Elandstraat,52.0803236,4.2969738,6,3,4
-donkey_denHaag::19134,donkey_denHaag,19134,19134,Prins Hendrikplein,52.0828109,4.2943367,3,3,4
-donkey_denHaag::19135,donkey_denHaag,19135,19135,Zoutmanstraat II,52.0840634,4.292901,3,3,4
-donkey_denHaag::19137,donkey_denHaag,19137,19137,Van Speijkstraat,52.0819367,4.2877911,6,3,4
-donkey_denHaag::19138,donkey_denHaag,19138,19138,Obrechtstraat,52.0836711,4.2892641,3,3,4
-donkey_denHaag::19140,donkey_denHaag,19140,19140,Edisonstraat,52.076179,4.2790195,6,0,4
-donkey_denHaag::19142,donkey_denHaag,19142,19142,Valkenbosplein,52.0782744,4.2764698,3,0,4
-donkey_denHaag::19148,donkey_denHaag,19148,19148,Reinkenstraat I,52.0807293,4.2845523,4,3,4
-donkey_denHaag::19149,donkey_denHaag,19149,19149,Reinkenstraat II,52.0824837,4.2829919,4,3,4
-donkey_denHaag::19150,donkey_denHaag,19150,19150,Groot Hertoginnelaan II,52.082508,4.2774285,3,0,4
-donkey_denHaag::19151,donkey_denHaag,19151,19151,Halte Valeriusstraat,52.0837978,4.2790606,3,14,1
-donkey_denHaag::19152,donkey_denHaag,19152,19152,Groot Hertoginnelaan I,52.085001,4.2839811,6,3,4
-donkey_denHaag::19153,donkey_denHaag,19153,19153,Anton Haenstraat,52.0765287,4.271047,3,0,4
-donkey_denHaag::19154,donkey_denHaag,19154,19154,Fahrenheitstraat III,52.0775829,4.2703942,3,15,2
-donkey_denHaag::19159,donkey_denHaag,19159,19159,Beeklaan II,52.079972,4.2761259,3,0,4
-donkey_denHaag::19162,donkey_denHaag,19162,19162,Ieplaan,52.0806336,4.2741951,3,0,4
-donkey_denHaag::19164,donkey_denHaag,19164,19164,Fahrenheitstraat V,52.0802982,4.2677801,3,15,2
-donkey_denHaag::19165,donkey_denHaag,19165,19165,Haga Ziekenhuis,52.0814383,4.2632421,2,15,2
-donkey_denHaag::19166,donkey_denHaag,19166,19166,Cornelis de Wittlaan,52.0865062,4.275297,3,14,1
-donkey_denHaag::19168,donkey_denHaag,19168,19168,Museon,52.0885426,4.280193,24,14,1
-donkey_denHaag::19171,donkey_denHaag,19171,19171,Statenplein I,52.0916582,4.2785158,3,14,1
-donkey_denHaag::19174,donkey_denHaag,19174,19174,Halte Boreelstraat,52.0885333,4.2718879,2,14,1
-donkey_denHaag::19176,donkey_denHaag,19176,19176,Halte Willem de Zwijgerlaan,52.0911311,4.2709699,3,14,1
-donkey_denHaag::19177,donkey_denHaag,19177,19177,Halte Frederik Hendriklaan,52.0925356,4.2756264,4,14,1
-donkey_denHaag::19183,donkey_denHaag,19183,19183,Ripperdastraat,52.0927644,4.2668149,3,14,1
-donkey_denHaag::19184,donkey_denHaag,19184,19184,Douzastraat,52.0940236,4.2684872,3,14,1
-donkey_denHaag::19185,donkey_denHaag,19185,19185,Dr. Lelykade,52.0941307,4.2648309,6,14,1
-donkey_denHaag::19187,donkey_denHaag,19187,19187,Hellingweg,52.0965764,4.2646794,12,14,1
-donkey_denHaag::19188,donkey_denHaag,19188,19188,Zuiderstrand,52.0970621,4.2573235,24,14,1
-donkey_denHaag::19189,donkey_denHaag,19189,19189,Churchillplein,52.0935211,4.2827824,12,14,1
-donkey_denHaag::19190,donkey_denHaag,19190,19190,Halte World Forum,52.0934529,4.2807856,4,14,1
-donkey_denHaag::19191,donkey_denHaag,19191,19191,Halte Johan de Wittlaan,52.0953887,4.2849661,12,6,2
-donkey_denHaag::19193,donkey_denHaag,19193,19193,Johan van Oldenbarneveltlaan I,52.0985377,4.2802046,3,6,2
-donkey_denHaag::19194,donkey_denHaag,19194,19194,Frederik Hendriklaan II,52.0937964,4.2768031,3,14,1
-donkey_denHaag::19195,donkey_denHaag,19195,19195,Frederik Hendriklaan III,52.0944414,4.2773546,3,14,1
-donkey_denHaag::19196,donkey_denHaag,19196,19196,Halte Prins Mauritslaan,52.0956113,4.2764168,3,6,2
-donkey_denHaag::19197,donkey_denHaag,19197,19197,Frankenstraat,52.0967416,4.274283,3,6,2
-donkey_denHaag::19198,donkey_denHaag,19198,19198,Van Bergenstraat,52.0971599,4.2697214,12,6,2
-donkey_denHaag::19199,donkey_denHaag,19199,19199,Schokkerweg,52.1001219,4.2716488,3,6,2
-donkey_denHaag::19200,donkey_denHaag,19200,19200,Halte Duinstraat I,52.1015341,4.2738319,3,6,2
-donkey_denHaag::19201,donkey_denHaag,19201,19201,Vissershavenweg,52.1021388,4.2673704,6,6,2
-donkey_denHaag::19204,donkey_denHaag,19204,19204,Kanaalweg,52.1027795,4.2847115,3,6,2
-donkey_denHaag::19205,donkey_denHaag,19205,19205,Halte Duinstraat II,52.1018725,4.2793243,16,6,2
-donkey_denHaag::19208,donkey_denHaag,19208,19208,Keizerstraat,52.1038501,4.2765179,4,6,2
-donkey_denHaag::19209,donkey_denHaag,19209,19209,Jan Kistenstraat,52.1053801,4.2744553,3,6,2
-donkey_denHaag::19216,donkey_denHaag,19216,19216,Strandweg III,52.1066055,4.2703483,12,6,2
-donkey_denHaag::19217,donkey_denHaag,19217,19217,Strandweg IV,52.1086101,4.2741272,12,6,2
-donkey_denHaag::19218,donkey_denHaag,19218,19218,Werfstraat,52.1069984,4.2739769,3,6,2
-donkey_denHaag::19222,donkey_denHaag,19222,19222,Gevers Deynootweg III,52.1100299,4.2787389,4,7,0
-donkey_denHaag::19223,donkey_denHaag,19223,19223,Harteveltstraat,52.110807,4.2786922,6,7,0
-donkey_denHaag::19224,donkey_denHaag,19224,19224,Katwijkstraat,52.1081509,4.2817407,4,7,0
-donkey_denHaag::19225,donkey_denHaag,19225,19225,Gevers Deynootweg II,52.1115651,4.2818248,10,7,0
-donkey_denHaag::19226,donkey_denHaag,19226,19226,Kurhausweg I (Donkey in rack),52.1122161,4.2838061,16,7,0
-donkey_denHaag::19227,donkey_denHaag,19227,19227,Gevers Deynootweg I,52.1129282,4.2832575,12,7,0
-donkey_denHaag::19228,donkey_denHaag,19228,19228,Circustheater,52.1101989,4.2845453,8,7,0
-donkey_denHaag::19231,donkey_denHaag,19231,19231,Bosschestraat,52.1117964,4.2880535,4,7,0
-donkey_denHaag::19232,donkey_denHaag,19232,19232,Stevinstraat II,52.11057,4.2905679,4,7,0
-donkey_denHaag::19233,donkey_denHaag,19233,19233,Stevinstraat I,52.110123,4.2877233,3,7,0
-donkey_denHaag::19234,donkey_denHaag,19234,19234,Nieuwe Duinweg,52.1073006,4.2893903,6,7,0
-donkey_denHaag::19237,donkey_denHaag,19237,19237,Groningsestraat,52.1128334,4.2932587,6,7,0
-donkey_denHaag::19272,donkey_denHaag,19272,19272,Hoge Zand,52.0730023,4.3060392,6,16,4
-donkey_denHaag::19276,donkey_denHaag,19276,19276,Roof Station Den Haag HS,52.0693041,4.3227935,50,18,4
-donkey_denHaag::19310,donkey_denHaag,19310,19310,Paviljoensgracht 139,52.0729583,4.313725,3,18,4
-donkey_denHaag::19343,donkey_denHaag,19343,19343,Biesieklette Nobelstraat,52.0785278,4.3071451,12,3,4
-donkey_denHaag::19346,donkey_denHaag,19346,19346,Biesieklette Spuiplein bikeparking DOWNSTAIRS,52.0775291,4.3163807,12,18,4
-donkey_denHaag::19348,donkey_denHaag,19348,19348,Biesieklette Anna UNDER the bridge inside,52.0800714,4.3270418,16,18,4
-donkey_denHaag::19349,donkey_denHaag,19349,19349,Biesieklette Strandweg Haven,52.1011259,4.262415,20,6,2
-donkey_denHaag::19350,donkey_denHaag,19350,19350,Biesieklette Zwarte Pad (Donkey in rack),52.118885,4.2918479,12,7,0
-donkey_denHaag::19371,donkey_denHaag,19371,19371,Villa Fedora ,52.108508,4.2767809,4,7,0
-donkey_denHaag::19407,donkey_denHaag,19407,19407,Weteringkade under the bridge.,52.0746564,4.3284534,16,18,4
-donkey_denHaag::19433,donkey_denHaag,19433,19433,J. Westerdijkplein (Donkey in rack),52.0683252,4.3229531,2,18,4
-donkey_denHaag::19447,donkey_denHaag,19447,19447,Albert H. Theo Mann,52.1049004,4.3241447,3,2,0
-donkey_denHaag::19601,donkey_denHaag,19601,19601,Turfmarkt ,52.0794551,4.3215544,12,18,4
-donkey_denHaag::19602,donkey_denHaag,19602,19602,Stationweg I,52.0730832,4.319418,12,18,4
-donkey_denHaag::19670,donkey_denHaag,19670,19670,Stadsdeelkantoor Laak ,52.0638441,4.3226279,3,17,2
-donkey_denHaag::19812,donkey_denHaag,19812,19812,Speeltuin Freddy Hendrikplein,52.0887408,4.2758727,10,14,1
-donkey_denHaag::20024,donkey_denHaag,20024,20024,Badhuisweg,52.1016847,4.3013135,3,2,0
-donkey_denHaag::20025,donkey_denHaag,20025,20025,Jokje ,52.1021168,4.2949261,3,7,0
-donkey_denHaag::20228,donkey_denHaag,20228,20228,Boulevard (Donkey inside),52.1170214,4.2862324,30,7,0
-donkey_denHaag::20230,donkey_denHaag,20230,20230,Lange Beestenmarkt,52.0715206,4.309999,6,18,4
-donkey_denHaag::20269,donkey_denHaag,20269,20269,Stationweg II,52.07177,4.3205576,6,18,4
-donkey_denHaag::20270,donkey_denHaag,20270,20270,Megastore DH,52.0668041,4.318849,12,18,4
-donkey_denHaag::20275,donkey_denHaag,20275,20275,International Centre (Donkey in rack),52.0783639,4.3180796,12,18,4
-donkey_denHaag::20328,donkey_denHaag,20328,20328,Hommerspn Casino ,52.0770706,4.3088501,6,18,4
-donkey_denHaag::20329,donkey_denHaag,20329,20329,Simonicini,52.0807188,4.3028725,6,3,4
-donkey_denHaag::20378,donkey_denHaag,20378,20378,Duwo,52.0661547,4.3231526,6,18,4
-donkey_denHaag::20391,donkey_denHaag,20391,20391,Hague Market II (point 46),52.0671306,4.2969823,3,16,4
-donkey_denHaag::20514,donkey_denHaag,20514,20514,Hollywood ,52.0905872,4.2742422,3,14,1
-donkey_denHaag::20781,donkey_denHaag,20781,20781,Marriott ,52.0900457,4.2827236,10,14,1
-donkey_denHaag::21800,donkey_denHaag,21800,21800,Moerweg,52.0584755,4.2939695,8,16,4
-donkey_denHaag::21846,donkey_denHaag,21846,21846,Driebergen ,52.0569442,4.2742563,4,8,3
-donkey_denHaag::22409,donkey_denHaag,22409,22409,Groothertogin,52.0843788,4.2929724,3,3,4
-donkey_denHaag::22638,donkey_denHaag,22638,22638,Malietoren II (Donkey in rack),52.0841365,4.3266704,3,12,3
-donkey_denHaag::23218,donkey_denHaag,23218,23218,Spaarnestraat,52.073641,4.3272977,4,18,4
-donkey_denHaag::26598,donkey_denHaag,26598,26598,Hoogvliet Tesselplein (point 14),52.0899047,4.2577497,3,14,1
-donkey_denHaag::26608,donkey_denHaag,26608,26608,Parkingspace Ockenburgh (point 5),52.0515099,4.2226623,3,13,1
-donkey_denHaag::26610,donkey_denHaag,26610,26610,Loosduinse Hoofdplein (point 30),52.0532793,4.2351313,4,13,1
-donkey_denHaag::26616,donkey_denHaag,26616,26616,Alphons Diepenbrockhof (point 35),52.059552,4.2319153,4,11,0
-donkey_denHaag::26624,donkey_denHaag,26624,26624,Wandelgangen (point 34),52.0645579,4.2494087,8,11,0
-donkey_denHaag::26625,donkey_denHaag,26625,26625,Bus halte Perenstraat (point 36),52.0673748,4.2586038,3,15,2
-donkey_denHaag::26626,donkey_denHaag,26626,26626,Winkelcentrum de Savornin (point 17),52.0667608,4.2450625,8,11,0
-donkey_denHaag::26627,donkey_denHaag,26627,26627,Westduinpark Bos van poot (point 7),52.0757778,4.2372127,6,11,0
-donkey_denHaag::26629,donkey_denHaag,26629,26629,Westduinpark Bos van poot 3 (point 15),52.0865633,4.2662137,3,14,1
-donkey_denHaag::26652,donkey_denHaag,26652,26652,AH Goeverneurplein (point 40),52.0556446,4.3143999,8,1,3
-donkey_denHaag::27488,donkey_denHaag,27488,27488,Teleport hotel Den Haag (point 54),52.0681766,4.337705,20,17,2
-donkey_denHaag::27494,donkey_denHaag,27494,27494,Park and bike Den Haag ( point 52),52.0496175,4.3495288,8,17,2
-donkey_denHaag::27498,donkey_denHaag,27498,27498,Ambachtsgaarde (point 26),52.034981,4.2657198,2,10,2
-donkey_denHaag::27499,donkey_denHaag,27499,27499,De Uithof (point 47),52.039241,4.2455446,4,10,2
-donkey_denHaag::27501,donkey_denHaag,27501,27501,De stede (point 16),52.0432348,4.2606873,4,10,2
-donkey_denHaag::27503,donkey_denHaag,27503,27503,Stadhuis Escamp ( point 29),52.0452078,4.2803402,4,4,3
-donkey_denHaag::27505,donkey_denHaag,27505,27505,AH Betje Wolffstraat (point 22),52.0489186,4.2908166,3,4,3
-donkey_denHaag::27506,donkey_denHaag,27506,27506,Zwembad Zuiderpark (point 23),52.0532259,4.2887593,10,4,3
-donkey_denHaag::27507,donkey_denHaag,27507,27507,Zuiderpark  (point 24),52.0602251,4.2836598,4,8,3
-donkey_denHaag::27508,donkey_denHaag,27508,27508,AH Lorentzplein (point 41),52.06084,4.3285405,6,17,2
-donkey_denHaag::27509,donkey_denHaag,27509,27509,AH Het Kleine Loo (point 42),52.0918943,4.3560798,4,9,0
-donkey_denHaag::27511,donkey_denHaag,27511,27511,HMC Bronovo ( point 56),52.102911,4.3182925,3,2,0
-donkey_denHaag::27512,donkey_denHaag,27512,27512,Oostduinen (point 43),52.108608,4.3232046,3,2,0
-donkey_denHaag::27514,donkey_denHaag,27514,27514,Fietsstalling Kijkduin (point 4),52.0677939,4.2229722,8,11,0
-donkey_denHaag::27515,donkey_denHaag,27515,27515,Goudsbloemlaan (point 18),52.0766461,4.2600146,6,15,2
-donkey_denHaag::27516,donkey_denHaag,27516,27516,AH Escamplaan (point 33),52.0621826,4.2702815,8,8,3
-donkey_denHaag::27517,donkey_denHaag,27517,27517,AH Apeldoornselaan (point 45),52.0660937,4.2819162,3,8,3
-donkey_denHaag::27518,donkey_denHaag,27518,27518,Haga Ziekenhuis (point 49),52.0564962,4.2644383,3,8,3
-donkey_denHaag::27522,donkey_denHaag,27522,27522,Kraiensteinlaan tram halte (point 31),52.0490652,4.2371072,6,13,1
-donkey_denHaag::27523,donkey_denHaag,27523,27523,Winkelcentrum Houtwijk (point 32),52.0543161,4.2506627,4,13,1
-donkey_denHaag::27526,donkey_denHaag,27526,27526,Westduinpark Bos van poot 1 (point 11),52.0814877,4.2506279,3,15,2
-donkey_denHaag::27883,donkey_denHaag,27883,27883,Den Haag Centraal Deelfiets UNDER the bridge ,52.0794285,4.3251777,40,18,4
-donkey_denHaag::27982,donkey_denHaag,27982,27982,Qpark mobility hub Veerkade,52.0755371,4.3158681,60,18,4
-donkey_denHaag::28200,donkey_denHaag,28200,28200,HMC Westeinde ,52.0734718,4.2994067,3,16,4
-donkey_denHaag::28480,donkey_denHaag,28480,28480,Provinciehuis Den Haag,52.0873106,4.3168959,12,2,0
-donkey_denHaag::28551,donkey_denHaag,28551,28551, ANVS,52.0876432,4.3150282,4,2,0
-donkey_denHaag::28613,donkey_denHaag,28613,28613,Bezuidenhoutseweg,52.084189,4.3274808,6,12,3
-donkey_denHaag::28614,donkey_denHaag,28614,28614,Jan van Nassau,52.0873813,4.3189954,3,2,0
-donkey_denHaag::28615,donkey_denHaag,28615,28615,Laan van NOI HUB,52.0794269,4.3434137,30,12,3
-donkey_denHaag::28754,donkey_denHaag,28754,28754,Spaces Mesdagstraat,52.0881269,4.3197741,6,2,0
-donkey_denHaag::28761,donkey_denHaag,28761,28761,Den Haag Moerwijk,52.0546423,4.3080092,16,1,3
-donkey_denHaag::28765,donkey_denHaag,28765,28765,Voorburg,52.0667715,4.3589229,8,5,1
-donkey_denHaag::28767,donkey_denHaag,28767,28767,Den Haag Mariahoeve,52.0902249,4.3695267,8,9,0
-donkey_denHaag::29676,donkey_denHaag,29676,29676,Hague Market II Bis.,52.0672406,4.2974702,3,16,4
-donkey_denHaag::29684,donkey_denHaag,29684,29684,Tarwekamp,52.0883496,4.3544339,4,9,0
-donkey_denHaag::29740,donkey_denHaag,29740,29740,Titaan,52.0659659,4.3453375,8,17,2
-donkey_denHaag::30173,donkey_denHaag,30173,30173,Van Kempen,52.054735,4.2503468,4,13,1
-donkey_denHaag::30187,donkey_denHaag,30187,30187,Honselersdijk bloemenveiling,52.0600181,4.3348662,4,17,2
-donkey_denHaag::30647,donkey_denHaag,30647,30647,Chrysantplein,52.072516,4.2567234,2,15,2
-donkey_denHaag::31216,donkey_denHaag,31216,31216,Hotelschool The Hague,52.1077113,4.2938465,8,7,0
-donkey_denHaag::31343,donkey_denHaag,31343,31343,the New Farm,52.0576107,4.3030612,6,1,3
-donkey_denHaag::31791,donkey_denHaag,31791,31791,Saturnussraat,52.0677874,4.349042,4,5,1
-donkey_denHaag::31798,donkey_denHaag,31798,31798,Station Rijswijk,52.0394992,4.3193878,10,19,1
-donkey_denHaag::31816,donkey_denHaag,31816,31816,Station Voorburg,52.0668404,4.3585863,12,5,1
-donkey_denHaag::31918,donkey_denHaag,31918,31918,veenkade bis,52.0799449,4.3026368,6,3,4
-donkey_denHaag::32090,donkey_denHaag,32090,32090,Sophialaan ,52.0870697,4.3073497,20,2,0
-donkey_denHaag::32256,donkey_denHaag,32256,32256,Weesperstraat,52.0654677,4.277656,3,8,3
-donkey_denHaag::32257,donkey_denHaag,32257,32257,hoefbladlaan,52.0678417,4.2375654,1,11,0
-donkey_denHaag::32326,donkey_denHaag,32326,32326,Muurbloemweg,52.0638278,4.2351574,6,11,0
-donkey_denHaag::32349,donkey_denHaag,32349,32349,Regulusweg,52.068964,4.3503429,4,5,1
-donkey_denHaag::32350,donkey_denHaag,32350,32350,Maanweg,52.067251,4.3524954,10,5,1
-donkey_denHaag::32351,donkey_denHaag,32351,32351,Grote Beerstraat,52.0701677,4.3469328,3,5,1
-donkey_denHaag::32352,donkey_denHaag,32352,32352,Zonweg,52.0667284,4.340515,8,17,2
-donkey_denHaag::32353,donkey_denHaag,32353,32353,Fokkerkade,52.0651329,4.3380654,2,17,2
-donkey_denHaag::32354,donkey_denHaag,32354,32354,Jupiterkade ,52.0632005,4.3396929,2,17,2
-donkey_denHaag::32417,donkey_denHaag,32417,32417,Rijswijkseweg,52.0649112,4.3299254,2,17,2
-donkey_denHaag::32418,donkey_denHaag,32418,32418,Laakweg ,52.0672253,4.330296,3,18,4
-donkey_denHaag::32419,donkey_denHaag,32419,32419,Speeltuin Trekweg,52.0672793,4.3334431,3,17,2
-donkey_denHaag::32420,donkey_denHaag,32420,32420,Schoeplaan,52.0630911,4.3351818,3,17,2
-donkey_denHaag::32421,donkey_denHaag,32421,32421,Tram Rijswijkseweg,52.0619105,4.3327556,4,17,2
-donkey_denHaag::32422,donkey_denHaag,32422,32422,Tram Rijswijkse weg 2,52.06269,4.3323984,4,17,2
-donkey_denHaag::32425,donkey_denHaag,32425,32425,Goeverneurlaan 1,52.0582238,4.3213099,4,1,3
-donkey_denHaag::32426,donkey_denHaag,32426,32426,Goevernerlaan 2,52.0588278,4.3215254,6,1,3
-donkey_denHaag::32427,donkey_denHaag,32427,32427,De Genestetlaan,52.0603748,4.3199426,2,1,3
-donkey_denHaag::32428,donkey_denHaag,32428,32428,Capadosestraat,52.0581326,4.3188286,2,1,3
-donkey_denHaag::32430,donkey_denHaag,32430,32430,Goeverneurlaan,52.0559741,4.314154,4,1,3
-donkey_denHaag::32431,donkey_denHaag,32431,32431,Moskee El Oemma,52.0536968,4.3167107,3,1,3
-donkey_denHaag::32432,donkey_denHaag,32432,32432,Van Meursstraat,52.052889,4.316773,6,1,3
-donkey_denHaag::32433,donkey_denHaag,32433,32433,Ledeganckplein,52.0538076,4.3180588,5,1,3
-donkey_denHaag::32458,donkey_denHaag,32458,32458,Soestdijksekade,52.0598754,4.2916946,3,16,4
-donkey_denHaag::32459,donkey_denHaag,32459,32459,Schalk Burgerstraat,52.0601915,4.2935755,5,16,4
-donkey_denHaag::32460,donkey_denHaag,32460,32460,Kaapseplein,52.0621402,4.2965373,3,16,4
-donkey_denHaag::32461,donkey_denHaag,32461,32461,Soestdijksekade 2,52.0605176,4.2890804,3,16,4
-donkey_denHaag::32462,donkey_denHaag,32462,32462,Zuiderparklaan,52.0619788,4.2828167,3,8,3
-donkey_denHaag::32463,donkey_denHaag,32463,32463,Schaarsbergerstraat,52.0619751,4.2832769,3,8,3
-donkey_denHaag::32464,donkey_denHaag,32464,32464,Zuiderparklaan 2,52.0657002,4.2787795,5,8,3
-donkey_denHaag::32465,donkey_denHaag,32465,32465,Scheepersstraat,52.0672283,4.2907194,3,16,4
-donkey_denHaag::32466,donkey_denHaag,32466,32466,Scheepersstraat 2,52.0672103,4.2873334,5,16,4
-donkey_denHaag::32467,donkey_denHaag,32467,32467,Copernicusplein,52.0758783,4.2749803,5,0,4
-donkey_denHaag::32483,donkey_denHaag,32483,32483,Hogewal,52.0834253,4.3035242,4,3,4
-donkey_denHaag::32546,donkey_denHaag,32546,32546,Marshallplein,52.0331597,4.3158466,4,19,1
-donkey_denHaag::32609,donkey_denHaag,32609,32609,Openbaar vervoer museum ,52.0621925,4.3080285,5,1,3
-donkey_denHaag::32610,donkey_denHaag,32610,32610,Ter Borchstraat,52.0624801,4.3091157,3,1,3
-donkey_denHaag::32611,donkey_denHaag,32611,32611,Paletplein,52.0688937,4.3024856,5,16,4
-donkey_denHaag::32612,donkey_denHaag,32612,32612,Paletplein 2,52.0686876,4.3028107,5,16,4
-donkey_denHaag::32613,donkey_denHaag,32613,32613,Paul Krugerlaan,52.0684598,4.2904422,2,16,4
-donkey_denHaag::32736,donkey_denHaag,32736,32736,Zeekant,52.1028736,4.2650164,20,6,2
-donkey_denHaag::32992,donkey_denHaag,32992,32992,1e Ludofsdwarsstraat,52.0610976,4.3130062,4,1,3
-donkey_denHaag::33009,donkey_denHaag,33009,33009,Q-park Leyweg,52.0463992,4.2790772,16,4,3
-donkey_denHaag::33010,donkey_denHaag,33010,33010,Vreeswijkstraat,52.05952,4.2790703,5,8,3
-donkey_denHaag::33011,donkey_denHaag,33011,33011,Leyweg 2,52.0470559,4.2783123,4,4,3
-donkey_denHaag::33012,donkey_denHaag,33012,33012,Tinaarlosstraat,52.0474174,4.2770868,4,4,3
-donkey_denHaag::33013,donkey_denHaag,33013,33013,zuidlarenstraat,52.0519635,4.2704868,8,4,3
-donkey_denHaag::33014,donkey_denHaag,33014,33014,Leyweg 3,52.0505324,4.2743043,3,4,3
-donkey_denHaag::33015,donkey_denHaag,33015,33015,Hengeloweg,52.0501428,4.2736572,5,4,3
-donkey_denHaag::33016,donkey_denHaag,33016,33016,Lonnekerstraat,52.0493654,4.2763309,8,4,3
-donkey_denHaag::33017,donkey_denHaag,33017,33017,Almeloplein,52.0554045,4.2749527,4,8,3
-donkey_denHaag::33018,donkey_denHaag,33018,33018,Castricumplein,52.0599589,4.266344,3,8,3
-donkey_denHaag::33019,donkey_denHaag,33019,33019,Driebergenstraat 2,52.0588247,4.2742023,3,8,3
-donkey_denHaag::33020,donkey_denHaag,33020,33020,Driebergenstraat 3,52.0610697,4.2737903,5,8,3
-donkey_denHaag::33021,donkey_denHaag,33021,33021,Vreeswijkstraat 150,52.0562288,4.2732752,5,8,3
-donkey_denHaag::33022,donkey_denHaag,33022,33022,Vreeswijkstraat Boemel,52.0555054,4.27204,5,8,3
-donkey_denHaag::33023,donkey_denHaag,33023,33023,Vreeswijkstraat 700,52.0543286,4.2700566,3,8,3
-donkey_denHaag::33024,donkey_denHaag,33024,33024,Leyweg 4,52.054126,4.2696776,3,8,3
-donkey_denHaag::33026,donkey_denHaag,33026,33026,Dedemsvaartweg 1,52.0461146,4.2701405,4,4,3
-donkey_denHaag::33027,donkey_denHaag,33027,33027,Hengelolaan 1,52.0476922,4.2695819,3,4,3
-donkey_denHaag::33028,donkey_denHaag,33028,33028,Hoogeveenlaan 1,52.0467241,4.2736206,5,4,3
-donkey_denHaag::33029,donkey_denHaag,33029,33029,Hoogevelaan 2,52.0474644,4.272705,3,4,3
-donkey_denHaag::33031,donkey_denHaag,33031,33031,Oosterhesselenstraat,52.0488563,4.2753589,4,4,3
-donkey_denHaag::33032,donkey_denHaag,33032,33032,Loevesteinlaan 1,52.0486567,4.2835501,4,4,3
-donkey_denHaag::33034,donkey_denHaag,33034,33034,Oranjeplein,52.072015,4.315336,5,18,4
-donkey_denHaag::33035,donkey_denHaag,33035,33035,Stationsweg 1,52.0736101,4.3181331,3,18,4
-donkey_denHaag::33036,donkey_denHaag,33036,33036,Tullinghstraat,52.0694762,4.3138556,3,18,4
-donkey_denHaag::33038,donkey_denHaag,33038,33038,Jasmijnstraat 1,52.0697726,4.2717463,4,0,4
-donkey_denHaag::33039,donkey_denHaag,33039,33039,Rabarberstraat 1,52.0700439,4.2690036,5,15,2
-donkey_denHaag::33040,donkey_denHaag,33040,33040,Heesterstraat,52.0691434,4.2712972,3,0,4
-donkey_denHaag::33041,donkey_denHaag,33041,33041,Indigostraat,52.0686703,4.2716172,3,0,4
-donkey_denHaag::33042,donkey_denHaag,33042,33042,Escamplaan 2,52.0644273,4.276989,4,8,3
-donkey_denHaag::33043,donkey_denHaag,33043,33043,Gooilaan,52.0661866,4.2754808,3,8,3
-donkey_denHaag::33044,donkey_denHaag,33044,33044,Gooilaan 2,52.0671145,4.2738945,5,8,3
-donkey_denHaag::33045,donkey_denHaag,33045,33045,Loosduinsekade 1,52.0666988,4.2708079,5,8,3
-donkey_denHaag::33046,donkey_denHaag,33046,33046,Loonduinsekade 2,52.0683758,4.2760856,5,0,4
-donkey_denHaag::33047,donkey_denHaag,33047,33047,Valkenboslaan 2,52.0707853,4.2754033,3,0,4
-donkey_denHaag::33048,donkey_denHaag,33048,33048,Newtonplein,52.0723591,4.2793023,5,0,4
-donkey_denHaag::33049,donkey_denHaag,33049,33049,Weimarstraat IV,52.0742155,4.2779702,4,0,4
-donkey_denHaag::33050,donkey_denHaag,33050,33050,Bautersemstraat,52.0748679,4.2939949,4,3,4
-donkey_denHaag::33051,donkey_denHaag,33051,33051,De Gheijnstraat,52.0723602,4.2842308,3,0,4
-donkey_denHaag::33052,donkey_denHaag,33052,33052,Cartesiusstraat,52.0738654,4.2837676,3,0,4
-donkey_denHaag::33053,donkey_denHaag,33053,33053,Newtonstraat,52.0755077,4.2834652,5,0,4
-donkey_denHaag::33054,donkey_denHaag,33054,33054,Loonduinseweg 2,52.0709842,4.2850191,8,0,4
-donkey_denHaag::33055,donkey_denHaag,33055,33055,Loonduinseweg 3,52.0708037,4.2853637,3,0,4
-donkey_denHaag::33056,donkey_denHaag,33056,33056,Paul Krugerlaan II,52.0693746,4.2883612,3,16,4
-donkey_denHaag::33057,donkey_denHaag,33057,33057,Lunterenstraat 1,52.0696046,4.2833945,3,0,4
-donkey_denHaag::33058,donkey_denHaag,33058,33058,Lunterenstraat 2,52.0697079,4.2826815,3,0,4
-donkey_denHaag::33059,donkey_denHaag,33059,33059,Nunspeetlaan 1,52.0690109,4.2849384,3,0,4
-donkey_denHaag::33060,donkey_denHaag,33060,33060,Lunterenstraat 3,52.068825,4.2802917,5,0,4
-donkey_denHaag::33061,donkey_denHaag,33061,33061,Beekbergenstraat,52.0688082,4.2815946,5,0,4
-donkey_denHaag::33062,donkey_denHaag,33062,33062,Nunspeetlaan 2,52.0683821,4.2845146,5,0,4
-donkey_denHaag::33063,donkey_denHaag,33063,33063,Zuiderparklaan 3,52.068182,4.2766918,5,0,4
-donkey_denHaag::33064,donkey_denHaag,33064,33064,Kootwijkstraat,52.0672438,4.2832679,3,0,4
-donkey_denHaag::33065,donkey_denHaag,33065,33065,Nunspeetlaan 3,52.0665168,4.2849367,3,16,4
-donkey_denHaag::33066,donkey_denHaag,33066,33066,Nunspeetlaan 4,52.0668067,4.2847115,5,16,4
-donkey_denHaag::33067,donkey_denHaag,33067,33067,De la Reyweg 2,52.0648181,4.288537,4,16,4
-donkey_denHaag::33068,donkey_denHaag,33068,33068,Kempstraat,52.0639219,4.2901338,8,16,4
-donkey_denHaag::33069,donkey_denHaag,33069,33069,Terletstraat,52.0633061,4.2879655,5,16,4
-donkey_denHaag::33070,donkey_denHaag,33070,33070,Velpsestraat,52.064282,4.2866944,3,16,4
-donkey_denHaag::33071,donkey_denHaag,33071,33071,Wapenveldestraat,52.0638995,4.2832672,8,8,3
-donkey_denHaag::33072,donkey_denHaag,33072,33072,Harderwijkstraat,52.063471,4.2856098,15,8,3
-donkey_denHaag::33073,donkey_denHaag,33073,33073,Wapenveldestraat 1,52.0623333,4.2843692,5,8,3
-donkey_denHaag::33074,donkey_denHaag,33074,33074,Ermelostraat,52.0623479,4.2826825,3,8,3
-donkey_denHaag::33075,donkey_denHaag,33075,33075, Bilthovenselaan,52.0639853,4.2804995,5,8,3
-donkey_denHaag::33076,donkey_denHaag,33076,33076,Blaricumseplein 1,52.0634319,4.2776804,3,8,3
-donkey_denHaag::33077,donkey_denHaag,33077,33077,Blaricumseplein 2,52.0630403,4.2783192,3,8,3
-donkey_denHaag::33078,donkey_denHaag,33078,33078,Loenensestraat,52.0625506,4.2778095,5,8,3
-donkey_denHaag::33079,donkey_denHaag,33079,33079,oestdijksekade 3,52.0620896,4.278274,5,8,3
-donkey_denHaag::33080,donkey_denHaag,33080,33080,Loenensestraat,52.0624135,4.2807682,3,8,3
-donkey_denHaag::33081,donkey_denHaag,33081,33081,'s-Gravenzandelaan 1,52.0721581,4.299185,3,16,4
-donkey_denHaag::33082,donkey_denHaag,33082,33082,Groenesteinstraat,52.0718056,4.2931821,3,16,4
-donkey_denHaag::33083,donkey_denHaag,33083,33083,Delftselaan 1,52.0692462,4.2960631,5,16,4
-donkey_denHaag::33084,donkey_denHaag,33084,33084,Ter Heijdestraat,52.0695267,4.2950428,3,16,4
-donkey_denHaag::33085,donkey_denHaag,33085,33085,Delftselaan 2,52.0701168,4.2993979,5,16,4
-donkey_denHaag::33105,donkey_denHaag,33105,33105,Hoefkade I,52.0693649,4.3152691,5,18,4
-donkey_denHaag::33106,donkey_denHaag,33106,33106,Hoefkade II,52.0672164,4.3108826,3,16,4
-donkey_denHaag::33107,donkey_denHaag,33107,33107,Van Ravesteinstraat,52.0676022,4.3097696,3,16,4
-donkey_denHaag::33108,donkey_denHaag,33108,33108,Hobbemastraat I,52.0682961,4.30082,5,16,4
-donkey_denHaag::33109,donkey_denHaag,33109,33109,Van der Vennestraat,52.0668099,4.2993558,5,16,4
-donkey_denHaag::33110,donkey_denHaag,33110,33110,Schalk Burgerplein,52.0671392,4.2934558,3,16,4
-donkey_denHaag::33115,donkey_denHaag,33115,33115,Werkhovenstraat,52.0592903,4.2721737,3,8,3
-donkey_denHaag::33116,donkey_denHaag,33116,33116,Rijsenburgstraat,52.0584408,4.2683998,3,8,3
-donkey_denHaag::33117,donkey_denHaag,33117,33117,Abcoudestraat,52.0574524,4.2719345,3,8,3
-donkey_denHaag::33118,donkey_denHaag,33118,33118,Benschoplaan,52.0562242,4.2685834,3,8,3
-donkey_denHaag::33119,donkey_denHaag,33119,33119,IIJsselsteinstraat,52.0605672,4.27571,3,8,3
-donkey_denHaag::33120,donkey_denHaag,33120,33120,Woudenbergstraat,52.0605853,4.2771822,3,8,3
-donkey_denHaag::33121,donkey_denHaag,33121,33121,Soestdijksekade 3,52.0615251,4.2770139,5,8,3
-donkey_denHaag::33122,donkey_denHaag,33122,33122,Soestdijksekade 4,52.0624397,4.2750022,3,8,3
-donkey_denHaag::33123,donkey_denHaag,33123,33123,Medemblikstraat,52.0629191,4.269193,4,8,3
-donkey_denHaag::33124,donkey_denHaag,33124,33124,Loosduinseweg 1,52.0678575,4.2725318,3,8,3
-donkey_denHaag::33125,donkey_denHaag,33125,33125,Seringenstraat,52.0687791,4.2737864,3,0,4
-donkey_denHaag::33126,donkey_denHaag,33126,33126,Soestdijksekade 5,52.0647349,4.271328,2,8,3
-donkey_denHaag::33127,donkey_denHaag,33127,33127,Hoogkarspelstraat,52.0643665,4.2671135,2,8,3
-donkey_denHaag::33128,donkey_denHaag,33128,33128,Vier Heemskinderenstraat,52.0560768,4.298765,3,1,3
-donkey_denHaag::33129,donkey_denHaag,33129,33129,Jan van Rodestraat,52.0572304,4.2963341,3,1,3
-donkey_denHaag::33130,donkey_denHaag,33130,33130,Anna Bijnslaan,52.0545198,4.3006669,3,1,3
-donkey_denHaag::33131,donkey_denHaag,33131,33131,Rederijkerstraat,52.0555066,4.3031255,5,1,3
-donkey_denHaag::33137,donkey_denHaag,33137,33137,Rijswijkseweg 2,52.0603101,4.334258,2,17,2
-donkey_denHaag::33138,donkey_denHaag,33138,33138,Linnaeusstraat,52.0594932,4.3304233,2,17,2
-donkey_denHaag::33139,donkey_denHaag,33139,33139,Linnaeusstraat II,52.0584443,4.3277995,2,17,2
-donkey_denHaag::33140,donkey_denHaag,33140,33140,Haverschmidtstraat,52.0570889,4.3237858,2,17,2
-donkey_denHaag::33141,donkey_denHaag,33141,33141,Burgersdijkstraat,52.0604295,4.3215346,3,1,3
-donkey_denHaag::33142,donkey_denHaag,33142,33142,Johan Gramstraat ,52.0617741,4.3244139,2,17,2
-donkey_denHaag::33143,donkey_denHaag,33143,33143,Oudemansstraat ,52.0633371,4.3247354,2,17,2
-donkey_denHaag::33144,donkey_denHaag,33144,33144,Schlegelstraat,52.0630459,4.3255142,2,17,2
-donkey_denHaag::33145,donkey_denHaag,33145,33145,Pasteurplein,52.0630875,4.3287683,3,17,2
-donkey_denHaag::33146,donkey_denHaag,33146,33146,Schalk Burgerstraat 2,52.0624999,4.2934153,5,16,4
-donkey_denHaag::33147,donkey_denHaag,33147,33147,Schalk Burgerstraat,52.0634147,4.2935208,3,16,4
-donkey_denHaag::33148,donkey_denHaag,33148,33148,Schalk Burgerstraat 3 ,52.0649254,4.2936981,5,16,4
-donkey_denHaag::33149,donkey_denHaag,33149,33149,Bloemfonteinstraat,52.0644016,4.2955144,3,16,4
-donkey_denHaag::33150,donkey_denHaag,33150,33150,Kraijenhoffstraat,52.0710119,4.319915,3,18,4
-donkey_denHaag::33151,donkey_denHaag,33151,33151,Jan Blankenstraat,52.0706103,4.3191246,5,18,4
-donkey_denHaag::33152,donkey_denHaag,33152,33152,Wolterbeekstraat,52.0697708,4.3181803,3,18,4
-donkey_denHaag::33153,donkey_denHaag,33153,33153,Bibliotheek Schilderswijk ,52.0689084,4.3142504,5,18,4
-donkey_denHaag::33154,donkey_denHaag,33154,33154,Van der Kunstraat,52.0653029,4.317881,12,18,4
-donkey_denHaag::33155,donkey_denHaag,33155,33155,Verheeskade,52.0632508,4.3183079,8,1,3
-donkey_denHaag::33166,donkey_denHaag,33166,33166,De Broodfabriek,52.0357905,4.3313176,12,19,1
-donkey_denHaag::33170,donkey_denHaag,33170,33170,Binck Padel,52.0672293,4.3432937,4,17,2
-donkey_denHaag::33191,donkey_denHaag,33191,33191,AH Binckhorstlaan,52.0679898,4.3379068,6,17,2
-donkey_denHaag::33194,donkey_denHaag,33194,33194,Lijsterbesplein,52.0738286,4.2649015,2,15,2
-donkey_denHaag::33201,donkey_denHaag,33201,33201,Julianalaan,52.0771277,4.3545315,4,5,1
-donkey_denHaag::33202,donkey_denHaag,33202,33202,Bruijnings Ingenhoeslaan,52.0781259,4.350307,4,12,3
-donkey_denHaag::33204,donkey_denHaag,33204,33204,Savallelaan,52.0797782,4.3528544,2,12,3
-donkey_denHaag::33205,donkey_denHaag,33205,33205,Spinozalaan,52.0829506,4.3535753,2,12,3
-donkey_denHaag::33206,donkey_denHaag,33206,33206,Monseigneur van Steelaan,52.0800877,4.3630173,5,5,1
-donkey_denHaag::33207,donkey_denHaag,33207,33207,Sint Martinuslaan,52.0818846,4.3660908,12,9,0
-donkey_denHaag::33208,donkey_denHaag,33208,33208,Wilgendreef 2Parking,52.0825496,4.3655165,8,9,0
-donkey_denHaag::33209,donkey_denHaag,33209,33209,Prins Bernhardlaan,52.0752424,4.3620088,3,5,1
-donkey_denHaag::33210,donkey_denHaag,33210,33210,Kon. Julianalaan,52.075262,4.3590128,4,5,1
-donkey_denHaag::33211,donkey_denHaag,33211,33211,kon. Julianalaan Jumbo,52.0757413,4.3583476,2,5,1
-donkey_denHaag::33212,donkey_denHaag,33212,33212,Van Arembergelaan,52.0746846,4.3497102,2,5,1
-donkey_denHaag::33213,donkey_denHaag,33213,33213,Laan van Nieuw Oosteinde,52.0744583,4.3500585,2,5,1
-donkey_denHaag::33214,donkey_denHaag,33214,33214,Heer Hubrechtstraat,52.0697341,4.3552335,3,5,1
-donkey_denHaag::33321,donkey_denHaag,33321,33321,De gaarde,52.0386423,4.2710263,2,10,2
-donkey_denHaag::33382,donkey_denHaag,33382,33382,Thomas Mannsingel ,52.040181,4.2343229,3,13,1
-donkey_denHaag::33409,donkey_denHaag,33409,33409,hazelaarstraat,52.073632,4.2669815,2,15,2
-donkey_denHaag::33488,donkey_denHaag,33488,33488,cornerhouse,52.0808738,4.2842961,3,3,4
-donkey_denHaag::33499,donkey_denHaag,33499,33499,parkweg,52.0760457,4.3737901,2,5,1
-donkey_denHaag::33500,donkey_denHaag,33500,33500,parkweg 2,52.0700974,4.3656355,1,5,1
-donkey_denHaag::33503,donkey_denHaag,33503,33503,Geestbrugweg 1,52.0592459,4.3436578,2,17,2
-donkey_denHaag::33504,donkey_denHaag,33504,33504,Geestbrugweg 2,52.0570789,4.33812,2,17,2
-donkey_denHaag::33505,donkey_denHaag,33505,33505,Haagseweg 1,52.0568838,4.3375987,6,17,2
-donkey_denHaag::33506,donkey_denHaag,33506,33506,Herenstraat,52.056576,4.3373519,4,17,2
-donkey_denHaag::33507,donkey_denHaag,33507,33507,Haagseweg 2,52.0536537,4.3410497,3,17,2
-donkey_denHaag::33508,donkey_denHaag,33508,33508,Geestbrugkade,52.0580601,4.3456178,2,17,2
-donkey_denHaag::33509,donkey_denHaag,33509,33509,Regentesselaan,52.0555453,4.3435777,2,17,2
-donkey_denHaag::33511,donkey_denHaag,33511,33511,Sir Winston Churchilllaan,52.0489843,4.3380295,3,17,2
-donkey_denHaag::33512,donkey_denHaag,33512,33512,Kerklaan,52.0503608,4.339321,3,17,2
-donkey_denHaag::33513,donkey_denHaag,33513,33513,Penninglaan,52.0601164,4.3415972,2,17,2
-donkey_denHaag::33514,donkey_denHaag,33514,33514,Herenstraat 2,52.0564827,4.3366401,4,17,2
-donkey_denHaag::33515,donkey_denHaag,33515,33515,BehandelcentrumVoorburg (Reinier de Graaf),52.0614641,4.3505092,3,17,2
-donkey_denHaag::33516,donkey_denHaag,33516,33516,Wijkcentrum Agora,52.0620399,4.3498681,4,17,2
-donkey_denHaag::33521,donkey_denHaag,33521,33521,Willemstraat I,52.0557141,4.3373875,2,17,2
-donkey_denHaag::33522,donkey_denHaag,33522,33522,Kerklaan 2,52.0548685,4.3350352,4,17,2
-donkey_denHaag::33523,donkey_denHaag,33523,33523,Kerklaan 3,52.0552641,4.3347113,6,17,2
-donkey_denHaag::33524,donkey_denHaag,33524,33524,Ruysdaelplein,52.0552041,4.3323613,4,17,2
-donkey_denHaag::33554,donkey_denHaag,33554,33554,Het Hoenstraat,52.095326,4.3087482,2,2,0
-donkey_denHaag::33639,donkey_denHaag,33639,33639,van geenstraat,52.0734283,4.2929967,3,16,4
-donkey_denHaag::33659,donkey_denHaag,33659,33659,Stadhoudersstraat,52.0576866,4.3337119,3,17,2
-donkey_denHaag::33660,donkey_denHaag,33660,33660,Blekerslaan,52.0567669,4.3331097,2,17,2
-donkey_denHaag::33662,donkey_denHaag,33662,33662,Kerklaan 4,52.0530816,4.3366002,4,17,2
-donkey_denHaag::33663,donkey_denHaag,33663,33663,Rembrandtkade,52.0516474,4.3358757,6,17,2
-donkey_denHaag::33665,donkey_denHaag,33665,33665,Florence woonzorg centrum ,52.0530622,4.3304151,3,17,2
-donkey_denHaag::33667,donkey_denHaag,33667,33667,Jozef Israëlslaan,52.0506452,4.3336062,2,17,2
-donkey_denHaag::33668,donkey_denHaag,33668,33668,Lindelaan ,52.0493481,4.3331439,2,17,2
-donkey_denHaag::33669,donkey_denHaag,33669,33669,Hoogvliet Rijswijk ,52.0485767,4.3315627,6,17,2
-donkey_denHaag::33670,donkey_denHaag,33670,33670,Tramhalte Van Verdenburchweg 1,52.0521367,4.3272685,3,17,2
-donkey_denHaag::33671,donkey_denHaag,33671,33671,Gemeentehuis Rijswijk 2,52.0478903,4.3307597,6,17,2
-donkey_denHaag::33672,donkey_denHaag,33672,33672,Handelskade ,52.0445096,4.3371813,3,17,2
-donkey_denHaag::33673,donkey_denHaag,33673,33673,Veraartlaan,52.0411457,4.3380389,2,19,1
-donkey_denHaag::33674,donkey_denHaag,33674,33674,Verrijn Stuartlaan,52.0395961,4.3329471,2,19,1
-donkey_denHaag::33675,donkey_denHaag,33675,33675,Van Gijnstraat,52.037515,4.3319483,2,19,1
-donkey_denHaag::33676,donkey_denHaag,33676,33676,Verrijn Stuartlaan 1,52.0377835,4.3298669,6,19,1
-donkey_denHaag::33677,donkey_denHaag,33677,33677,Doctor H. Colijnlaan 2,52.0411193,4.3212308,6,19,1
-donkey_denHaag::33678,donkey_denHaag,33678,33678,Doctor H. Colijnlaan,52.0410713,4.3224905,4,19,1
-donkey_denHaag::33679,donkey_denHaag,33679,33679,Huis te Landelaan,52.0418207,4.3222994,6,19,1
-donkey_denHaag::33680,donkey_denHaag,33680,33680,Generaal Spoorlaan ,52.0466395,4.3277439,6,17,2
-donkey_denHaag::33681,donkey_denHaag,33681,33681,Van Vredenburchweg,52.0464786,4.3168146,3,19,1
-donkey_denHaag::33682,donkey_denHaag,33682,33682,Purpupstraat,52.0414881,4.3145223,2,19,1
-donkey_denHaag::33683,donkey_denHaag,33683,33683,Kleurenbuurt,52.0403847,4.3119598,2,19,1
-donkey_denHaag::33684,donkey_denHaag,33684,33684,Generaal Spoorlaan 2,52.0376738,4.3091575,2,19,1
-donkey_denHaag::33685,donkey_denHaag,33685,33685,Generaal Spoorlaan 1,52.0376245,4.3079036,2,19,1
-donkey_denHaag::33686,donkey_denHaag,33686,33686,Schaapweg,52.0387472,4.2988592,6,19,1
-donkey_denHaag::33687,donkey_denHaag,33687,33687,Minister Aalberselaan,52.0347339,4.3066359,6,19,1
-donkey_denHaag::33688,donkey_denHaag,33688,33688,Pr. Margrietsingel,52.0350478,4.3082593,3,19,1
-donkey_denHaag::33689,donkey_denHaag,33689,33689,Wijkcentrum Stervoorde,52.0318879,4.3107759,6,19,1
-donkey_denHaag::33693,donkey_denHaag,33693,33693,Adm. Helfrichsingel,52.0324157,4.317458,3,19,1
-donkey_denHaag::33694,donkey_denHaag,33694,33694,Waldhoornplein,52.0333971,4.3205817,4,19,1
-donkey_denHaag::33695,donkey_denHaag,33695,33695,Fietsenwacht,52.0353225,4.3155472,8,19,1
-donkey_denHaag::33696,donkey_denHaag,33696,33696,Beatrixlaan ,52.0371093,4.3135634,4,19,1
-donkey_denHaag::33698,donkey_denHaag,33698,33698,Steenvoordelaan 2,52.0379116,4.3163479,3,19,1
-donkey_denHaag::33699,donkey_denHaag,33699,33699,Steenvoordelaan,52.0361112,4.3173262,3,19,1
-donkey_denHaag::33700,donkey_denHaag,33700,33700,Station Rijswijk 3,52.0367888,4.3221974,8,19,1
-donkey_denHaag::33701,donkey_denHaag,33701,33701,De Hoofmeesters toren 2,52.0419578,4.329249,3,19,1
-donkey_denHaag::33702,donkey_denHaag,33702,33702,Van Vollenhovenlaan,52.0436468,4.3294005,2,19,1
-ns_ov_fiets::gv001,ns_ov_fiets,gv001,gv001,Den Haag HS,52.069582,4.320696,116,18,4
-ns_ov_fiets::gvc021,ns_ov_fiets,gvc021,gvc021,Den Haag Centraal Koningin Julianaplein,52.08129,4.323001,666,18,4
-ns_ov_fiets::gvm001,ns_ov_fiets,gvm001,gvm001,Den Haag Mariahoeve,52.090284,4.3694,13,9,0
-ns_ov_fiets::laa001,ns_ov_fiets,laa001,laa001,Den Haag Laan van NOI,52.07847,4.34398,8,12,3
-ns_ov_fiets::rsw002,ns_ov_fiets,rsw002,rsw002,Rijswijk,52.03988,4.31965,11,19,1
-ns_ov_fiets::vb002,ns_ov_fiets,vb002,vb002,Voorburg,52.06676,4.35956,20,5,1
+donkey_denHaag::18860,donkey_denHaag,18860,18860,Stamkartstraat,52.0676108,4.3216707,4,12,4
+donkey_denHaag::18863,donkey_denHaag,18863,18863,Bontoekstraat,52.0702538,4.3263082,3,12,4
+donkey_denHaag::18865,donkey_denHaag,18865,18865,AH Zuylichemstraat,52.0708313,4.3225854,8,12,4
+donkey_denHaag::18867,donkey_denHaag,18867,18867,Van Maanenkade,52.0714197,4.325112,3,12,4
+donkey_denHaag::18868,donkey_denHaag,18868,18868,Oranjelaan,52.0716342,4.3220415,3,12,4
+donkey_denHaag::18869,donkey_denHaag,18869,18869,Trekvietplein,52.0722482,4.3261949,12,12,4
+donkey_denHaag::18878,donkey_denHaag,18878,18878,Scheldestraat,52.0744381,4.3239685,6,12,4
+donkey_denHaag::18881,donkey_denHaag,18881,18881,Spui 300,52.0752072,4.3199492,6,12,4
+donkey_denHaag::18882,donkey_denHaag,18882,18882,Bierkade,52.0745643,4.3184421,8,12,4
+donkey_denHaag::18887,donkey_denHaag,18887,18887,Theater aan het Spui (Donkey in rack),52.076334,4.3167128,6,12,4
+donkey_denHaag::18889,donkey_denHaag,18889,18889,Ammunitiehaven II,52.0781024,4.3225396,3,12,4
+donkey_denHaag::18891,donkey_denHaag,18891,18891,WTC The Hague I,52.0788986,4.3374599,14,8,1
+donkey_denHaag::18892,donkey_denHaag,18892,18892,WTC The Hague II,52.0786305,4.3360611,3,8,1
+donkey_denHaag::18893,donkey_denHaag,18893,18893,WTC The Hague III,52.0791561,4.3358734,12,8,1
+donkey_denHaag::18915,donkey_denHaag,18915,18915,De Vriesstraat,52.0836125,4.3444116,3,8,1
+donkey_denHaag::18917,donkey_denHaag,18917,18917,Stuyvesantplein,52.0842277,4.3431771,12,8,1
+donkey_denHaag::18918,donkey_denHaag,18918,18918,Loudonstraat,52.0857485,4.3458531,8,8,1
+donkey_denHaag::18919,donkey_denHaag,18919,18919,De Eerensplein,52.0891537,4.3444034,8,8,1
+donkey_denHaag::18925,donkey_denHaag,18925,18925,Theresiastraat I (Donkey in rack),52.0860425,4.3365402,8,8,1
+donkey_denHaag::18937,donkey_denHaag,18937,18937,Emmastraat I,52.0838888,4.3322031,6,8,1
+donkey_denHaag::18943,donkey_denHaag,18943,18943,Unicef (L),52.0864489,4.3321903,3,8,1
+donkey_denHaag::18945,donkey_denHaag,18945,18945,Bezuidenhoutseweg II,52.0848467,4.329004,3,8,1
+donkey_denHaag::18948,donkey_denHaag,18948,18948,Malietoren I (Donkey in rack),52.0839911,4.3263549,3,8,1
+donkey_denHaag::18949,donkey_denHaag,18949,18949,Wagenstraat,52.074111,4.3165014,3,12,4
+donkey_denHaag::18950,donkey_denHaag,18950,18950,Dunne Bierkade,52.0734656,4.3157072,3,12,4
+donkey_denHaag::18953,donkey_denHaag,18953,18953,Stille Veerkade I,52.0744182,4.3148488,6,12,4
+donkey_denHaag::18954,donkey_denHaag,18954,18954,Paviljoensgracht,52.0745081,4.3108949,6,12,4
+donkey_denHaag::18955,donkey_denHaag,18955,18955,Gedempte Burgwal,52.0754489,4.3122149,6,12,4
+donkey_denHaag::18956,donkey_denHaag,18956,18956,Gedempte Gracht,52.0760486,4.3133663,6,12,4
+donkey_denHaag::18958,donkey_denHaag,18958,18958,Muzenplein,52.0796179,4.319758,12,12,4
+donkey_denHaag::18959,donkey_denHaag,18959,18959,Muzenstraat,52.0806941,4.3204349,10,12,4
+donkey_denHaag::18960,donkey_denHaag,18960,18960,Herengracht,52.0806916,4.3189241,3,12,4
+donkey_denHaag::18961,donkey_denHaag,18961,18961,KABK,52.0817733,4.3195256,16,12,4
+donkey_denHaag::18962,donkey_denHaag,18962,18962,KJ Basement (Park underground),52.0815393,4.3228549,30,8,1
+donkey_denHaag::18964,donkey_denHaag,18964,18964,Paviljoen Malieveld,52.0837158,4.3182908,20,11,3
+donkey_denHaag::18966,donkey_denHaag,18966,18966,Schouwburgstraat,52.0822684,4.3157216,10,11,3
+donkey_denHaag::18968,donkey_denHaag,18968,18968,Het Plein,52.080295,4.3158875,8,12,4
+donkey_denHaag::18969,donkey_denHaag,18969,18969,Lange Houtstraat,52.0811044,4.3156179,6,12,4
+donkey_denHaag::18971,donkey_denHaag,18971,18971,Escher,52.0834482,4.3135295,6,11,3
+donkey_denHaag::18973,donkey_denHaag,18973,18973,Prinsessengracht II,52.0854396,4.3153853,3,11,3
+donkey_denHaag::18974,donkey_denHaag,18974,18974,Hofweg,52.0783327,4.3131101,6,12,4
+donkey_denHaag::18975,donkey_denHaag,18975,18975,Buitenhof,52.0789563,4.3108922,16,12,4
+donkey_denHaag::18976,donkey_denHaag,18976,18976,Kettingstraat,52.0782088,4.3100395,6,12,4
+donkey_denHaag::18977,donkey_denHaag,18977,18977,Visbanken,52.0770551,4.3079689,6,12,4
+donkey_denHaag::18979,donkey_denHaag,18979,18979,Lange Vijverberg,52.0806848,4.3107433,6,12,4
+donkey_denHaag::18980,donkey_denHaag,18980,18980,Heulstraat,52.0808291,4.3078686,6,11,3
+donkey_denHaag::18981,donkey_denHaag,18981,18981,Lange Voorhout I,52.0816365,4.3103206,6,11,3
+donkey_denHaag::18987,donkey_denHaag,18987,18987,Willem Witsenplein,52.0927728,4.3296922,12,8,1
+donkey_denHaag::18991,donkey_denHaag,18991,18991,Van Hoytemastraat I,52.0918961,4.3252678,3,11,3
+donkey_denHaag::18999,donkey_denHaag,18999,18999,Spaces,52.0879427,4.3197895,3,11,3
+donkey_denHaag::19004,donkey_denHaag,19004,19004,Groenhovenstraat I,52.0943835,4.3130506,4,11,3
+donkey_denHaag::19007,donkey_denHaag,19007,19007,Bachmanstraat,52.0928183,4.3119103,16,11,3
+donkey_denHaag::19010,donkey_denHaag,19010,19010,Madurodam,52.0991058,4.2995375,12,11,3
+donkey_denHaag::19015,donkey_denHaag,19015,19015,Koningskade,52.0884964,4.3140632,3,11,3
+donkey_denHaag::19018,donkey_denHaag,19018,19018,Koninginnegracht,52.0879374,4.3133565,6,11,3
+donkey_denHaag::19021,donkey_denHaag,19021,19021,Denneweg II,52.0851569,4.3125148,3,11,3
+donkey_denHaag::19022,donkey_denHaag,19022,19022,Denneweg I,52.0862835,4.3111202,3,11,3
+donkey_denHaag::19024,donkey_denHaag,19024,19024,Frederikstraat II,52.0882218,4.3100457,6,11,3
+donkey_denHaag::19026,donkey_denHaag,19026,19026,Balistraat I,52.0893786,4.310559,3,11,3
+donkey_denHaag::19031,donkey_denHaag,19031,19031,Javastraat I,52.0880644,4.3037014,3,11,3
+donkey_denHaag::19034,donkey_denHaag,19034,19034,Mauritskade,52.0852892,4.3090442,3,11,3
+donkey_denHaag::19038,donkey_denHaag,19038,19038,Parkstraat,52.0831823,4.3080534,4,11,3
+donkey_denHaag::19043,donkey_denHaag,19043,19043,Bankastraat I,52.0918222,4.3043504,3,11,3
+donkey_denHaag::19044,donkey_denHaag,19044,19044,Batjanstraat,52.0944885,4.3049663,3,11,3
+donkey_denHaag::19050,donkey_denHaag,19050,19050,Burgemeester Kolfschotenlaan I,52.0903905,4.3038493,3,11,3
+donkey_denHaag::19060,donkey_denHaag,19060,19060,Laan van Meerdervoort I,52.0866226,4.3004453,3,11,3
+donkey_denHaag::19061,donkey_denHaag,19061,19061,Zeestraat I,52.0862909,4.3016585,14,11,3
+donkey_denHaag::19062,donkey_denHaag,19062,19062,Sophialaan bis,52.085532,4.3024017,6,11,3
+donkey_denHaag::19064,donkey_denHaag,19064,19064,Mauritskade I,52.0841165,4.3053649,3,11,3
+donkey_denHaag::19065,donkey_denHaag,19065,19065,Scheveningseveer,52.0839001,4.3045794,2,11,3
+donkey_denHaag::19066,donkey_denHaag,19066,19066,Oranjestraat,52.0824277,4.3060758,6,11,3
+donkey_denHaag::19068,donkey_denHaag,19068,19068,Vredespaleis,52.0867759,4.2974597,6,4,4
+donkey_denHaag::19069,donkey_denHaag,19069,19069,Trompstraat,52.0857222,4.297682,6,4,4
+donkey_denHaag::19070,donkey_denHaag,19070,19070,Anna Paulowna,52.0847924,4.2998039,6,4,4
+donkey_denHaag::19071,donkey_denHaag,19071,19071,De Ruijterstraat,52.0834312,4.3021265,6,4,4
+donkey_denHaag::19072,donkey_denHaag,19072,19072,Jacob van der Doesstraat II,52.0841134,4.2974077,3,4,4
+donkey_denHaag::19074,donkey_denHaag,19074,19074,Elandstraat II,52.0819843,4.3001892,4,4,4
+donkey_denHaag::19076,donkey_denHaag,19076,19076,2e de Riemerstraat,52.0815146,4.2985568,3,4,4
+donkey_denHaag::19078,donkey_denHaag,19078,19078,Veenkade,52.0797092,4.3022427,6,4,4
+donkey_denHaag::19079,donkey_denHaag,19079,19079,Molenstraat,52.0794112,4.3048099,6,4,4
+donkey_denHaag::19080,donkey_denHaag,19080,19080,Prinsestraat,52.0783801,4.3068089,6,12,4
+donkey_denHaag::19081,donkey_denHaag,19081,19081,Kerkplein,52.0776795,4.3059342,4,12,4
+donkey_denHaag::19082,donkey_denHaag,19082,19082,Grote Markt (tram stop Prinsengracht),52.074915,4.3074949,45,12,4
+donkey_denHaag::19083,donkey_denHaag,19083,19083,Prinsegracht (Donkey in rack),52.0748048,4.3068075,12,12,4
+donkey_denHaag::19084,donkey_denHaag,19084,19084,Brouwersgracht (Donkey in rack),52.0740517,4.3046397,6,12,4
+donkey_denHaag::19085,donkey_denHaag,19085,19085,Assendelftstraat (Donkey in rack),52.0752839,4.3051167,3,12,4
+donkey_denHaag::19086,donkey_denHaag,19086,19086,Vleerstraat,52.0770853,4.3033975,3,4,4
+donkey_denHaag::19087,donkey_denHaag,19087,19087,Torenstraat,52.0785462,4.3044445,12,4,4
+donkey_denHaag::19088,donkey_denHaag,19088,19088,Snoekstraat,52.0786004,4.3022682,3,4,4
+donkey_denHaag::19094,donkey_denHaag,19094,19094,Zusterstraat,52.0736445,4.296692,6,3,4
+donkey_denHaag::19095,donkey_denHaag,19095,19095,Halte Loosduinseweg,52.0731868,4.291639,6,3,4
+donkey_denHaag::19097,donkey_denHaag,19097,19097,Fahrenheitstraat I,52.069657,4.2792467,6,3,4
+donkey_denHaag::19098,donkey_denHaag,19098,19098,Halte Valkenboslaan,52.0690004,4.2765784,6,13,3
+donkey_denHaag::19099,donkey_denHaag,19099,19099,Valkenboskade I,52.0705042,4.2738462,3,1,3
+donkey_denHaag::19100,donkey_denHaag,19100,19100,Johnny Loco,52.0714234,4.2695323,3,1,3
+donkey_denHaag::19101,donkey_denHaag,19101,19101,Valkenboskade II,52.0717273,4.2727135,3,1,3
+donkey_denHaag::19103,donkey_denHaag,19103,19103,Valkenboskade III,52.0742812,4.270115,3,1,3
+donkey_denHaag::19105,donkey_denHaag,19105,19105,Valkenboskade IV,52.0752238,4.2691887,3,1,3
+donkey_denHaag::19108,donkey_denHaag,19108,19108,Halte Cartesiusstraat,52.073192,4.2818801,6,3,4
+donkey_denHaag::19110,donkey_denHaag,19110,19110,Weimarstraat III,52.0723306,4.2749336,6,1,3
+donkey_denHaag::19112,donkey_denHaag,19112,19112,Valkenboslaan,52.0739481,4.2753289,3,1,3
+donkey_denHaag::19115,donkey_denHaag,19115,19115,Weimarstraat II,52.0754445,4.2803775,6,1,3
+donkey_denHaag::19117,donkey_denHaag,19117,19117,Regentesseplein,52.0769991,4.2831016,8,4,4
+donkey_denHaag::19119,donkey_denHaag,19119,19119,Weimarstraat,52.0782841,4.2858063,3,4,4
+donkey_denHaag::19125,donkey_denHaag,19125,19125,Da Costastraat,52.0793751,4.294557,3,4,4
+donkey_denHaag::19126,donkey_denHaag,19126,19126,Elandstraat I,52.0784854,4.2926203,3,4,4
+donkey_denHaag::19127,donkey_denHaag,19127,19127,De Perponcherstraat,52.0783245,4.2897573,3,4,4
+donkey_denHaag::19129,donkey_denHaag,19129,19129,Koningsplein I,52.0797609,4.2889328,3,4,4
+donkey_denHaag::19130,donkey_denHaag,19130,19130,Prins Hendrikstraat II,52.0814804,4.2921574,3,4,4
+donkey_denHaag::19131,donkey_denHaag,19131,19131,Prins Hendrikstraat I,52.0821399,4.2939437,6,4,4
+donkey_denHaag::19132,donkey_denHaag,19132,19132,Halte Elandstraat,52.0803236,4.2969738,6,4,4
+donkey_denHaag::19134,donkey_denHaag,19134,19134,Prins Hendrikplein,52.0828109,4.2943367,3,4,4
+donkey_denHaag::19135,donkey_denHaag,19135,19135,Zoutmanstraat II,52.0840634,4.292901,3,4,4
+donkey_denHaag::19137,donkey_denHaag,19137,19137,Van Speijkstraat,52.0819367,4.2877911,6,4,4
+donkey_denHaag::19138,donkey_denHaag,19138,19138,Obrechtstraat,52.0836711,4.2892641,3,4,4
+donkey_denHaag::19140,donkey_denHaag,19140,19140,Edisonstraat,52.076179,4.2790195,6,1,3
+donkey_denHaag::19142,donkey_denHaag,19142,19142,Valkenbosplein,52.0782744,4.2764698,3,1,3
+donkey_denHaag::19148,donkey_denHaag,19148,19148,Reinkenstraat I,52.0807293,4.2845523,4,4,4
+donkey_denHaag::19149,donkey_denHaag,19149,19149,Reinkenstraat II,52.0824837,4.2829919,4,4,4
+donkey_denHaag::19150,donkey_denHaag,19150,19150,Groot Hertoginnelaan II,52.082508,4.2774285,3,1,3
+donkey_denHaag::19151,donkey_denHaag,19151,19151,Halte Valeriusstraat,52.0837978,4.2790606,3,4,4
+donkey_denHaag::19152,donkey_denHaag,19152,19152,Groot Hertoginnelaan I,52.085001,4.2839811,6,4,4
+donkey_denHaag::19153,donkey_denHaag,19153,19153,Anton Haenstraat,52.0765287,4.271047,3,1,3
+donkey_denHaag::19154,donkey_denHaag,19154,19154,Fahrenheitstraat III,52.0775829,4.2703942,3,1,3
+donkey_denHaag::19159,donkey_denHaag,19159,19159,Beeklaan II,52.079972,4.2761259,3,1,3
+donkey_denHaag::19162,donkey_denHaag,19162,19162,Ieplaan,52.0806336,4.2741951,3,1,3
+donkey_denHaag::19164,donkey_denHaag,19164,19164,Fahrenheitstraat V,52.0802982,4.2677801,3,1,3
+donkey_denHaag::19165,donkey_denHaag,19165,19165,Haga Ziekenhuis,52.0814383,4.2632421,2,1,3
+donkey_denHaag::19166,donkey_denHaag,19166,19166,Cornelis de Wittlaan,52.0865062,4.275297,3,18,2
+donkey_denHaag::19168,donkey_denHaag,19168,19168,Museon,52.0885426,4.280193,24,18,2
+donkey_denHaag::19171,donkey_denHaag,19171,19171,Statenplein I,52.0916582,4.2785158,3,18,2
+donkey_denHaag::19174,donkey_denHaag,19174,19174,Halte Boreelstraat,52.0885333,4.2718879,2,18,2
+donkey_denHaag::19176,donkey_denHaag,19176,19176,Halte Willem de Zwijgerlaan,52.0911311,4.2709699,3,18,2
+donkey_denHaag::19177,donkey_denHaag,19177,19177,Halte Frederik Hendriklaan,52.0925356,4.2756264,4,18,2
+donkey_denHaag::19183,donkey_denHaag,19183,19183,Ripperdastraat,52.0927644,4.2668149,3,18,2
+donkey_denHaag::19184,donkey_denHaag,19184,19184,Douzastraat,52.0940236,4.2684872,3,18,2
+donkey_denHaag::19185,donkey_denHaag,19185,19185,Dr. Lelykade,52.0941307,4.2648309,6,18,2
+donkey_denHaag::19187,donkey_denHaag,19187,19187,Hellingweg,52.0965764,4.2646794,12,18,2
+donkey_denHaag::19188,donkey_denHaag,19188,19188,Zuiderstrand,52.0970621,4.2573235,24,18,2
+donkey_denHaag::19189,donkey_denHaag,19189,19189,Churchillplein,52.0935211,4.2827824,12,18,2
+donkey_denHaag::19190,donkey_denHaag,19190,19190,Halte World Forum,52.0934529,4.2807856,4,18,2
+donkey_denHaag::19191,donkey_denHaag,19191,19191,Halte Johan de Wittlaan,52.0953887,4.2849661,12,18,2
+donkey_denHaag::19193,donkey_denHaag,19193,19193,Johan van Oldenbarneveltlaan I,52.0985377,4.2802046,3,18,2
+donkey_denHaag::19194,donkey_denHaag,19194,19194,Frederik Hendriklaan II,52.0937964,4.2768031,3,18,2
+donkey_denHaag::19195,donkey_denHaag,19195,19195,Frederik Hendriklaan III,52.0944414,4.2773546,3,18,2
+donkey_denHaag::19196,donkey_denHaag,19196,19196,Halte Prins Mauritslaan,52.0956113,4.2764168,3,18,2
+donkey_denHaag::19197,donkey_denHaag,19197,19197,Frankenstraat,52.0967416,4.274283,3,18,2
+donkey_denHaag::19198,donkey_denHaag,19198,19198,Van Bergenstraat,52.0971599,4.2697214,12,18,2
+donkey_denHaag::19199,donkey_denHaag,19199,19199,Schokkerweg,52.1001219,4.2716488,3,18,2
+donkey_denHaag::19200,donkey_denHaag,19200,19200,Halte Duinstraat I,52.1015341,4.2738319,3,18,2
+donkey_denHaag::19201,donkey_denHaag,19201,19201,Vissershavenweg,52.1021388,4.2673704,6,18,2
+donkey_denHaag::19204,donkey_denHaag,19204,19204,Kanaalweg,52.1027795,4.2847115,3,16,3
+donkey_denHaag::19205,donkey_denHaag,19205,19205,Halte Duinstraat II,52.1018725,4.2793243,16,16,3
+donkey_denHaag::19208,donkey_denHaag,19208,19208,Keizerstraat,52.1038501,4.2765179,4,16,3
+donkey_denHaag::19209,donkey_denHaag,19209,19209,Jan Kistenstraat,52.1053801,4.2744553,3,16,3
+donkey_denHaag::19216,donkey_denHaag,19216,19216,Strandweg III,52.1066055,4.2703483,12,16,3
+donkey_denHaag::19217,donkey_denHaag,19217,19217,Strandweg IV,52.1086101,4.2741272,12,16,3
+donkey_denHaag::19218,donkey_denHaag,19218,19218,Werfstraat,52.1069984,4.2739769,3,16,3
+donkey_denHaag::19222,donkey_denHaag,19222,19222,Gevers Deynootweg III,52.1100299,4.2787389,4,16,3
+donkey_denHaag::19223,donkey_denHaag,19223,19223,Harteveltstraat,52.110807,4.2786922,6,16,3
+donkey_denHaag::19224,donkey_denHaag,19224,19224,Katwijkstraat,52.1081509,4.2817407,4,16,3
+donkey_denHaag::19225,donkey_denHaag,19225,19225,Gevers Deynootweg II,52.1115651,4.2818248,10,16,3
+donkey_denHaag::19226,donkey_denHaag,19226,19226,Kurhausweg I (Donkey in rack),52.1122161,4.2838061,16,16,3
+donkey_denHaag::19227,donkey_denHaag,19227,19227,Gevers Deynootweg I,52.1129282,4.2832575,12,16,3
+donkey_denHaag::19228,donkey_denHaag,19228,19228,Circustheater,52.1101989,4.2845453,8,16,3
+donkey_denHaag::19231,donkey_denHaag,19231,19231,Bosschestraat,52.1117964,4.2880535,4,16,3
+donkey_denHaag::19232,donkey_denHaag,19232,19232,Stevinstraat II,52.11057,4.2905679,4,16,3
+donkey_denHaag::19233,donkey_denHaag,19233,19233,Stevinstraat I,52.110123,4.2877233,3,16,3
+donkey_denHaag::19234,donkey_denHaag,19234,19234,Nieuwe Duinweg,52.1073006,4.2893903,6,16,3
+donkey_denHaag::19237,donkey_denHaag,19237,19237,Groningsestraat,52.1128334,4.2932587,6,16,3
+donkey_denHaag::19272,donkey_denHaag,19272,19272,Hoge Zand,52.0730023,4.3060392,6,12,4
+donkey_denHaag::19276,donkey_denHaag,19276,19276,Roof Station Den Haag HS,52.0693041,4.3227935,50,12,4
+donkey_denHaag::19310,donkey_denHaag,19310,19310,Paviljoensgracht 139,52.0729583,4.313725,3,12,4
+donkey_denHaag::19343,donkey_denHaag,19343,19343,Biesieklette Nobelstraat,52.0785278,4.3071451,12,12,4
+donkey_denHaag::19346,donkey_denHaag,19346,19346,Biesieklette Spuiplein bikeparking DOWNSTAIRS,52.0775291,4.3163807,12,12,4
+donkey_denHaag::19348,donkey_denHaag,19348,19348,Biesieklette Anna UNDER the bridge inside,52.0800714,4.3270418,16,8,1
+donkey_denHaag::19349,donkey_denHaag,19349,19349,Biesieklette Strandweg Haven,52.1011259,4.262415,20,18,2
+donkey_denHaag::19350,donkey_denHaag,19350,19350,Biesieklette Zwarte Pad (Donkey in rack),52.118885,4.2918479,12,16,3
+donkey_denHaag::19371,donkey_denHaag,19371,19371,Villa Fedora ,52.108508,4.2767809,4,16,3
+donkey_denHaag::19407,donkey_denHaag,19407,19407,Weteringkade under the bridge.,52.0746564,4.3284534,16,12,4
+donkey_denHaag::19433,donkey_denHaag,19433,19433,J. Westerdijkplein (Donkey in rack),52.0683252,4.3229531,2,12,4
+donkey_denHaag::19447,donkey_denHaag,19447,19447,Albert H. Theo Mann,52.1049004,4.3241447,3,10,0
+donkey_denHaag::19601,donkey_denHaag,19601,19601,Turfmarkt ,52.0794551,4.3215544,12,12,4
+donkey_denHaag::19602,donkey_denHaag,19602,19602,Stationweg I,52.0730832,4.319418,12,12,4
+donkey_denHaag::19670,donkey_denHaag,19670,19670,Stadsdeelkantoor Laak ,52.0638441,4.3226279,3,19,4
+donkey_denHaag::19812,donkey_denHaag,19812,19812,Speeltuin Freddy Hendrikplein,52.0887408,4.2758727,10,18,2
+donkey_denHaag::20024,donkey_denHaag,20024,20024,Badhuisweg,52.1016847,4.3013135,3,10,0
+donkey_denHaag::20025,donkey_denHaag,20025,20025,Jokje ,52.1021168,4.2949261,3,16,3
+donkey_denHaag::20228,donkey_denHaag,20228,20228,Boulevard (Donkey inside),52.1170214,4.2862324,30,16,3
+donkey_denHaag::20230,donkey_denHaag,20230,20230,Lange Beestenmarkt,52.0715206,4.309999,6,12,4
+donkey_denHaag::20269,donkey_denHaag,20269,20269,Stationweg II,52.07177,4.3205576,6,12,4
+donkey_denHaag::20270,donkey_denHaag,20270,20270,Megastore DH,52.0668041,4.318849,12,12,4
+donkey_denHaag::20275,donkey_denHaag,20275,20275,International Centre (Donkey in rack),52.0783639,4.3180796,12,12,4
+donkey_denHaag::20328,donkey_denHaag,20328,20328,Hommerspn Casino ,52.0770706,4.3088501,6,12,4
+donkey_denHaag::20329,donkey_denHaag,20329,20329,Simonicini,52.0807188,4.3028725,6,4,4
+donkey_denHaag::20378,donkey_denHaag,20378,20378,Duwo,52.0661547,4.3231526,6,19,4
+donkey_denHaag::20391,donkey_denHaag,20391,20391,Hague Market II (point 46),52.0671306,4.2969823,3,3,4
+donkey_denHaag::20514,donkey_denHaag,20514,20514,Hollywood ,52.0905872,4.2742422,3,18,2
+donkey_denHaag::20781,donkey_denHaag,20781,20781,Marriott ,52.0900457,4.2827236,10,18,2
+donkey_denHaag::21800,donkey_denHaag,21800,21800,Moerweg,52.0584755,4.2939695,8,7,1
+donkey_denHaag::21846,donkey_denHaag,21846,21846,Driebergen ,52.0569442,4.2742563,4,13,3
+donkey_denHaag::22409,donkey_denHaag,22409,22409,Groothertogin,52.0843788,4.2929724,3,4,4
+donkey_denHaag::22638,donkey_denHaag,22638,22638,Malietoren II (Donkey in rack),52.0841365,4.3266704,3,8,1
+donkey_denHaag::23218,donkey_denHaag,23218,23218,Spaarnestraat,52.073641,4.3272977,4,12,4
+donkey_denHaag::26598,donkey_denHaag,26598,26598,Hoogvliet Tesselplein (point 14),52.0899047,4.2577497,3,18,2
+donkey_denHaag::26608,donkey_denHaag,26608,26608,Parkingspace Ockenburgh (point 5),52.0515099,4.2226623,3,9,0
+donkey_denHaag::26610,donkey_denHaag,26610,26610,Loosduinse Hoofdplein (point 30),52.0532793,4.2351313,4,9,0
+donkey_denHaag::26616,donkey_denHaag,26616,26616,Alphons Diepenbrockhof (point 35),52.059552,4.2319153,4,15,2
+donkey_denHaag::26624,donkey_denHaag,26624,26624,Wandelgangen (point 34),52.0645579,4.2494087,8,15,2
+donkey_denHaag::26625,donkey_denHaag,26625,26625,Bus halte Perenstraat (point 36),52.0673748,4.2586038,3,13,3
+donkey_denHaag::26626,donkey_denHaag,26626,26626,Winkelcentrum de Savornin (point 17),52.0667608,4.2450625,8,15,2
+donkey_denHaag::26627,donkey_denHaag,26627,26627,Westduinpark Bos van poot (point 7),52.0757778,4.2372127,6,15,2
+donkey_denHaag::26629,donkey_denHaag,26629,26629,Westduinpark Bos van poot 3 (point 15),52.0865633,4.2662137,3,18,2
+donkey_denHaag::26652,donkey_denHaag,26652,26652,AH Goeverneurplein (point 40),52.0556446,4.3143999,8,19,4
+donkey_denHaag::27488,donkey_denHaag,27488,27488,Teleport hotel Den Haag (point 54),52.0681766,4.337705,20,6,0
+donkey_denHaag::27494,donkey_denHaag,27494,27494,Park and bike Den Haag ( point 52),52.0496175,4.3495288,8,14,1
+donkey_denHaag::27498,donkey_denHaag,27498,27498,Ambachtsgaarde (point 26),52.034981,4.2657198,2,2,2
+donkey_denHaag::27499,donkey_denHaag,27499,27499,De Uithof (point 47),52.039241,4.2455446,4,9,0
+donkey_denHaag::27501,donkey_denHaag,27501,27501,De stede (point 16),52.0432348,4.2606873,4,2,2
+donkey_denHaag::27503,donkey_denHaag,27503,27503,Stadhuis Escamp ( point 29),52.0452078,4.2803402,4,2,2
+donkey_denHaag::27505,donkey_denHaag,27505,27505,AH Betje Wolffstraat (point 22),52.0489186,4.2908166,3,7,1
+donkey_denHaag::27506,donkey_denHaag,27506,27506,Zwembad Zuiderpark (point 23),52.0532259,4.2887593,10,7,1
+donkey_denHaag::27507,donkey_denHaag,27507,27507,Zuiderpark  (point 24),52.0602251,4.2836598,4,13,3
+donkey_denHaag::27508,donkey_denHaag,27508,27508,AH Lorentzplein (point 41),52.06084,4.3285405,6,6,0
+donkey_denHaag::27509,donkey_denHaag,27509,27509,AH Het Kleine Loo (point 42),52.0918943,4.3560798,4,0,0
+donkey_denHaag::27511,donkey_denHaag,27511,27511,HMC Bronovo ( point 56),52.102911,4.3182925,3,10,0
+donkey_denHaag::27512,donkey_denHaag,27512,27512,Oostduinen (point 43),52.108608,4.3232046,3,10,0
+donkey_denHaag::27514,donkey_denHaag,27514,27514,Fietsstalling Kijkduin (point 4),52.0677939,4.2229722,8,15,2
+donkey_denHaag::27515,donkey_denHaag,27515,27515,Goudsbloemlaan (point 18),52.0766461,4.2600146,6,1,3
+donkey_denHaag::27516,donkey_denHaag,27516,27516,AH Escamplaan (point 33),52.0621826,4.2702815,8,13,3
+donkey_denHaag::27517,donkey_denHaag,27517,27517,AH Apeldoornselaan (point 45),52.0660937,4.2819162,3,3,4
+donkey_denHaag::27518,donkey_denHaag,27518,27518,Haga Ziekenhuis (point 49),52.0564962,4.2644383,3,13,3
+donkey_denHaag::27522,donkey_denHaag,27522,27522,Kraiensteinlaan tram halte (point 31),52.0490652,4.2371072,6,9,0
+donkey_denHaag::27523,donkey_denHaag,27523,27523,Winkelcentrum Houtwijk (point 32),52.0543161,4.2506627,4,9,0
+donkey_denHaag::27526,donkey_denHaag,27526,27526,Westduinpark Bos van poot 1 (point 11),52.0814877,4.2506279,3,1,3
+donkey_denHaag::27883,donkey_denHaag,27883,27883,Den Haag Centraal Deelfiets UNDER the bridge ,52.0794285,4.3251777,40,12,4
+donkey_denHaag::27982,donkey_denHaag,27982,27982,Qpark mobility hub Veerkade,52.0755371,4.3158681,60,12,4
+donkey_denHaag::28200,donkey_denHaag,28200,28200,HMC Westeinde ,52.0734718,4.2994067,3,3,4
+donkey_denHaag::28480,donkey_denHaag,28480,28480,Provinciehuis Den Haag,52.0873106,4.3168959,12,11,3
+donkey_denHaag::28551,donkey_denHaag,28551,28551, ANVS,52.0876432,4.3150282,4,11,3
+donkey_denHaag::28613,donkey_denHaag,28613,28613,Bezuidenhoutseweg,52.084189,4.3274808,6,8,1
+donkey_denHaag::28614,donkey_denHaag,28614,28614,Jan van Nassau,52.0873813,4.3189954,3,11,3
+donkey_denHaag::28615,donkey_denHaag,28615,28615,Laan van NOI HUB,52.0794269,4.3434137,30,8,1
+donkey_denHaag::28754,donkey_denHaag,28754,28754,Spaces Mesdagstraat,52.0881269,4.3197741,6,11,3
+donkey_denHaag::28761,donkey_denHaag,28761,28761,Den Haag Moerwijk,52.0546423,4.3080092,16,7,1
+donkey_denHaag::28765,donkey_denHaag,28765,28765,Voorburg,52.0667715,4.3589229,8,17,2
+donkey_denHaag::28767,donkey_denHaag,28767,28767,Den Haag Mariahoeve,52.0902249,4.3695267,8,0,0
+donkey_denHaag::29676,donkey_denHaag,29676,29676,Hague Market II Bis.,52.0672406,4.2974702,3,3,4
+donkey_denHaag::29684,donkey_denHaag,29684,29684,Tarwekamp,52.0883496,4.3544339,4,0,0
+donkey_denHaag::29740,donkey_denHaag,29740,29740,Titaan,52.0659659,4.3453375,8,6,0
+donkey_denHaag::30173,donkey_denHaag,30173,30173,Van Kempen,52.054735,4.2503468,4,9,0
+donkey_denHaag::30187,donkey_denHaag,30187,30187,Honselersdijk bloemenveiling,52.0600181,4.3348662,4,6,0
+donkey_denHaag::30647,donkey_denHaag,30647,30647,Chrysantplein,52.072516,4.2567234,2,1,3
+donkey_denHaag::31216,donkey_denHaag,31216,31216,Hotelschool The Hague,52.1077113,4.2938465,8,16,3
+donkey_denHaag::31343,donkey_denHaag,31343,31343,the New Farm,52.0576107,4.3030612,6,7,1
+donkey_denHaag::31791,donkey_denHaag,31791,31791,Saturnussraat,52.0677874,4.349042,4,17,2
+donkey_denHaag::31798,donkey_denHaag,31798,31798,Station Rijswijk,52.0394992,4.3193878,10,5,1
+donkey_denHaag::31816,donkey_denHaag,31816,31816,Station Voorburg,52.0668404,4.3585863,12,17,2
+donkey_denHaag::31918,donkey_denHaag,31918,31918,veenkade bis,52.0799449,4.3026368,6,4,4
+donkey_denHaag::32090,donkey_denHaag,32090,32090,Sophialaan ,52.0870697,4.3073497,20,11,3
+donkey_denHaag::32256,donkey_denHaag,32256,32256,Weesperstraat,52.0654677,4.277656,3,13,3
+donkey_denHaag::32257,donkey_denHaag,32257,32257,hoefbladlaan,52.0678417,4.2375654,1,15,2
+donkey_denHaag::32326,donkey_denHaag,32326,32326,Muurbloemweg,52.0638278,4.2351574,6,15,2
+donkey_denHaag::32349,donkey_denHaag,32349,32349,Regulusweg,52.068964,4.3503429,4,17,2
+donkey_denHaag::32350,donkey_denHaag,32350,32350,Maanweg,52.067251,4.3524954,10,17,2
+donkey_denHaag::32351,donkey_denHaag,32351,32351,Grote Beerstraat,52.0701677,4.3469328,3,17,2
+donkey_denHaag::32352,donkey_denHaag,32352,32352,Zonweg,52.0667284,4.340515,8,6,0
+donkey_denHaag::32353,donkey_denHaag,32353,32353,Fokkerkade,52.0651329,4.3380654,2,6,0
+donkey_denHaag::32354,donkey_denHaag,32354,32354,Jupiterkade ,52.0632005,4.3396929,2,6,0
+donkey_denHaag::32417,donkey_denHaag,32417,32417,Rijswijkseweg,52.0649112,4.3299254,2,6,0
+donkey_denHaag::32418,donkey_denHaag,32418,32418,Laakweg ,52.0672253,4.330296,3,6,0
+donkey_denHaag::32419,donkey_denHaag,32419,32419,Speeltuin Trekweg,52.0672793,4.3334431,3,6,0
+donkey_denHaag::32420,donkey_denHaag,32420,32420,Schoeplaan,52.0630911,4.3351818,3,6,0
+donkey_denHaag::32421,donkey_denHaag,32421,32421,Tram Rijswijkseweg,52.0619105,4.3327556,4,6,0
+donkey_denHaag::32422,donkey_denHaag,32422,32422,Tram Rijswijkse weg 2,52.06269,4.3323984,4,6,0
+donkey_denHaag::32425,donkey_denHaag,32425,32425,Goeverneurlaan 1,52.0582238,4.3213099,4,19,4
+donkey_denHaag::32426,donkey_denHaag,32426,32426,Goevernerlaan 2,52.0588278,4.3215254,6,19,4
+donkey_denHaag::32427,donkey_denHaag,32427,32427,De Genestetlaan,52.0603748,4.3199426,2,19,4
+donkey_denHaag::32428,donkey_denHaag,32428,32428,Capadosestraat,52.0581326,4.3188286,2,19,4
+donkey_denHaag::32430,donkey_denHaag,32430,32430,Goeverneurlaan,52.0559741,4.314154,4,19,4
+donkey_denHaag::32431,donkey_denHaag,32431,32431,Moskee El Oemma,52.0536968,4.3167107,3,19,4
+donkey_denHaag::32432,donkey_denHaag,32432,32432,Van Meursstraat,52.052889,4.316773,6,19,4
+donkey_denHaag::32433,donkey_denHaag,32433,32433,Ledeganckplein,52.0538076,4.3180588,5,19,4
+donkey_denHaag::32458,donkey_denHaag,32458,32458,Soestdijksekade,52.0598754,4.2916946,3,7,1
+donkey_denHaag::32459,donkey_denHaag,32459,32459,Schalk Burgerstraat,52.0601915,4.2935755,5,7,1
+donkey_denHaag::32460,donkey_denHaag,32460,32460,Kaapseplein,52.0621402,4.2965373,3,3,4
+donkey_denHaag::32461,donkey_denHaag,32461,32461,Soestdijksekade 2,52.0605176,4.2890804,3,3,4
+donkey_denHaag::32462,donkey_denHaag,32462,32462,Zuiderparklaan,52.0619788,4.2828167,3,13,3
+donkey_denHaag::32463,donkey_denHaag,32463,32463,Schaarsbergerstraat,52.0619751,4.2832769,3,3,4
+donkey_denHaag::32464,donkey_denHaag,32464,32464,Zuiderparklaan 2,52.0657002,4.2787795,5,13,3
+donkey_denHaag::32465,donkey_denHaag,32465,32465,Scheepersstraat,52.0672283,4.2907194,3,3,4
+donkey_denHaag::32466,donkey_denHaag,32466,32466,Scheepersstraat 2,52.0672103,4.2873334,5,3,4
+donkey_denHaag::32467,donkey_denHaag,32467,32467,Copernicusplein,52.0758783,4.2749803,5,1,3
+donkey_denHaag::32483,donkey_denHaag,32483,32483,Hogewal,52.0834253,4.3035242,4,4,4
+donkey_denHaag::32546,donkey_denHaag,32546,32546,Marshallplein,52.0331597,4.3158466,4,5,1
+donkey_denHaag::32609,donkey_denHaag,32609,32609,Openbaar vervoer museum ,52.0621925,4.3080285,5,19,4
+donkey_denHaag::32610,donkey_denHaag,32610,32610,Ter Borchstraat,52.0624801,4.3091157,3,19,4
+donkey_denHaag::32611,donkey_denHaag,32611,32611,Paletplein,52.0688937,4.3024856,5,3,4
+donkey_denHaag::32612,donkey_denHaag,32612,32612,Paletplein 2,52.0686876,4.3028107,5,3,4
+donkey_denHaag::32613,donkey_denHaag,32613,32613,Paul Krugerlaan,52.0684598,4.2904422,2,3,4
+donkey_denHaag::32736,donkey_denHaag,32736,32736,Zeekant,52.1028736,4.2650164,20,18,2
+donkey_denHaag::32992,donkey_denHaag,32992,32992,1e Ludofsdwarsstraat,52.0610976,4.3130062,4,19,4
+donkey_denHaag::33009,donkey_denHaag,33009,33009,Q-park Leyweg,52.0463992,4.2790772,16,2,2
+donkey_denHaag::33010,donkey_denHaag,33010,33010,Vreeswijkstraat,52.05952,4.2790703,5,13,3
+donkey_denHaag::33011,donkey_denHaag,33011,33011,Leyweg 2,52.0470559,4.2783123,4,2,2
+donkey_denHaag::33012,donkey_denHaag,33012,33012,Tinaarlosstraat,52.0474174,4.2770868,4,2,2
+donkey_denHaag::33013,donkey_denHaag,33013,33013,zuidlarenstraat,52.0519635,4.2704868,8,2,2
+donkey_denHaag::33014,donkey_denHaag,33014,33014,Leyweg 3,52.0505324,4.2743043,3,2,2
+donkey_denHaag::33015,donkey_denHaag,33015,33015,Hengeloweg,52.0501428,4.2736572,5,2,2
+donkey_denHaag::33016,donkey_denHaag,33016,33016,Lonnekerstraat,52.0493654,4.2763309,8,2,2
+donkey_denHaag::33017,donkey_denHaag,33017,33017,Almeloplein,52.0554045,4.2749527,4,13,3
+donkey_denHaag::33018,donkey_denHaag,33018,33018,Castricumplein,52.0599589,4.266344,3,13,3
+donkey_denHaag::33019,donkey_denHaag,33019,33019,Driebergenstraat 2,52.0588247,4.2742023,3,13,3
+donkey_denHaag::33020,donkey_denHaag,33020,33020,Driebergenstraat 3,52.0610697,4.2737903,5,13,3
+donkey_denHaag::33021,donkey_denHaag,33021,33021,Vreeswijkstraat 150,52.0562288,4.2732752,5,13,3
+donkey_denHaag::33022,donkey_denHaag,33022,33022,Vreeswijkstraat Boemel,52.0555054,4.27204,5,13,3
+donkey_denHaag::33023,donkey_denHaag,33023,33023,Vreeswijkstraat 700,52.0543286,4.2700566,3,13,3
+donkey_denHaag::33024,donkey_denHaag,33024,33024,Leyweg 4,52.054126,4.2696776,3,13,3
+donkey_denHaag::33026,donkey_denHaag,33026,33026,Dedemsvaartweg 1,52.0461146,4.2701405,4,2,2
+donkey_denHaag::33027,donkey_denHaag,33027,33027,Hengelolaan 1,52.0476922,4.2695819,3,2,2
+donkey_denHaag::33028,donkey_denHaag,33028,33028,Hoogeveenlaan 1,52.0467241,4.2736206,5,2,2
+donkey_denHaag::33029,donkey_denHaag,33029,33029,Hoogevelaan 2,52.0474644,4.272705,3,2,2
+donkey_denHaag::33031,donkey_denHaag,33031,33031,Oosterhesselenstraat,52.0488563,4.2753589,4,2,2
+donkey_denHaag::33032,donkey_denHaag,33032,33032,Loevesteinlaan 1,52.0486567,4.2835501,4,2,2
+donkey_denHaag::33034,donkey_denHaag,33034,33034,Oranjeplein,52.072015,4.315336,5,12,4
+donkey_denHaag::33035,donkey_denHaag,33035,33035,Stationsweg 1,52.0736101,4.3181331,3,12,4
+donkey_denHaag::33036,donkey_denHaag,33036,33036,Tullinghstraat,52.0694762,4.3138556,3,12,4
+donkey_denHaag::33038,donkey_denHaag,33038,33038,Jasmijnstraat 1,52.0697726,4.2717463,4,1,3
+donkey_denHaag::33039,donkey_denHaag,33039,33039,Rabarberstraat 1,52.0700439,4.2690036,5,1,3
+donkey_denHaag::33040,donkey_denHaag,33040,33040,Heesterstraat,52.0691434,4.2712972,3,13,3
+donkey_denHaag::33041,donkey_denHaag,33041,33041,Indigostraat,52.0686703,4.2716172,3,13,3
+donkey_denHaag::33042,donkey_denHaag,33042,33042,Escamplaan 2,52.0644273,4.276989,4,13,3
+donkey_denHaag::33043,donkey_denHaag,33043,33043,Gooilaan,52.0661866,4.2754808,3,13,3
+donkey_denHaag::33044,donkey_denHaag,33044,33044,Gooilaan 2,52.0671145,4.2738945,5,13,3
+donkey_denHaag::33045,donkey_denHaag,33045,33045,Loosduinsekade 1,52.0666988,4.2708079,5,13,3
+donkey_denHaag::33046,donkey_denHaag,33046,33046,Loonduinsekade 2,52.0683758,4.2760856,5,13,3
+donkey_denHaag::33047,donkey_denHaag,33047,33047,Valkenboslaan 2,52.0707853,4.2754033,3,1,3
+donkey_denHaag::33048,donkey_denHaag,33048,33048,Newtonplein,52.0723591,4.2793023,5,1,3
+donkey_denHaag::33049,donkey_denHaag,33049,33049,Weimarstraat IV,52.0742155,4.2779702,4,1,3
+donkey_denHaag::33050,donkey_denHaag,33050,33050,Bautersemstraat,52.0748679,4.2939949,4,4,4
+donkey_denHaag::33051,donkey_denHaag,33051,33051,De Gheijnstraat,52.0723602,4.2842308,3,3,4
+donkey_denHaag::33052,donkey_denHaag,33052,33052,Cartesiusstraat,52.0738654,4.2837676,3,3,4
+donkey_denHaag::33053,donkey_denHaag,33053,33053,Newtonstraat,52.0755077,4.2834652,5,4,4
+donkey_denHaag::33054,donkey_denHaag,33054,33054,Loonduinseweg 2,52.0709842,4.2850191,8,3,4
+donkey_denHaag::33055,donkey_denHaag,33055,33055,Loonduinseweg 3,52.0708037,4.2853637,3,3,4
+donkey_denHaag::33056,donkey_denHaag,33056,33056,Paul Krugerlaan II,52.0693746,4.2883612,3,3,4
+donkey_denHaag::33057,donkey_denHaag,33057,33057,Lunterenstraat 1,52.0696046,4.2833945,3,3,4
+donkey_denHaag::33058,donkey_denHaag,33058,33058,Lunterenstraat 2,52.0697079,4.2826815,3,3,4
+donkey_denHaag::33059,donkey_denHaag,33059,33059,Nunspeetlaan 1,52.0690109,4.2849384,3,3,4
+donkey_denHaag::33060,donkey_denHaag,33060,33060,Lunterenstraat 3,52.068825,4.2802917,5,3,4
+donkey_denHaag::33061,donkey_denHaag,33061,33061,Beekbergenstraat,52.0688082,4.2815946,5,3,4
+donkey_denHaag::33062,donkey_denHaag,33062,33062,Nunspeetlaan 2,52.0683821,4.2845146,5,3,4
+donkey_denHaag::33063,donkey_denHaag,33063,33063,Zuiderparklaan 3,52.068182,4.2766918,5,13,3
+donkey_denHaag::33064,donkey_denHaag,33064,33064,Kootwijkstraat,52.0672438,4.2832679,3,3,4
+donkey_denHaag::33065,donkey_denHaag,33065,33065,Nunspeetlaan 3,52.0665168,4.2849367,3,3,4
+donkey_denHaag::33066,donkey_denHaag,33066,33066,Nunspeetlaan 4,52.0668067,4.2847115,5,3,4
+donkey_denHaag::33067,donkey_denHaag,33067,33067,De la Reyweg 2,52.0648181,4.288537,4,3,4
+donkey_denHaag::33068,donkey_denHaag,33068,33068,Kempstraat,52.0639219,4.2901338,8,3,4
+donkey_denHaag::33069,donkey_denHaag,33069,33069,Terletstraat,52.0633061,4.2879655,5,3,4
+donkey_denHaag::33070,donkey_denHaag,33070,33070,Velpsestraat,52.064282,4.2866944,3,3,4
+donkey_denHaag::33071,donkey_denHaag,33071,33071,Wapenveldestraat,52.0638995,4.2832672,8,3,4
+donkey_denHaag::33072,donkey_denHaag,33072,33072,Harderwijkstraat,52.063471,4.2856098,15,3,4
+donkey_denHaag::33073,donkey_denHaag,33073,33073,Wapenveldestraat 1,52.0623333,4.2843692,5,3,4
+donkey_denHaag::33074,donkey_denHaag,33074,33074,Ermelostraat,52.0623479,4.2826825,3,13,3
+donkey_denHaag::33075,donkey_denHaag,33075,33075, Bilthovenselaan,52.0639853,4.2804995,5,13,3
+donkey_denHaag::33076,donkey_denHaag,33076,33076,Blaricumseplein 1,52.0634319,4.2776804,3,13,3
+donkey_denHaag::33077,donkey_denHaag,33077,33077,Blaricumseplein 2,52.0630403,4.2783192,3,13,3
+donkey_denHaag::33078,donkey_denHaag,33078,33078,Loenensestraat,52.0625506,4.2778095,5,13,3
+donkey_denHaag::33079,donkey_denHaag,33079,33079,oestdijksekade 3,52.0620896,4.278274,5,13,3
+donkey_denHaag::33080,donkey_denHaag,33080,33080,Loenensestraat,52.0624135,4.2807682,3,13,3
+donkey_denHaag::33081,donkey_denHaag,33081,33081,'s-Gravenzandelaan 1,52.0721581,4.299185,3,3,4
+donkey_denHaag::33082,donkey_denHaag,33082,33082,Groenesteinstraat,52.0718056,4.2931821,3,3,4
+donkey_denHaag::33083,donkey_denHaag,33083,33083,Delftselaan 1,52.0692462,4.2960631,5,3,4
+donkey_denHaag::33084,donkey_denHaag,33084,33084,Ter Heijdestraat,52.0695267,4.2950428,3,3,4
+donkey_denHaag::33085,donkey_denHaag,33085,33085,Delftselaan 2,52.0701168,4.2993979,5,3,4
+donkey_denHaag::33105,donkey_denHaag,33105,33105,Hoefkade I,52.0693649,4.3152691,5,12,4
+donkey_denHaag::33106,donkey_denHaag,33106,33106,Hoefkade II,52.0672164,4.3108826,3,12,4
+donkey_denHaag::33107,donkey_denHaag,33107,33107,Van Ravesteinstraat,52.0676022,4.3097696,3,12,4
+donkey_denHaag::33108,donkey_denHaag,33108,33108,Hobbemastraat I,52.0682961,4.30082,5,3,4
+donkey_denHaag::33109,donkey_denHaag,33109,33109,Van der Vennestraat,52.0668099,4.2993558,5,3,4
+donkey_denHaag::33110,donkey_denHaag,33110,33110,Schalk Burgerplein,52.0671392,4.2934558,3,3,4
+donkey_denHaag::33115,donkey_denHaag,33115,33115,Werkhovenstraat,52.0592903,4.2721737,3,13,3
+donkey_denHaag::33116,donkey_denHaag,33116,33116,Rijsenburgstraat,52.0584408,4.2683998,3,13,3
+donkey_denHaag::33117,donkey_denHaag,33117,33117,Abcoudestraat,52.0574524,4.2719345,3,13,3
+donkey_denHaag::33118,donkey_denHaag,33118,33118,Benschoplaan,52.0562242,4.2685834,3,13,3
+donkey_denHaag::33119,donkey_denHaag,33119,33119,IIJsselsteinstraat,52.0605672,4.27571,3,13,3
+donkey_denHaag::33120,donkey_denHaag,33120,33120,Woudenbergstraat,52.0605853,4.2771822,3,13,3
+donkey_denHaag::33121,donkey_denHaag,33121,33121,Soestdijksekade 3,52.0615251,4.2770139,5,13,3
+donkey_denHaag::33122,donkey_denHaag,33122,33122,Soestdijksekade 4,52.0624397,4.2750022,3,13,3
+donkey_denHaag::33123,donkey_denHaag,33123,33123,Medemblikstraat,52.0629191,4.269193,4,13,3
+donkey_denHaag::33124,donkey_denHaag,33124,33124,Loosduinseweg 1,52.0678575,4.2725318,3,13,3
+donkey_denHaag::33125,donkey_denHaag,33125,33125,Seringenstraat,52.0687791,4.2737864,3,13,3
+donkey_denHaag::33126,donkey_denHaag,33126,33126,Soestdijksekade 5,52.0647349,4.271328,2,13,3
+donkey_denHaag::33127,donkey_denHaag,33127,33127,Hoogkarspelstraat,52.0643665,4.2671135,2,13,3
+donkey_denHaag::33128,donkey_denHaag,33128,33128,Vier Heemskinderenstraat,52.0560768,4.298765,3,7,1
+donkey_denHaag::33129,donkey_denHaag,33129,33129,Jan van Rodestraat,52.0572304,4.2963341,3,7,1
+donkey_denHaag::33130,donkey_denHaag,33130,33130,Anna Bijnslaan,52.0545198,4.3006669,3,7,1
+donkey_denHaag::33131,donkey_denHaag,33131,33131,Rederijkerstraat,52.0555066,4.3031255,5,7,1
+donkey_denHaag::33137,donkey_denHaag,33137,33137,Rijswijkseweg 2,52.0603101,4.334258,2,6,0
+donkey_denHaag::33138,donkey_denHaag,33138,33138,Linnaeusstraat,52.0594932,4.3304233,2,6,0
+donkey_denHaag::33139,donkey_denHaag,33139,33139,Linnaeusstraat II,52.0584443,4.3277995,2,6,0
+donkey_denHaag::33140,donkey_denHaag,33140,33140,Haverschmidtstraat,52.0570889,4.3237858,2,19,4
+donkey_denHaag::33141,donkey_denHaag,33141,33141,Burgersdijkstraat,52.0604295,4.3215346,3,19,4
+donkey_denHaag::33142,donkey_denHaag,33142,33142,Johan Gramstraat ,52.0617741,4.3244139,2,19,4
+donkey_denHaag::33143,donkey_denHaag,33143,33143,Oudemansstraat ,52.0633371,4.3247354,2,19,4
+donkey_denHaag::33144,donkey_denHaag,33144,33144,Schlegelstraat,52.0630459,4.3255142,2,19,4
+donkey_denHaag::33145,donkey_denHaag,33145,33145,Pasteurplein,52.0630875,4.3287683,3,6,0
+donkey_denHaag::33146,donkey_denHaag,33146,33146,Schalk Burgerstraat 2,52.0624999,4.2934153,5,3,4
+donkey_denHaag::33147,donkey_denHaag,33147,33147,Schalk Burgerstraat,52.0634147,4.2935208,3,3,4
+donkey_denHaag::33148,donkey_denHaag,33148,33148,Schalk Burgerstraat 3 ,52.0649254,4.2936981,5,3,4
+donkey_denHaag::33149,donkey_denHaag,33149,33149,Bloemfonteinstraat,52.0644016,4.2955144,3,3,4
+donkey_denHaag::33150,donkey_denHaag,33150,33150,Kraijenhoffstraat,52.0710119,4.319915,3,12,4
+donkey_denHaag::33151,donkey_denHaag,33151,33151,Jan Blankenstraat,52.0706103,4.3191246,5,12,4
+donkey_denHaag::33152,donkey_denHaag,33152,33152,Wolterbeekstraat,52.0697708,4.3181803,3,12,4
+donkey_denHaag::33153,donkey_denHaag,33153,33153,Bibliotheek Schilderswijk ,52.0689084,4.3142504,5,12,4
+donkey_denHaag::33154,donkey_denHaag,33154,33154,Van der Kunstraat,52.0653029,4.317881,12,19,4
+donkey_denHaag::33155,donkey_denHaag,33155,33155,Verheeskade,52.0632508,4.3183079,8,19,4
+donkey_denHaag::33166,donkey_denHaag,33166,33166,De Broodfabriek,52.0357905,4.3313176,12,5,1
+donkey_denHaag::33170,donkey_denHaag,33170,33170,Binck Padel,52.0672293,4.3432937,4,6,0
+donkey_denHaag::33191,donkey_denHaag,33191,33191,AH Binckhorstlaan,52.0679898,4.3379068,6,6,0
+donkey_denHaag::33194,donkey_denHaag,33194,33194,Lijsterbesplein,52.0738286,4.2649015,2,1,3
+donkey_denHaag::33201,donkey_denHaag,33201,33201,Julianalaan,52.0771277,4.3545315,4,17,2
+donkey_denHaag::33202,donkey_denHaag,33202,33202,Bruijnings Ingenhoeslaan,52.0781259,4.350307,4,17,2
+donkey_denHaag::33204,donkey_denHaag,33204,33204,Savallelaan,52.0797782,4.3528544,2,17,2
+donkey_denHaag::33205,donkey_denHaag,33205,33205,Spinozalaan,52.0829506,4.3535753,2,0,0
+donkey_denHaag::33206,donkey_denHaag,33206,33206,Monseigneur van Steelaan,52.0800877,4.3630173,5,17,2
+donkey_denHaag::33207,donkey_denHaag,33207,33207,Sint Martinuslaan,52.0818846,4.3660908,12,0,0
+donkey_denHaag::33208,donkey_denHaag,33208,33208,Wilgendreef 2Parking,52.0825496,4.3655165,8,0,0
+donkey_denHaag::33209,donkey_denHaag,33209,33209,Prins Bernhardlaan,52.0752424,4.3620088,3,17,2
+donkey_denHaag::33210,donkey_denHaag,33210,33210,Kon. Julianalaan,52.075262,4.3590128,4,17,2
+donkey_denHaag::33211,donkey_denHaag,33211,33211,kon. Julianalaan Jumbo,52.0757413,4.3583476,2,17,2
+donkey_denHaag::33212,donkey_denHaag,33212,33212,Van Arembergelaan,52.0746846,4.3497102,2,17,2
+donkey_denHaag::33213,donkey_denHaag,33213,33213,Laan van Nieuw Oosteinde,52.0744583,4.3500585,2,17,2
+donkey_denHaag::33214,donkey_denHaag,33214,33214,Heer Hubrechtstraat,52.0697341,4.3552335,3,17,2
+donkey_denHaag::33321,donkey_denHaag,33321,33321,De gaarde,52.0386423,4.2710263,2,2,2
+donkey_denHaag::33382,donkey_denHaag,33382,33382,Thomas Mannsingel ,52.040181,4.2343229,3,9,0
+donkey_denHaag::33409,donkey_denHaag,33409,33409,hazelaarstraat,52.073632,4.2669815,2,1,3
+donkey_denHaag::33488,donkey_denHaag,33488,33488,cornerhouse,52.0808738,4.2842961,3,4,4
+donkey_denHaag::33499,donkey_denHaag,33499,33499,parkweg,52.0760457,4.3737901,2,17,2
+donkey_denHaag::33500,donkey_denHaag,33500,33500,parkweg 2,52.0700974,4.3656355,1,17,2
+donkey_denHaag::33503,donkey_denHaag,33503,33503,Geestbrugweg 1,52.0592459,4.3436578,2,6,0
+donkey_denHaag::33504,donkey_denHaag,33504,33504,Geestbrugweg 2,52.0570789,4.33812,2,6,0
+donkey_denHaag::33505,donkey_denHaag,33505,33505,Haagseweg 1,52.0568838,4.3375987,6,6,0
+donkey_denHaag::33506,donkey_denHaag,33506,33506,Herenstraat,52.056576,4.3373519,4,6,0
+donkey_denHaag::33507,donkey_denHaag,33507,33507,Haagseweg 2,52.0536537,4.3410497,3,14,1
+donkey_denHaag::33508,donkey_denHaag,33508,33508,Geestbrugkade,52.0580601,4.3456178,2,6,0
+donkey_denHaag::33509,donkey_denHaag,33509,33509,Regentesselaan,52.0555453,4.3435777,2,6,0
+donkey_denHaag::33511,donkey_denHaag,33511,33511,Sir Winston Churchilllaan,52.0489843,4.3380295,3,14,1
+donkey_denHaag::33512,donkey_denHaag,33512,33512,Kerklaan,52.0503608,4.339321,3,14,1
+donkey_denHaag::33513,donkey_denHaag,33513,33513,Penninglaan,52.0601164,4.3415972,2,6,0
+donkey_denHaag::33514,donkey_denHaag,33514,33514,Herenstraat 2,52.0564827,4.3366401,4,6,0
+donkey_denHaag::33515,donkey_denHaag,33515,33515,BehandelcentrumVoorburg (Reinier de Graaf),52.0614641,4.3505092,3,6,0
+donkey_denHaag::33516,donkey_denHaag,33516,33516,Wijkcentrum Agora,52.0620399,4.3498681,4,6,0
+donkey_denHaag::33521,donkey_denHaag,33521,33521,Willemstraat I,52.0557141,4.3373875,2,6,0
+donkey_denHaag::33522,donkey_denHaag,33522,33522,Kerklaan 2,52.0548685,4.3350352,4,14,1
+donkey_denHaag::33523,donkey_denHaag,33523,33523,Kerklaan 3,52.0552641,4.3347113,6,14,1
+donkey_denHaag::33524,donkey_denHaag,33524,33524,Ruysdaelplein,52.0552041,4.3323613,4,14,1
+donkey_denHaag::33554,donkey_denHaag,33554,33554,Het Hoenstraat,52.095326,4.3087482,2,11,3
+donkey_denHaag::33639,donkey_denHaag,33639,33639,van geenstraat,52.0734283,4.2929967,3,3,4
+donkey_denHaag::33659,donkey_denHaag,33659,33659,Stadhoudersstraat,52.0576866,4.3337119,3,6,0
+donkey_denHaag::33660,donkey_denHaag,33660,33660,Blekerslaan,52.0567669,4.3331097,2,6,0
+donkey_denHaag::33662,donkey_denHaag,33662,33662,Kerklaan 4,52.0530816,4.3366002,4,14,1
+donkey_denHaag::33663,donkey_denHaag,33663,33663,Rembrandtkade,52.0516474,4.3358757,6,14,1
+donkey_denHaag::33665,donkey_denHaag,33665,33665,Florence woonzorg centrum ,52.0530622,4.3304151,3,14,1
+donkey_denHaag::33667,donkey_denHaag,33667,33667,Jozef Israëlslaan,52.0506452,4.3336062,2,14,1
+donkey_denHaag::33668,donkey_denHaag,33668,33668,Lindelaan ,52.0493481,4.3331439,2,14,1
+donkey_denHaag::33669,donkey_denHaag,33669,33669,Hoogvliet Rijswijk ,52.0485767,4.3315627,6,14,1
+donkey_denHaag::33670,donkey_denHaag,33670,33670,Tramhalte Van Verdenburchweg 1,52.0521367,4.3272685,3,14,1
+donkey_denHaag::33671,donkey_denHaag,33671,33671,Gemeentehuis Rijswijk 2,52.0478903,4.3307597,6,14,1
+donkey_denHaag::33672,donkey_denHaag,33672,33672,Handelskade ,52.0445096,4.3371813,3,14,1
+donkey_denHaag::33673,donkey_denHaag,33673,33673,Veraartlaan,52.0411457,4.3380389,2,14,1
+donkey_denHaag::33674,donkey_denHaag,33674,33674,Verrijn Stuartlaan,52.0395961,4.3329471,2,14,1
+donkey_denHaag::33675,donkey_denHaag,33675,33675,Van Gijnstraat,52.037515,4.3319483,2,5,1
+donkey_denHaag::33676,donkey_denHaag,33676,33676,Verrijn Stuartlaan 1,52.0377835,4.3298669,6,5,1
+donkey_denHaag::33677,donkey_denHaag,33677,33677,Doctor H. Colijnlaan 2,52.0411193,4.3212308,6,5,1
+donkey_denHaag::33678,donkey_denHaag,33678,33678,Doctor H. Colijnlaan,52.0410713,4.3224905,4,5,1
+donkey_denHaag::33679,donkey_denHaag,33679,33679,Huis te Landelaan,52.0418207,4.3222994,6,5,1
+donkey_denHaag::33680,donkey_denHaag,33680,33680,Generaal Spoorlaan ,52.0466395,4.3277439,6,14,1
+donkey_denHaag::33681,donkey_denHaag,33681,33681,Van Vredenburchweg,52.0464786,4.3168146,3,5,1
+donkey_denHaag::33682,donkey_denHaag,33682,33682,Purpupstraat,52.0414881,4.3145223,2,5,1
+donkey_denHaag::33683,donkey_denHaag,33683,33683,Kleurenbuurt,52.0403847,4.3119598,2,5,1
+donkey_denHaag::33684,donkey_denHaag,33684,33684,Generaal Spoorlaan 2,52.0376738,4.3091575,2,5,1
+donkey_denHaag::33685,donkey_denHaag,33685,33685,Generaal Spoorlaan 1,52.0376245,4.3079036,2,5,1
+donkey_denHaag::33686,donkey_denHaag,33686,33686,Schaapweg,52.0387472,4.2988592,6,5,1
+donkey_denHaag::33687,donkey_denHaag,33687,33687,Minister Aalberselaan,52.0347339,4.3066359,6,5,1
+donkey_denHaag::33688,donkey_denHaag,33688,33688,Pr. Margrietsingel,52.0350478,4.3082593,3,5,1
+donkey_denHaag::33689,donkey_denHaag,33689,33689,Wijkcentrum Stervoorde,52.0318879,4.3107759,6,5,1
+donkey_denHaag::33693,donkey_denHaag,33693,33693,Adm. Helfrichsingel,52.0324157,4.317458,3,5,1
+donkey_denHaag::33694,donkey_denHaag,33694,33694,Waldhoornplein,52.0333971,4.3205817,4,5,1
+donkey_denHaag::33695,donkey_denHaag,33695,33695,Fietsenwacht,52.0353225,4.3155472,8,5,1
+donkey_denHaag::33696,donkey_denHaag,33696,33696,Beatrixlaan ,52.0371093,4.3135634,4,5,1
+donkey_denHaag::33698,donkey_denHaag,33698,33698,Steenvoordelaan 2,52.0379116,4.3163479,3,5,1
+donkey_denHaag::33699,donkey_denHaag,33699,33699,Steenvoordelaan,52.0361112,4.3173262,3,5,1
+donkey_denHaag::33700,donkey_denHaag,33700,33700,Station Rijswijk 3,52.0367888,4.3221974,8,5,1
+donkey_denHaag::33701,donkey_denHaag,33701,33701,De Hoofmeesters toren 2,52.0419578,4.329249,3,14,1
+donkey_denHaag::33702,donkey_denHaag,33702,33702,Van Vollenhovenlaan,52.0436468,4.3294005,2,14,1

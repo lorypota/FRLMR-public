@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import logging
+import urllib.parse
+import urllib.request
+from pathlib import Path
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
@@ -28,7 +32,7 @@ from research_support.empirical_analysis.internal.processed_data_utils import (
 
 logger = logging.getLogger(__name__)
 
-PROVIDERS = ("donkey_denHaag", "ns_ov_fiets")
+PROVIDERS = ("donkey_denHaag",)
 RECENT_WINDOW_DAYS = 15
 COVERAGE_RADIUS_M = 500
 SERVICE_ZONE_COUNT = 20
@@ -39,6 +43,33 @@ SERVICE_ZONE_TAG = f"k{SERVICE_ZONE_COUNT}"
 SERVICE_ZONE_DIR = PROJECT_ROOT / "research_support" / "service_zone_calculation"
 OUTPUT_DIR = SERVICE_ZONE_DIR / "output"
 FIGURES_DIR = SERVICE_ZONE_DIR / "figures"
+BAG_ACTIVITY_CACHE = OUTPUT_DIR / "bag_non_residential_activity_den_haag.csv"
+BAG_VERBLIJFSOBJECTEN_URL = (
+    "https://api.pdok.nl/kadaster/bag/ogc/v2/collections/verblijfsobject/items"
+)
+BAG_REQUEST_LIMIT = 1000
+BAG_ACTIVITY_FUNCTIONS = {
+    "bijeenkomstfunctie",
+    "gezondheidszorgfunctie",
+    "kantoorfunctie",
+    "logiesfunctie",
+    "onderwijsfunctie",
+    "sportfunctie",
+    "winkelfunctie",
+}
+ODIN_DEMAND_PATH = (
+    PROJECT_ROOT
+    / "research_support"
+    / "odin_demand_estimation"
+    / "output"
+    / "service_zone_period_demand_rates.csv"
+)
+ODIN_POOLED_YEAR = "pooled_2018_2023"
+SERVICE_PRESSURE_WEIGHTS = {
+    "departure_score": 1 / 3,
+    "density_score": 1 / 3,
+    "activity_score": 1 / 3,
+}
 
 BACKGROUND = "#f6f0e8"
 PANEL_BACKGROUND = "#fbf8f2"
@@ -262,38 +293,255 @@ def _weighted_kmeans_labels(
     return best_centroids, best_labels, best_inertia
 
 
-def _assign_density_rank_categories(
+def _minmax_score(series: pd.Series) -> pd.Series:
+    values = pd.to_numeric(series, errors="coerce")
+    min_value = values.min()
+    max_value = values.max()
+    if pd.isna(min_value) or pd.isna(max_value):
+        return pd.Series(np.zeros(len(values)), index=values.index, dtype=float)
+    if np.isclose(max_value, min_value):
+        return pd.Series(np.zeros(len(values)), index=values.index, dtype=float)
+    return (values - min_value) / (max_value - min_value)
+
+
+def _load_zone_demand_profile(demand_path: Path = ODIN_DEMAND_PATH) -> pd.DataFrame:
+    if not demand_path.exists():
+        raise FileNotFoundError(
+            "Demand-aware service categories need ODiN service-zone demand rates. "
+            f"Missing: {demand_path}"
+        )
+
+    demand = pd.read_csv(demand_path)
+    required_cols = {
+        "year",
+        "service_zone",
+        "lambda_departures_per_hour",
+        "lambda_arrivals_per_hour",
+    }
+    missing_cols = sorted(required_cols - set(demand.columns))
+    if missing_cols:
+        raise ValueError(
+            f"{demand_path} is missing required columns: {', '.join(missing_cols)}"
+        )
+
+    selected = demand[demand["year"].astype(str) == ODIN_POOLED_YEAR].copy()
+    if selected.empty:
+        raise ValueError(f"{demand_path} has no rows for year={ODIN_POOLED_YEAR}")
+
+    selected["service_zone"] = selected["service_zone"].astype(int)
+    return (
+        selected.groupby("service_zone", as_index=False)
+        .agg(
+            zone_departures_per_hour=("lambda_departures_per_hour", "sum"),
+            zone_arrivals_per_hour=("lambda_arrivals_per_hour", "sum"),
+        )
+        .sort_values("service_zone")
+    )
+
+
+def _activity_functions(raw_value: object) -> list[str]:
+    if pd.isna(raw_value):
+        return []
+    return [
+        value.strip()
+        for value in str(raw_value).split(",")
+        if value.strip() in BAG_ACTIVITY_FUNCTIONS
+    ]
+
+
+def _download_bag_activity_points() -> pd.DataFrame:
+    bbox = ",".join(
+        map(
+            str,
+            [
+                DEN_HAAG_BBOX["lon_min"],
+                DEN_HAAG_BBOX["lat_min"],
+                DEN_HAAG_BBOX["lon_max"],
+                DEN_HAAG_BBOX["lat_max"],
+            ],
+        )
+    )
+    query = urllib.parse.urlencode(
+        {"f": "json", "limit": BAG_REQUEST_LIMIT, "bbox": bbox}
+    )
+    next_url: str | None = f"{BAG_VERBLIJFSOBJECTEN_URL}?{query}"
+    rows: list[dict[str, object]] = []
+    page_count = 0
+
+    while next_url is not None:
+        request = urllib.request.Request(
+            next_url,
+            headers={"User-Agent": "FRLSR service-zone calculation"},
+        )
+        with urllib.request.urlopen(request, timeout=60) as response:
+            payload = json.load(response)
+
+        page_count += 1
+        for feature in payload.get("features", []):
+            properties = feature.get("properties", {})
+            if properties.get("woonplaats_naam") != "'s-Gravenhage":
+                continue
+            if properties.get("status") != "Verblijfsobject in gebruik":
+                continue
+            functions = _activity_functions(properties.get("gebruiksdoel"))
+            if not functions:
+                continue
+
+            geometry = feature.get("geometry") or {}
+            if geometry.get("type") != "Point":
+                continue
+            coordinates = geometry.get("coordinates") or []
+            if len(coordinates) < 2:
+                continue
+
+            rows.append(
+                {
+                    "identificatie": properties.get("identificatie"),
+                    "lat": float(coordinates[1]),
+                    "lon": float(coordinates[0]),
+                    "gebruiksdoel": properties.get("gebruiksdoel"),
+                    "activity_function_count": len(functions),
+                    "oppervlakte_m2": pd.to_numeric(
+                        properties.get("oppervlakte"), errors="coerce"
+                    ),
+                }
+            )
+
+        next_url = next(
+            (
+                link.get("href")
+                for link in payload.get("links", [])
+                if link.get("rel") == "next"
+            ),
+            None,
+        )
+
+    logger.info(
+        "Downloaded %d BAG non-residential activity objects across %d page(s)",
+        len(rows),
+        page_count,
+    )
+    return pd.DataFrame(rows)
+
+
+def _load_bag_activity_points(city_boundary) -> gpd.GeoDataFrame:
+    if BAG_ACTIVITY_CACHE.exists():
+        activity_df = pd.read_csv(BAG_ACTIVITY_CACHE)
+        logger.info("Loaded BAG activity cache from %s", BAG_ACTIVITY_CACHE)
+    else:
+        activity_df = _download_bag_activity_points()
+        activity_df.to_csv(BAG_ACTIVITY_CACHE, index=False)
+        logger.info("Wrote %s", BAG_ACTIVITY_CACHE)
+
+    if activity_df.empty:
+        return gpd.GeoDataFrame(
+            activity_df,
+            geometry=[],
+            crs="EPSG:28992",
+        )
+
+    activity_points = gpd.GeoDataFrame(
+        activity_df,
+        geometry=gpd.points_from_xy(activity_df["lon"], activity_df["lat"]),
+        crs="EPSG:4326",
+    ).to_crs("EPSG:28992")
+    return activity_points[activity_points.within(city_boundary)].copy()
+
+
+def _summarize_bag_activity_by_zone(
+    activity_points: gpd.GeoDataFrame,
+    zone_polygon_gdf: gpd.GeoDataFrame,
     zone_density_df: pd.DataFrame,
+) -> pd.DataFrame:
+    zone_activity = zone_density_df[["service_zone", "zone_area_km2"]].copy()
+    if activity_points.empty:
+        zone_activity["bag_activity_count"] = 0
+        zone_activity["bag_activity_function_count"] = 0
+        zone_activity["bag_activity_area_m2"] = 0.0
+    else:
+        joined = gpd.sjoin(
+            activity_points,
+            zone_polygon_gdf[["service_zone", "geometry"]],
+            how="left",
+            predicate="within",
+        )
+        summary = (
+            joined.dropna(subset=["service_zone"])
+            .assign(service_zone=lambda df: df["service_zone"].astype(int))
+            .groupby("service_zone", as_index=False)
+            .agg(
+                bag_activity_count=("identificatie", "count"),
+                bag_activity_function_count=("activity_function_count", "sum"),
+                bag_activity_area_m2=("oppervlakte_m2", "sum"),
+            )
+        )
+        zone_activity = zone_activity.merge(
+            summary,
+            on="service_zone",
+            how="left",
+            validate="one_to_one",
+        )
+        fill_cols = [
+            "bag_activity_count",
+            "bag_activity_function_count",
+            "bag_activity_area_m2",
+        ]
+        zone_activity[fill_cols] = zone_activity[fill_cols].fillna(0)
+
+    zone_activity["bag_activity_density_per_km2"] = np.where(
+        zone_activity["zone_area_km2"] > 0,
+        zone_activity["bag_activity_count"] / zone_activity["zone_area_km2"],
+        np.nan,
+    )
+    return zone_activity.drop(columns=["zone_area_km2"])
+
+
+def _assign_service_pressure_categories(
+    zone_profile_df: pd.DataFrame,
     category_count: int,
 ) -> tuple[pd.DataFrame, dict[int, int], dict[int, int]]:
-    ordered_density = zone_density_df.sort_values(
-        "address_density_per_km2"
-    ).reset_index(drop=True)
-    effective_category_count = min(category_count, len(ordered_density))
-    ordered_density["density_rank"] = np.arange(len(ordered_density), dtype=int)
-    ordered_density["service_category"] = (
-        ordered_density["density_rank"]
+    scored = zone_profile_df.copy()
+    scored["departure_score"] = _minmax_score(scored["zone_departures_per_hour"])
+    scored["density_score"] = _minmax_score(scored["address_density_per_km2"])
+    scored["activity_score"] = _minmax_score(scored["bag_activity_density_per_km2"])
+    scored["service_pressure_score"] = sum(
+        scored[column] * weight
+        for column, weight in SERVICE_PRESSURE_WEIGHTS.items()
+    )
+    scored["density_rank"] = (
+        scored["address_density_per_km2"].rank(method="first").astype(int) - 1
+    )
+
+    ordered_pressure = scored.sort_values("service_pressure_score").reset_index(
+        drop=True
+    )
+    effective_category_count = min(category_count, len(ordered_pressure))
+    ordered_pressure["service_pressure_rank"] = np.arange(
+        len(ordered_pressure), dtype=int
+    )
+    ordered_pressure["service_category"] = (
+        ordered_pressure["service_pressure_rank"]
         * effective_category_count
-        // len(ordered_density)
+        // len(ordered_pressure)
     ).astype(int)
-    ordered_density["zones_in_category"] = ordered_density.groupby("service_category")[
-        "service_zone"
-    ].transform("size")
+    ordered_pressure["zones_in_category"] = ordered_pressure.groupby(
+        "service_category"
+    )["service_zone"].transform("size")
     category_lookup = dict(
         zip(
-            ordered_density["service_zone"],
-            ordered_density["service_category"],
+            ordered_pressure["service_zone"],
+            ordered_pressure["service_category"],
             strict=True,
         )
     )
     rank_lookup = dict(
         zip(
-            ordered_density["service_zone"],
-            ordered_density["density_rank"],
+            ordered_pressure["service_zone"],
+            ordered_pressure["service_pressure_rank"],
             strict=True,
         )
     )
-    return ordered_density, category_lookup, rank_lookup
+    return ordered_pressure, category_lookup, rank_lookup
 
 
 def _build_service_zone_polygons(
@@ -389,7 +637,7 @@ def calculate_service_zones() -> None:
     assigned_addresses = np.bincount(
         nearest_idx[reachable_mask],
         weights=house_weights[reachable_mask],
-        minlength=len(recent_wide.columns),
+        minlength=len(latest_stations),
     )
     service_zone_weights = np.maximum(assigned_addresses, 1.0)
 
@@ -399,7 +647,7 @@ def calculate_service_zones() -> None:
         crs="EPSG:28992",
     )
 
-    city_boundary = _load_area_layer("buurten").geometry.unary_union
+    city_boundary = _load_area_layer("buurten").geometry.union_all()
     zone_centroids, zone_labels, _inertia = _weighted_kmeans_labels(
         station_coords,
         service_zone_weights,
@@ -444,19 +692,68 @@ def calculate_service_zones() -> None:
         )
 
     zone_density_df = pd.DataFrame(zone_density_rows).sort_values("service_zone")
-    ordered_density, category_lookup, rank_lookup = _assign_density_rank_categories(
+    bag_activity_points = _load_bag_activity_points(city_boundary)
+    zone_activity_df = _summarize_bag_activity_by_zone(
+        bag_activity_points,
+        zone_polygon_gdf,
         zone_density_df,
-        SERVICE_CATEGORY_COUNT,
+    )
+    zone_density_df = zone_density_df.merge(
+        zone_activity_df,
+        on="service_zone",
+        how="left",
+        validate="one_to_one",
+    )
+    zone_demand_df = _load_zone_demand_profile()
+    zone_density_df = zone_density_df.merge(
+        zone_demand_df,
+        on="service_zone",
+        how="left",
+        validate="one_to_one",
+    )
+    if zone_density_df["zone_departures_per_hour"].isna().any():
+        missing_zones = sorted(
+            zone_density_df.loc[
+                zone_density_df["zone_departures_per_hour"].isna(), "service_zone"
+            ].astype(int)
+        )
+        raise ValueError(
+            "ODiN demand rates are missing generated service zones: "
+            + ", ".join(map(str, missing_zones))
+        )
+
+    ordered_pressure, category_lookup, rank_lookup = (
+        _assign_service_pressure_categories(
+            zone_density_df,
+            SERVICE_CATEGORY_COUNT,
+        )
+    )
+    score_cols = [
+        "service_zone",
+        "departure_score",
+        "density_score",
+        "activity_score",
+        "service_pressure_score",
+        "density_rank",
+    ]
+    zone_density_df = zone_density_df.drop(columns=["density_rank"], errors="ignore")
+    zone_density_df = zone_density_df.merge(
+        ordered_pressure[score_cols],
+        on="service_zone",
+        how="left",
+        validate="one_to_one",
     )
     zone_density_df["service_category"] = zone_density_df["service_zone"].map(
         category_lookup
     )
-    zone_density_df["density_rank"] = zone_density_df["service_zone"].map(rank_lookup)
+    zone_density_df["service_pressure_rank"] = zone_density_df["service_zone"].map(
+        rank_lookup
+    )
     zone_density_df["zones_in_category"] = zone_density_df["service_zone"].map(
         dict(
             zip(
-                ordered_density["service_zone"],
-                ordered_density["zones_in_category"],
+                ordered_pressure["service_zone"],
+                ordered_pressure["zones_in_category"],
                 strict=True,
             )
         )
@@ -471,7 +768,14 @@ def calculate_service_zones() -> None:
 
     zone_polygon_gdf = zone_polygon_gdf.merge(
         zone_density_df[
-            ["service_zone", "address_density_per_km2", "service_category"]
+            [
+                "service_zone",
+                "address_density_per_km2",
+                "zone_departures_per_hour",
+                "bag_activity_density_per_km2",
+                "service_pressure_score",
+                "service_category",
+            ]
         ],
         on="service_zone",
         how="left",
@@ -539,18 +843,6 @@ def plot_service_zone_map() -> None:
             color=color,
             label=f"Cat {category}",
             alpha=0.85,
-        )
-    ns_mask = zone_assign_df["provider"] == "ns_ov_fiets"
-    if ns_mask.any():
-        ax.scatter(
-            zone_assign_df.loc[ns_mask, "lon"],
-            zone_assign_df.loc[ns_mask, "lat"],
-            s=90,
-            facecolors="none",
-            edgecolors=TEXT,
-            marker="D",
-            linewidths=1.4,
-            label="NS OV-fiets",
         )
     ax.set_title(
         f"Chosen {SERVICE_ZONE_COUNT} service zones, mapped into {SERVICE_CATEGORY_COUNT} categories"
