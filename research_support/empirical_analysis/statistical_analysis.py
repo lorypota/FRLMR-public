@@ -1,7 +1,7 @@
 """Prepare statistical-analysis tables and thesis figures for key empirical findings.
 
 Usage:
-    uv run preliminary_studies/empirical_analysis/statistical_analysis.py
+    uv run research_support/empirical_analysis/statistical_analysis.py
 """
 
 from pathlib import Path

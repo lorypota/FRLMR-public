@@ -2,7 +2,7 @@
 Interactive Den Haag area map with time slider
 
 Usage:
-    uv run preliminary_studies/empirical_analysis/map_den_haag.py
+    uv run research_support/empirical_analysis/map_den_haag.py
 
 Creates an interactive Folium map showing Den Haag area polygons and bike
 availability over time with multiple visualization modes. The map supports PC4,
@@ -104,7 +104,7 @@ AREA_LEVEL_CONFIG = {
         "cache_path": str(GEODATA_DIR / "cmdp_service_zones_k20.geojson"),
         "local_source": str(
             PROJECT_ROOT
-            / "preliminary_studies"
+            / "research_support"
             / "service_zone_calculation"
             / "output"
             / "service_zone_boundaries_k20.geojson"

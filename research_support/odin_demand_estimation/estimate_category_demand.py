@@ -27,7 +27,7 @@ REPO_ROOT = SCRIPT_DIR.parents[1]
 OUTPUT_DIR = SCRIPT_DIR / "output"
 PC4_GEOJSON = (
     REPO_ROOT
-    / "preliminary_studies"
+    / "research_support"
     / "empirical_analysis"
     / "output"
     / "geodata"
@@ -35,7 +35,7 @@ PC4_GEOJSON = (
 )
 SERVICE_ZONES_GEOJSON = (
     REPO_ROOT
-    / "preliminary_studies"
+    / "research_support"
     / "service_zone_calculation"
     / "output"
     / "service_zone_boundaries_k20.geojson"

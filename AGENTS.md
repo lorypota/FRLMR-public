@@ -175,15 +175,17 @@ uv run cmdp/plots/generate_all.py --categories 5
 
 If you change filenames, tokens, or directory layouts, expect downstream evaluation and plotting scripts to break.
 
-## Preliminary Studies
+## Research Support
 
-`preliminary_studies/` is not dead code. It holds work that supports the thesis narrative and data exploration.
+`research_support/` holds work that supports the thesis narrative and data exploration.
 
 Subareas currently visible in the repo:
 
 - `baseline/`: earlier baseline reproduction outputs and scripts
 - `failure_rate_analysis/`: scripts and arrays for comparing failure-rate behavior
 - `empirical_analysis/`: utilities for inspecting data snapshots, generating maps to visualize available data and generating useful statistics on this data to ground the research approach. This folder tries to justify and guide the research approach with the available TNO data.
+- `service_zone_calculation/`: scripts for deriving empirical Den Haag service zones from docked-bike station coverage and address density.
+- `odin_demand_estimation/`: scripts for estimating Den Haag movement-demand rates from ODiN and mapping them to PC4, service-zone, and service-category outputs.
 
 ## Conventions To Preserve
 
@@ -192,6 +194,8 @@ Subareas currently visible in the repo:
 - Preserve `cat{n}/seed{seed}` directory structure.
 - Respect `active_cats` and `boundaries`; do not infer category slices with hard-coded indices.
 - Keep comments focused on experimental logic, not boilerplate narration.
+- Prefer keeping script entry points and output layout stable.
+- If you change output names, paths, or generated-page behavior, check `README.md` and update it if needed.
 
 ## Working Assumptions
 

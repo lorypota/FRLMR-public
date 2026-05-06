@@ -29,10 +29,12 @@ FairMSS/
 │   ├── q_tables/                  # Trained Q-tables
 │   └── results/                   # Evaluation outputs (.npy, .pkl)
 │
-├── preliminary_studies/           # Supporting studies and analyses
+├── research_support/              # Supporting studies and analyses
 │   ├── baseline/                  # Reproduction of baseline (start of project)
-│   ├── empirical_analysis/        # Map visualizations of TNO data
-│   └── failure_rate_analysis/     # Analysis of failure rates (start of project)
+│   ├── empirical_analysis/        # Map visualizations and statistics for TNO data
+│   ├── failure_rate_analysis/     # Analysis of failure rates (start of project)
+│   ├── odin_demand_estimation/    # ODiN demand-rate estimation for real-data CMDP inputs
+│   └── service_zone_calculation/  # Empirical Den Haag service-zone generation
 │
 ├── pyproject.toml
 └── README.md
@@ -41,7 +43,7 @@ FairMSS/
 ## Setup
 
 1. Clone the repository
-2. Install dependencies with: `uv sync` (also needed for preliminary_studies)
+2. Install dependencies with: `uv sync` (also needed for `research_support`)
 
 ## Beta formulation
 

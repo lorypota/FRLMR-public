@@ -1,10 +1,10 @@
 """Build docked/dockless/station CSV tables from raw tar snapshots.
 
 Usage:
-    uv run preliminary_studies/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
+    uv run research_support/empirical_analysis/build_data_tables.py --data-root /full/path/to/snapshots
 
-    uv run preliminary_studies/empirical_analysis/build_data_tables.py `
-    --data-root preliminary_studies/empirical_analysis/output/raw_staging `
+    uv run research_support/empirical_analysis/build_data_tables.py `
+    --data-root research_support/empirical_analysis/output/raw_staging `
     --providers donkey_denHaag ns_ov_fiets
 """
 

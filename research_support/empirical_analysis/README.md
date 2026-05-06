@@ -35,7 +35,7 @@ empirical_analysis/
 └── README.md
 ```
 
-Operational context on Den Haag providers and GBFS coverage is documented in [docs/data_notes.md](docs/data_notes.md).
+Operational context on Den Haag providers and GBFS coverage is documented in [data_notes.md](data_notes.md).
 
 ## Scripts
 
@@ -78,7 +78,7 @@ The workflow is (skip first two steps to just run visualization with already sav
 Copy selected providers from the TNO network share into `output/raw_staging/`. This staged data is not committed by default as it contains many .zip files that would take a lot of space in the repository. Uses `--start`/`--end` for date ranges and skips already-staged files:
 
 ```powershell
-uv run preliminary_studies/empirical_analysis/stage_gbfs_subset.py `
+uv run research_support/empirical_analysis/stage_gbfs_subset.py `
   --source-root "\\\\tsn.tno.nl\\RA-Data\\SV\\sv-057767\\Feeds\\OpenOV\\GBFS" `
   --start 2026-02-01 --end 2026-02-07 `
   --providers donkey_denHaag ns_ov_fiets
@@ -91,8 +91,8 @@ Use `--mode first-per-hour` for lighter transfers every hour instead of every mi
 Parse the staged raw tars into processed CSVs in `output/data/`:
 
 ```powershell
-uv run preliminary_studies/empirical_analysis/build_data_tables.py `
-  --data-root preliminary_studies/empirical_analysis/output/raw_staging `
+uv run research_support/empirical_analysis/build_data_tables.py `
+  --data-root research_support/empirical_analysis/output/raw_staging `
   --providers donkey_denHaag ns_ov_fiets
 ```
 
@@ -108,4 +108,4 @@ Run a local server from the repo root:
 uv run python -m http.server 8000
 ```
 
-Then open: <http://localhost:8000/preliminary_studies/empirical_analysis/output/maps/den_haag.html>
+Then open: <http://localhost:8000/research_support/empirical_analysis/output/maps/den_haag.html>

@@ -1,7 +1,7 @@
 """Stage selected providers and snapshots from a GBFS network share.
 
 Usage:
-    uv run preliminary_studies/empirical_analysis/stage_gbfs_subset.py `
+    uv run research_support/empirical_analysis/stage_gbfs_subset.py `
         --source-root "\\tsn.tno.nl\RA-Data\SV\sv-057767\Feeds\OpenOV\GBFS" `
         --start 2021-10-01 --end 2026-03-20 `
         --providers donkey_denHaag ns_ov_fiets `

@@ -1,4 +1,4 @@
-"""Shared output paths for preliminary empirical analysis artifacts.
+"""Shared output paths for empirical analysis artifacts.
 
 Usage:
     Import-only helper module used by empirical_analysis scripts.

@@ -16,7 +16,7 @@ import pandas as pd
 from pyproj import Transformer
 from scipy.spatial import cKDTree
 
-from internal.paths import GEODATA_DIR
+from .paths import GEODATA_DIR
 
 logger = logging.getLogger(__name__)
 

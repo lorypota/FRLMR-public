@@ -5,9 +5,9 @@ Runs one or more analysis steps:
 - spatial: buurt-level inequality, demographic correlations, and grouped comparisons
 
 Run:
-    uv run preliminary_studies/empirical_analysis/build_coverage_runs.py
-    uv run preliminary_studies/empirical_analysis/build_coverage_runs.py --step temporal
-    uv run preliminary_studies/empirical_analysis/build_coverage_runs.py --step temporal --start-date 2026-01-01 --end-date 2026-12-31
+    uv run research_support/empirical_analysis/build_coverage_runs.py
+    uv run research_support/empirical_analysis/build_coverage_runs.py --step temporal
+    uv run research_support/empirical_analysis/build_coverage_runs.py --step temporal --start-date 2026-01-01 --end-date 2026-12-31
 """
 
 import argparse

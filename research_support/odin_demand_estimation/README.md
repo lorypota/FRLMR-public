@@ -40,7 +40,7 @@ The default filters are:
 ODiN gives origins and destinations as PC4 codes (`vertpc`, `aankpc`). The script maps each PC4 to the generated `K = 20` service zones using dominant polygon overlap with:
 
 ```text
-preliminary_studies/service_zone_calculation/output/service_zone_boundaries_k20.geojson
+research_support/service_zone_calculation/output/service_zone_boundaries_k20.geojson
 ```
 
 It then produces PC4-level, service-zone-level, and service-category-level outputs. PC4 remains useful for checking the spatial bridge, while the category-period output is the most stable first input for the Skellam-style CMDP.
@@ -50,23 +50,23 @@ It then produces PC4-level, service-zone-level, and service-category-level outpu
 Run a small smoke test first:
 
 ```bash
-uv run preliminary_studies/odin_demand_estimation/estimate_category_demand.py --years 2023 --limit 1000
+uv run research_support/odin_demand_estimation/estimate_category_demand.py --years 2023 --limit 1000
 ```
 
 Then run the full supported set:
 
 ```bash
-uv run preliminary_studies/odin_demand_estimation/estimate_category_demand.py
+uv run research_support/odin_demand_estimation/estimate_category_demand.py
 ```
 
 The script writes:
 
 ```text
-preliminary_studies/odin_demand_estimation/output/category_period_demand_rates.csv
-preliminary_studies/odin_demand_estimation/output/pc4_period_demand_rates.csv
-preliminary_studies/odin_demand_estimation/output/pc4_od_demand_rates.csv
-preliminary_studies/odin_demand_estimation/output/service_zone_period_demand_rates.csv
-preliminary_studies/odin_demand_estimation/output/service_zone_od_demand_rates.csv
+research_support/odin_demand_estimation/output/category_period_demand_rates.csv
+research_support/odin_demand_estimation/output/pc4_period_demand_rates.csv
+research_support/odin_demand_estimation/output/pc4_od_demand_rates.csv
+research_support/odin_demand_estimation/output/service_zone_period_demand_rates.csv
+research_support/odin_demand_estimation/output/service_zone_od_demand_rates.csv
 ```
 
 When multiple years are selected, the outputs also include a pooled row group such as `pooled_2018_2023`. Pooled weighted demand is averaged across years rather than summed, so the hourly rates remain annual demand rates.

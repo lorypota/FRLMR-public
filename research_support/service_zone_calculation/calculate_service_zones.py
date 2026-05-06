@@ -12,13 +12,13 @@ from scipy.spatial import cKDTree
 from shapely.geometry import MultiPoint, Point
 from shapely.ops import voronoi_diagram
 
-from preliminary_studies.empirical_analysis.internal.coverage_utils import (
+from research_support.empirical_analysis.internal.coverage_utils import (
     load_houses,
     wgs84_to_rd,
 )
-from preliminary_studies.empirical_analysis.internal.data_utils import DEN_HAAG_BBOX
-from preliminary_studies.empirical_analysis.internal.paths import DATA_DIR, PROJECT_ROOT
-from preliminary_studies.empirical_analysis.internal.processed_data_utils import (
+from research_support.empirical_analysis.internal.data_utils import DEN_HAAG_BBOX
+from research_support.empirical_analysis.internal.paths import DATA_DIR, PROJECT_ROOT
+from research_support.empirical_analysis.internal.processed_data_utils import (
     discover_docked_dates,
     discover_station_dates,
     latest_date,
@@ -36,7 +36,7 @@ SERVICE_CATEGORY_COUNT = 5
 RANDOM_SEED = 7
 SERVICE_ZONE_TAG = f"k{SERVICE_ZONE_COUNT}"
 
-SERVICE_ZONE_DIR = PROJECT_ROOT / "preliminary_studies" / "service_zone_calculation"
+SERVICE_ZONE_DIR = PROJECT_ROOT / "research_support" / "service_zone_calculation"
 OUTPUT_DIR = SERVICE_ZONE_DIR / "output"
 FIGURES_DIR = SERVICE_ZONE_DIR / "figures"
 
@@ -330,7 +330,7 @@ def _build_service_zone_polygons(
 def _load_area_layer(name: str) -> gpd.GeoDataFrame:
     geodata_dir = (
         PROJECT_ROOT
-        / "preliminary_studies"
+        / "research_support"
         / "empirical_analysis"
         / "output"
         / "geodata"
