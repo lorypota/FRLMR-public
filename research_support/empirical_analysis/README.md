@@ -31,7 +31,6 @@ empirical_analysis/
 │   └── statistical_analysis/    # Coverage runs, summary CSVs, and generated figures
 │
 ├── data_notes.md                # Notes on available data and interpretation
-├── AGENTS.md                    # Development guidelines
 └── README.md
 ```
 

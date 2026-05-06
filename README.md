@@ -36,8 +36,8 @@ FairMSS/
 │   ├── odin_demand_estimation/    # ODiN demand-rate estimation for real-data CMDP inputs
 │   └── service_zone_calculation/  # Empirical Den Haag service-zone generation
 │
-├── pyproject.toml
-└── README.md
+├── pyproject.toml                 # uv setup of dependencies, linter, dev. preferences
+└── README.md                      # 👋👋
 ```
 
 ## Setup
