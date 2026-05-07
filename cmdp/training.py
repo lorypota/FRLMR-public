@@ -162,7 +162,7 @@ agents = {i: RebalancingAgent(i) for i in range(5)}
 G = generate_network(node_list)
 np.random.seed(args.seed)
 random.seed(args.seed)
-all_days_demand_vectors, transformed_demand_vectors = generate_global_demand(
+_all_days_demand_vectors, transformed_demand_vectors = generate_global_demand(
     node_list, NUM_TRAIN_DAYS, demand_params, TIME_SLOTS
 )
 
@@ -211,7 +211,8 @@ for repeat in range(args.num_repeats):
         cat_daily_abs_actions = {cat: 0.0 for cat in active_cats}
         nonzero_actions_day = 0
         abs_actions_sum_day = 0.0
-        for _times in (0, 1):
+
+        for _time_period in (0, 1):
             actions = np.zeros(num_stations, dtype=np.int64)
             if not (repeat == 0 and day == 0):
                 for i in range(num_stations):
@@ -252,11 +253,14 @@ for repeat in range(args.num_repeats):
                     )
 
             if not (day == 0 and repeat == 0):
-                for i in range(num_stations):
+                for station in range(num_stations):
                     cat = G.nodes[i]["station"]
                     if repeat < cmdp_train_until[cat]:
                         agents[cat].update_q_table(
-                            state[i], actions[i], reward[i], next_state[i]
+                            state[station],
+                            actions[station],
+                            reward[station],
+                            next_state[station],
                         )
                         agents[cat].update_epsilon()
 
@@ -319,7 +323,10 @@ for repeat in range(args.num_repeats):
             daily_cat_failures.append([cat_daily_fails[cat] for cat in active_cats])
             daily_cat_period_failures.append(
                 [
-                    [cat_period_fails[cat].get(0, 0.0), cat_period_fails[cat].get(1, 0.0)]
+                    [
+                        cat_period_fails[cat].get(0, 0.0),
+                        cat_period_fails[cat].get(1, 0.0),
+                    ]
                     for cat in active_cats
                 ]
             )
@@ -401,7 +408,6 @@ np.save(
     total_bikes,
 )
 
-# Save lambda history and final values
 with open(
     os.path.join(results_dir, f"lambda_history_{r_token}_{bf_token}.pkl"),
     "wb",

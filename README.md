@@ -29,6 +29,11 @@ FairMSS/
 │   ├── q_tables/                  # Trained Q-tables
 │   └── results/                   # Evaluation outputs (.npy, .pkl)
 │
+├── cmdp_den_haag_case/            # Empirical Den Haag CMDP case study
+│   ├── config.py                  # ODiN category-period demand loader
+│   ├── training.py                # Lagrangian CMDP training with empirical demand
+│   └── run_training.py            # Batch sweep over r_max and demand scales
+│
 ├── research_support/              # Supporting studies and analyses
 │   ├── baseline/                  # Reproduction of baseline (start of project)
 │   ├── empirical_analysis/        # Map visualizations and statistics for TNO data
@@ -107,4 +112,18 @@ uv run cmdp/plots/generate_all.py --categories 5
 uv run cmdp/plots/boxplots.py --categories 5 --save
 uv run cmdp/plots/paretoplots.py --categories 5 --save
 uv run cmdp/plots/lambda_convergence.py --categories 5 --save
+```
+
+## Den Haag CMDP case
+
+Uses ODiN category-period demand rates from `research_support/odin_demand_estimation/output/category_period_demand_rates.csv` while preserving the existing CMDP constraint structure. Batch training sweeps `r_max` values and calibrated demand scales.
+
+### Den Haag CMDP Training
+
+```bash
+# Train a single configuration
+uv run cmdp_den_haag_case/training.py --r-max 0.01 --seed 100 --demand-scale 0.01
+
+# Train all configurations
+uv run cmdp_den_haag_case/run_training.py
 ```
