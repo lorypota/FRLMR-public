@@ -1,33 +1,41 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Beta: Run Training",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/beta/run_training.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "CMDP: Run Training",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/cmdp/run_training.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "name": "Empirical Analysis: Open Den Haag Map",
-            "type": "node-terminal",
-            "request": "launch",
-            "command": "uv run python -m http.server 8000",
-            "cwd": "${workspaceFolder}",
-            "serverReadyAction": {
-                "pattern": "Serving HTTP on .* port ([0-9]+)",
-                "uriFormat": "http://localhost:%s/research_support/empirical_analysis/output/maps/den_haag.html",
-                "action": "openExternally"
-            }
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Beta: Run Training",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/beta/run_training.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "CMDP: Run Training",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/cmdp/run_training.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Den Haag CMDP: Run Training",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/cmdp_den_haag_case/run_training.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Empirical Analysis: Open Den Haag Map",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "uv run python -m http.server 8000",
+      "cwd": "${workspaceFolder}",
+      "serverReadyAction": {
+        "pattern": "Serving HTTP on .* port ([0-9]+)",
+        "uriFormat": "http://localhost:%s/research_support/empirical_analysis/output/maps/den_haag.html",
+        "action": "openExternally"
+      }
+    }
+  ]
 }
