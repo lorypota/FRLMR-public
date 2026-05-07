@@ -5,5 +5,4 @@ __pycache__/
 .idea/
 wandb/
 research_support/empirical_analysis/output/raw_staging/
-research_support/empirical_analysis/output/analysis/cache/
-empirical_analysis/empirical_analysis/output/analysis/cache/
+research_support/empirical_analysis/output/cache/
