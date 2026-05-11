@@ -33,7 +33,8 @@ FairMSS/
 │   ├── config.py                  # ODiN category-period demand loader
 │   ├── training.py                # Lagrangian CMDP training with empirical demand
 │   ├── evaluation.py              # Evaluation with empirical demand
-│   └── run_training.py            # Batch sweep over r_max and demand scales
+│   ├── run_training.py            # Batch sweep over r_max and demand scales
+│   └── plots/                     # Plotting scripts + generated figures
 │
 ├── research_support/              # Supporting studies and analyses
 │   ├── baseline/                  # Reproduction of baseline (start of project)
@@ -137,4 +138,12 @@ uv run cmdp_den_haag_case/evaluation.py
 
 # With selected demand scales
 uv run cmdp_den_haag_case/evaluation.py --demand-scales 0.005 0.01 0.02
+```
+
+### Den Haag CMDP Plotting
+
+```bash
+uv run cmdp_den_haag_case/plots/generate_all.py
+uv run cmdp_den_haag_case/plots/generate_all.py --demand-scales 0.005 0.01
+uv run cmdp_den_haag_case/plots/demand_scale_comparison.py --save
 ```
