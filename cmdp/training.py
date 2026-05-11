@@ -254,7 +254,7 @@ for repeat in range(args.num_repeats):
 
             if not (day == 0 and repeat == 0):
                 for station in range(num_stations):
-                    cat = G.nodes[i]["station"]
+                    cat = G.nodes[station]["station"]
                     if repeat < cmdp_train_until[cat]:
                         agents[cat].update_q_table(
                             state[station],
