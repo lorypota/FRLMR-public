@@ -197,6 +197,7 @@ Subareas currently visible in the repo:
 - Prefer keeping script entry points and output layout stable.
 - If you change output names, paths, or generated-page behavior, check `README.md` and update it if needed.
 - When doing changes, do not say "this version does this, next version will do this" unless explicitly asked. Just explain what we're currently doing and note what has to be improved/worked on. Just be direct on what is done without saying "now we do bla bla". Just say "This works by doing ..." etc. (not same wording but an example)
+- do NOT say stuff like "do not add ...", "keep ... unchanged", ... (only state the actual change, not unchanged behavior).
 
 ## Working Assumptions
 

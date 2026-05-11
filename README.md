@@ -32,6 +32,7 @@ FairMSS/
 ├── cmdp_den_haag_case/            # Empirical Den Haag CMDP case study
 │   ├── config.py                  # ODiN category-period demand loader
 │   ├── training.py                # Lagrangian CMDP training with empirical demand
+│   ├── evaluation.py              # Evaluation with empirical demand
 │   └── run_training.py            # Batch sweep over r_max and demand scales
 │
 ├── research_support/              # Supporting studies and analyses
@@ -126,4 +127,14 @@ uv run cmdp_den_haag_case/training.py --r-max 0.01 --seed 100 --demand-scale 0.0
 
 # Train all configurations
 uv run cmdp_den_haag_case/run_training.py
+```
+
+### Den Haag CMDP Evaluation
+
+```bash
+# Evaluate trained policies
+uv run cmdp_den_haag_case/evaluation.py
+
+# With selected demand scales
+uv run cmdp_den_haag_case/evaluation.py --demand-scales 0.005 0.01 0.02
 ```
