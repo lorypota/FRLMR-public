@@ -22,16 +22,15 @@ import inequalipy as ineq
 import numpy as np
 
 from cmdp.config import compute_failure_thresholds, fmt_token
-from cmdp.environment import CMDPEnv
 from cmdp_den_haag_case.config import (
     DEMAND_SCALES,
     R_MAX_VALUES,
+    build_den_haag_network,
     build_den_haag_scenario,
 )
-from common.agent import RebalancingAgent
-from common.config import GAMMA, NUM_EVAL_DAYS, PHI, TIME_SLOTS
+from cmdp_den_haag_case.zone_model import ZoneCMDPEnv, ZoneRebalancingAgent
+from common.config import GAMMA, NUM_EVAL_DAYS, TIME_SLOTS
 from common.demand import generate_global_demand
-from common.network import generate_network
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -240,14 +239,14 @@ def evaluate_demand_scale(
                 )
             )
 
-            graph = generate_network(node_list)
+            graph = build_den_haag_network(scenario)
             all_days_demand, transformed_demand = generate_global_demand(
                 node_list, NUM_EVAL_DAYS, demand_params, TIME_SLOTS
             )
 
             agents = {}
             for cat in active_cats:
-                agent = RebalancingAgent(cat)
+                agent = ZoneRebalancingAgent(cat)
                 with open(
                     require_file(
                         os.path.join(
@@ -261,7 +260,7 @@ def evaluate_demand_scale(
                 agent.set_epsilon(0.0)
                 agents[cat] = agent
 
-            eval_env = CMDPEnv(graph, transformed_demand, {}, GAMMA, station_params)
+            eval_env = ZoneCMDPEnv(graph, transformed_demand, {}, GAMMA, station_params)
             state = eval_env.reset()
 
             daily_cat_failures = {cat: [] for cat in active_cats}
@@ -281,13 +280,13 @@ def evaluate_demand_scale(
                 }
 
                 for _time_period in (0, 1):
-                    actions = np.zeros(num_stations, dtype=np.int64)
+                    actions = np.zeros(num_stations, dtype=float)
                     if day > 0:
                         for station in range(num_stations):
                             cat = graph.nodes[station]["station"]
                             actions[station] = agents[cat].decide_action(state[station])
 
-                    next_state, _reward, _base_reward, failures, _reb_costs = (
+                    next_state, _reward, _base_reward, failures, reb_costs = (
                         eval_env.step(actions)
                     )
                     period = eval_env.current_period
@@ -305,10 +304,7 @@ def evaluate_demand_scale(
                         )
                         period_fails_today[cat][period] += pf
 
-                    for station, action in enumerate(actions):
-                        if action != 0:
-                            cat = graph.nodes[station]["station"]
-                            costs += PHI[cat]
+                    costs += float(np.sum(reb_costs) / GAMMA)
 
                     state = next_state
 

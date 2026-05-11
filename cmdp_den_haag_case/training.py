@@ -19,12 +19,10 @@ import psutil
 
 import wandb
 from cmdp.config import compute_failure_thresholds, fmt_token
-from cmdp.environment import CMDPEnv
-from cmdp_den_haag_case.config import build_den_haag_scenario
-from common.agent import RebalancingAgent
+from cmdp_den_haag_case.config import build_den_haag_network, build_den_haag_scenario
+from cmdp_den_haag_case.zone_model import ZoneCMDPEnv, ZoneRebalancingAgent
 from common.config import CPU_CORES, GAMMA, NUM_TRAIN_DAYS, TIME_SLOTS
 from common.demand import generate_global_demand
-from common.network import generate_network
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -136,12 +134,12 @@ def main() -> None:
     failure_thresholds = compute_failure_thresholds(
         args.r_max, demand_params, active_cats, constrained_cats
     )
-    base_epsilon_decay = RebalancingAgent(0).epsilon_decay
+    base_epsilon_decay = ZoneRebalancingAgent(0).epsilon_decay
     epsilon_decay_by_category = {
         cat: base_epsilon_decay
         * scenario["reference_station_counts_by_category"][cat]
-        / scenario["station_counts_by_category"][cat]
-        for cat in active_cats
+        / node_list[cat_idx]
+        for cat_idx, cat in enumerate(active_cats)
     }
 
     # =============================================================================
@@ -182,10 +180,10 @@ def main() -> None:
     # =============================================================================
 
     agents = {
-        cat: RebalancingAgent(cat, epsilon_decay=epsilon_decay_by_category[cat])
+        cat: ZoneRebalancingAgent(cat, epsilon_decay=epsilon_decay_by_category[cat])
         for cat in active_cats
     }
-    graph = generate_network(node_list)
+    graph = build_den_haag_network(scenario)
     np.random.seed(args.seed)
     random.seed(args.seed)
     _all_days_demand_vectors, transformed_demand_vectors = generate_global_demand(
@@ -215,7 +213,7 @@ def main() -> None:
     daily_cat_nonzero_actions = []
     daily_cat_mean_abs_action = []
 
-    env = CMDPEnv(
+    env = ZoneCMDPEnv(
         graph,
         transformed_demand_vectors,
         lambdas,
@@ -245,7 +243,7 @@ def main() -> None:
             abs_actions_sum_day = 0.0
 
             for _time_period in (0, 1):
-                actions = np.zeros(num_stations, dtype=np.int64)
+                actions = np.zeros(num_stations, dtype=float)
                 if not (repeat == 0 and day == 0):
                     for station in range(num_stations):
                         cat = graph.nodes[station]["station"]
@@ -500,6 +498,14 @@ def main() -> None:
                     "demand_year_group": scenario["demand_year_group"],
                     "demand_rates_path": scenario["demand_rates_path"],
                     "station_assignments_path": scenario["station_assignments_path"],
+                    "model_unit": scenario["model_unit"],
+                    "demand_allocation": scenario["demand_allocation"],
+                    "initial_bikes_path": scenario["initial_bikes_path"],
+                    "initial_bikes_timestamp": scenario["initial_bikes_timestamp"],
+                    "zone_records": scenario["zone_records"],
+                    "zone_capacities": scenario["zone_capacities"],
+                    "zone_initial_bikes": scenario["zone_initial_bikes"],
+                    "zone_raw_initial_bikes": scenario["zone_raw_initial_bikes"],
                     "station_counts_by_category": {
                         str(cat): int(count)
                         for cat, count in scenario["station_counts_by_category"].items()
@@ -540,9 +546,8 @@ def main() -> None:
         )
 
     print(
-        "Finished Den Haag CMDP training "
-        f"with seed {args.seed}, year group {scenario['demand_year_group']}, "
-        f"and r_max {args.r_max}"
+        f"Finished Den Haag CMDP training with seed {args.seed}, "
+        f"year group {scenario['demand_year_group']}, and r_max {args.r_max}"
     )
     print(f"Final lambdas: {dict(lambdas)}")
 

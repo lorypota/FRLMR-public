@@ -118,7 +118,7 @@ uv run cmdp/plots/lambda_convergence.py --categories 5 --save
 
 ## Den Haag CMDP case
 
-Uses ODiN category-period demand rates from `research_support/odin_demand_estimation/output/category_period_demand_rates.csv` while preserving the existing CMDP constraint structure. Batch training sweeps `r_max` values and calibrated demand scales.
+Uses ODiN category-period demand rates from `research_support/odin_demand_estimation/output/category_period_demand_rates.csv` with Den Haag service zones as inventory units. Batch training sweeps `r_max` values and calibrated demand scales.
 
 ### Den Haag CMDP Training
 

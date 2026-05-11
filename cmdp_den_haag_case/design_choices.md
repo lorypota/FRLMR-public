@@ -1,35 +1,71 @@
 # Den Haag CMDP Case
 
-## ODiN demand station approximation
+## Service-zone inventory units
 
-This folder uses ODiN 2018 to 2023 category-period demand rates as the first empirical input for the Den Haag CMDP. It also uses real Donkey station counts by service category from `research_support/service_zone_calculation/output/service_zone_assignments_k20.csv`.
-
-The modeling issue is that ODiN currently provides demand at category-period level, while the station simulator consumes station-level Skellam parameters. The current approximation divides each category-period rate equally across the real station count in that category:
+The Den Haag CMDP uses empirical service zones as inventory units. One model node represents one generated service zone from `research_support/service_zone_calculation/output/service_zone_assignments_k20.csv`. With the current `k20` zones, the Den Haag scenario has:
 
 ```text
-lambda_station = lambda_category / number_of_stations_in_category
+node_list = [4, 4, 4, 4, 4]
+boundaries = [0, 4, 8, 12, 16, 20]
 ```
 
-The limitation is that stations in the same category are unlikely to face identical demand. Better allocation rules could distribute category demand by station capacity, by service-zone demand, or by a combined score.
-
-## Exploration calibration with real station counts
-
-The Q-learning agent updates epsilon after every station-level Q-table update. If the real station counts were used with the original fixed epsilon decay, categories with many real stations would stop exploring much faster than they did in the synthetic setup.
-
-For the Den Haag case, epsilon decay is therefore scaled per category by:
+Each service-zone node stores:
 
 ```text
-epsilon_decay_category = base_epsilon_decay * synthetic_station_count / real_station_count
+service_category  = category assigned in the k20 service-zone output
+station_count     = number of Donkey stations assigned to the service zone
+capacity          = sum of assigned station capacities
+raw_initial_bikes = sum of station bike counts in the selected docked snapshot
+initial_bikes     = min(raw_initial_bikes, capacity)
 ```
 
-This keeps the exploration schedule approximately tied to training days rather than to the number of station units in a category.
+The selected docked snapshot is the last row of the latest available
+`docked_*.csv` file in `research_support/empirical_analysis/output/data/docked/donkey_denHaag`.
 
-## Scope
+## Demand allocation and factorization
 
-This folder is an empirical demand calibration of the existing CMDP model, not a full empirical station-level or service-zone simulator.
+The model keeps category-factorized learning. There is still one Q-table per service category, and zones in the same category are treated as exchangeable units for learning.
 
-Each category contains exchangeable station units based on the real station count. Category demand is divided equally over those units, each unit has the fixed simulator capacity of 100 bikes, and station-level failures occur when sampled synthetic departures exceed the unit's current inventory.
+Zones in the same category can still have different capacities, initial bikes, station counts, and service-zone IDs. This does not create separate Q-tables. The shared Q-table sees normalized occupancy states and normalized occupancy actions, not raw bike counts. For example, two zones with different capacities but 50 percent occupancy both map to `(0.50, period)`. An action such as `+0.10` then means a 10 percentage-point occupancy increase. The physical number of bikes moved depends on the zone capacity, but the learned policy remains category-level.
 
-This setup is useful for initial results because it tests how the CMDP fairness formulation behaves when the category demand pressure is calibrated to the available data for Den Haag. The results should be interpreted as evidence on the algorithm sensitivity, not as real estimates.
+The empirical demand input is the ODiN 2018 to 2023 category-period demand rate. For each category and period, the category arrival and departure rates are divided equally over the service zones in that category:
 
-A fuller empirical model would replace the synthetic units with real spatial inventory units, for example service zones with aggregate capacity and initial bikes. That would require changes to state representation, available actions, capacity handling, reward targets, and evaluation. It is intentionally outside the current initial-results setup.
+```text
+lambda_zone = lambda_category / number_of_service_zones_in_category
+```
+
+## State, actions, and reward
+
+The Den Haag service-zone model uses normalized occupancy states. The bike count of each zone is converted to an occupancy fraction in `[0.0, 1.0]` and binned in steps of `0.01`. The state is:
+
+```text
+(occupancy_bin, period)
+```
+
+Actions are bounded occupancy changes. They mirror the original station action grid, where capacity was 100 bikes, the action step was 5 bikes, and the maximum absolute action was 30 bikes:
+
+```text
+[-0.30, -0.25, ..., 0.25, 0.30]
+```
+
+An action changes the zone inventory by `round(action * zone_capacity)` bikes, then clips the resulting inventory to `[0, zone_capacity]`.
+
+The rebalancing-cost logic follows the original reward structure. A nonzero effective inventory change in a service zone incurs:
+
+```text
+gamma * phi(category)
+```
+
+The cost is an operation indicator. The interpretation is that a nonzero change dispatches rebalancing effort to one service zone. The category multiplier `phi` keeps peripheral zones more expensive to service than central zones.
+
+The fleet size penalty is evaluated in normalized occupancy space, using the original capacity-100 target and threshold values as fractions. The penalty is scaled back to percentage-point units so its numerical scale stays close to the original station model.
+
+## Failure constraints and interpretation
+
+Failures occur when sampled departures exceed current zone inventory. The CMDP dual update keeps the original `f_hat` structure:
+
+```text
+f_hat = mean failures per category unit and period
+```
+
+In this Den Haag case, the category unit is a service zone. Failure thresholds use the same formula as the original CMDP, with the category-period ODiN departure rate after equal division over service zones.

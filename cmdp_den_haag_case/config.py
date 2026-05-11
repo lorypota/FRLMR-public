@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 
 from common.config import get_scenario
+from common.network import generate_network
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEMAND_RATES_PATH = (
@@ -23,21 +24,33 @@ STATION_ASSIGNMENTS_PATH = (
     / "output"
     / "service_zone_assignments_k20.csv"
 )
+DOCKED_DATA_DIR = (
+    SCRIPT_DIR.parent
+    / "research_support"
+    / "empirical_analysis"
+    / "output"
+    / "data"
+    / "docked"
+    / "donkey_denHaag"
+)
 PERIODS = ("morning", "evening")
 YEAR_GROUP = "pooled_2018_2023"
 R_MAX_VALUES = [0.05, 0.0625, 0.075, 0.0875, 0.10, 0.125, 0.15, 0.20, 1.0]
 DEMAND_SCALES = [0.005, 0.01, 0.02]
 
 
-def load_category_period_demand_rates() -> dict[int, dict[str, dict[str, Any]]]:
-    if not DEMAND_RATES_PATH.exists():
-        raise FileNotFoundError(f"Demand-rate CSV not found: {DEMAND_RATES_PATH}")
-
-    with DEMAND_RATES_PATH.open(newline="", encoding="utf-8") as file:
+def _read_csv_rows(path: Path, label: str) -> list[dict[str, str]]:
+    if not path.exists():
+        raise FileNotFoundError(f"{label} CSV not found: {path}")
+    with path.open(newline="", encoding="utf-8") as file:
         rows = list(csv.DictReader(file))
     if not rows:
-        raise ValueError(f"Demand-rate CSV is empty: {DEMAND_RATES_PATH}")
+        raise ValueError(f"{label} CSV is empty: {path}")
+    return rows
 
+
+def load_category_period_demand_rates() -> dict[int, dict[str, dict[str, Any]]]:
+    rows = _read_csv_rows(DEMAND_RATES_PATH, "Demand-rate")
     rates: dict[int, dict[str, dict[str, Any]]] = {cat: {} for cat in range(5)}
     for row in rows:
         if row["year"] != YEAR_GROUP:
@@ -72,87 +85,152 @@ def load_category_period_demand_rates() -> dict[int, dict[str, dict[str, Any]]]:
     return rates
 
 
-def load_station_assignment_summary() -> dict[str, Any]:
-    if not STATION_ASSIGNMENTS_PATH.exists():
-        raise FileNotFoundError(
-            f"Station-assignment CSV not found: {STATION_ASSIGNMENTS_PATH}"
-        )
+def _load_latest_zone_initial_bikes(
+    station_to_zone: dict[str, int],
+) -> tuple[dict[int, int], str, str]:
+    docked_files = sorted(DOCKED_DATA_DIR.glob("docked_*.csv"))
+    if not docked_files:
+        raise FileNotFoundError(f"No docked-bike CSV files found in {DOCKED_DATA_DIR}")
 
-    with STATION_ASSIGNMENTS_PATH.open(newline="", encoding="utf-8") as file:
-        rows = list(csv.DictReader(file))
-    if not rows:
-        raise ValueError(f"Station-assignment CSV is empty: {STATION_ASSIGNMENTS_PATH}")
+    docked_path = docked_files[-1]
+    rows = _read_csv_rows(docked_path, "Docked-bike")
+    latest_row = rows[-1]
+    zone_bikes = {zone: 0 for zone in set(station_to_zone.values())}
+    for station_id, zone in station_to_zone.items():
+        value = latest_row.get(station_id)
+        if value not in (None, ""):
+            zone_bikes[zone] += int(float(value))
+    return zone_bikes, str(docked_path), latest_row["timestamp"]
 
-    station_counts = {cat: 0 for cat in range(5)}
-    capacity_sums = {cat: 0.0 for cat in range(5)}
+
+def load_zone_inventory_units() -> list[dict[str, Any]]:
+    rows = _read_csv_rows(STATION_ASSIGNMENTS_PATH, "Station-assignment")
+    zones: dict[int, dict[str, Any]] = {}
+    station_to_zone = {}
     for row in rows:
+        zone = int(float(row["service_zone"]))
         category = int(float(row["service_category"]))
-        if category not in station_counts:
+        if category not in range(5):
             raise ValueError(f"Unsupported service_category value: {category}")
-        station_counts[category] += 1
-        capacity_sums[category] += float(row.get("capacity") or 0.0)
+        zone_info = zones.setdefault(
+            zone,
+            {
+                "service_zone": zone,
+                "service_category": category,
+                "station_count": 0,
+                "capacity": 0,
+            },
+        )
+        if zone_info["service_category"] != category:
+            raise ValueError(f"Service zone {zone} maps to multiple categories")
+        zone_info["station_count"] += 1
+        zone_info["capacity"] += int(float(row.get("capacity") or 0.0))
+        station_to_zone[row["station_id_raw"]] = zone
 
-    missing = [cat for cat, count in station_counts.items() if count == 0]
+    missing = [
+        cat
+        for cat in range(5)
+        if not any(zone["service_category"] == cat for zone in zones.values())
+    ]
     if missing:
         raise ValueError(
-            "Station-assignment CSV is missing stations for categories: "
+            "Station-assignment CSV is missing zones for categories: "
             + ", ".join(str(cat) for cat in missing)
         )
 
-    return {
-        "station_counts_by_category": station_counts,
-        "station_capacity_sums_by_category": capacity_sums,
-    }
+    zone_initial_bikes, initial_bikes_path, initial_bikes_timestamp = (
+        _load_latest_zone_initial_bikes(station_to_zone)
+    )
+    zone_records = []
+    for zone in zones.values():
+        initial_bikes = zone_initial_bikes.get(zone["service_zone"], 0)
+        zone_records.append(
+            {
+                **zone,
+                "initial_bikes": min(initial_bikes, zone["capacity"]),
+                "raw_initial_bikes": initial_bikes,
+                "initial_bikes_path": initial_bikes_path,
+                "initial_bikes_timestamp": initial_bikes_timestamp,
+            }
+        )
+    return sorted(
+        zone_records,
+        key=lambda zone: (zone["service_category"], zone["service_zone"]),
+    )
 
 
-def build_den_haag_scenario(
-    demand_scale: float = 1.0,
-) -> dict[str, Any]:
+def build_den_haag_scenario(demand_scale: float = 1.0) -> dict[str, Any]:
     """Build the 5-category Den Haag CMDP scenario.
 
-    ODiN rates are category-level potential movement demand. The station
-    simulator consumes station-level Skellam parameters, so each category-period
-    lambda is divided by the real Donkey station count in that category.
+    Each generated node represents one service zone with aggregate
+    station capacity. ODiN demand remains category-period demand and is split
+    equally over the service zones in each category.
     """
     if demand_scale <= 0:
         raise ValueError("demand_scale must be positive")
 
     scenario = get_scenario(5)
-    rates = load_category_period_demand_rates()
-    station_summary = load_station_assignment_summary()
-    station_counts = station_summary["station_counts_by_category"]
+    category_rates = load_category_period_demand_rates()
+    zone_records = load_zone_inventory_units()
     reference_node_list = list(scenario["node_list"])
 
-    scenario["node_list"] = [station_counts[cat] for cat in scenario["active_cats"]]
+    scenario["node_list"] = [
+        sum(1 for zone in zone_records if zone["service_category"] == cat)
+        for cat in scenario["active_cats"]
+    ]
     scenario["boundaries"] = np.cumsum([0] + scenario["node_list"])
 
+    zone_demand_params = []
     demand_params = []
     raw_category_demand_params = []
     for cat_idx, cat in enumerate(scenario["active_cats"]):
-        station_count = scenario["node_list"][cat_idx]
+        cat_zones = [zone for zone in zone_records if zone["service_category"] == cat]
+        zone_count = scenario["node_list"][cat_idx]
         cat_params = []
         raw_cat_params = []
         for period in PERIODS:
-            row = rates[cat][period]
+            row = category_rates[cat][period]
             raw_lambda_a = row["lambda_arrivals_per_hour"]
             raw_lambda_d = row["lambda_departures_per_hour"]
-            lambda_a = raw_lambda_a / station_count * demand_scale
-            lambda_d = raw_lambda_d / station_count * demand_scale
+            lambda_a = raw_lambda_a / zone_count * demand_scale
+            lambda_d = raw_lambda_d / zone_count * demand_scale
             cat_params.append((lambda_a, lambda_d))
             raw_cat_params.append((raw_lambda_a, raw_lambda_d))
         demand_params.append(cat_params)
         raw_category_demand_params.append(raw_cat_params)
+        zone_demand_params.extend([cat_params for _zone in cat_zones])
 
     scenario["demand_params"] = demand_params
     scenario["raw_category_demand_params"] = raw_category_demand_params
-    scenario["demand_rates"] = rates
+    scenario["zone_demand_params"] = zone_demand_params
+    scenario["demand_rates"] = category_rates
     scenario["demand_year_group"] = YEAR_GROUP
     scenario["demand_rates_path"] = str(DEMAND_RATES_PATH)
     scenario["station_assignments_path"] = str(STATION_ASSIGNMENTS_PATH)
-    scenario["station_counts_by_category"] = station_counts
-    scenario["station_capacity_sums_by_category"] = station_summary[
-        "station_capacity_sums_by_category"
+    scenario["model_unit"] = "service_zone"
+    scenario["demand_allocation"] = "category_period_equal_split_over_service_zones"
+    scenario["zone_records"] = zone_records
+    scenario["zone_capacities"] = [zone["capacity"] for zone in zone_records]
+    scenario["zone_initial_bikes"] = [zone["initial_bikes"] for zone in zone_records]
+    scenario["zone_raw_initial_bikes"] = [
+        zone["raw_initial_bikes"] for zone in zone_records
     ]
+    scenario["initial_bikes_path"] = zone_records[0]["initial_bikes_path"]
+    scenario["initial_bikes_timestamp"] = zone_records[0]["initial_bikes_timestamp"]
+    scenario["station_counts_by_category"] = {
+        cat: sum(
+            zone["station_count"]
+            for zone in zone_records
+            if zone["service_category"] == cat
+        )
+        for cat in scenario["active_cats"]
+    }
+    scenario["station_capacity_sums_by_category"] = {
+        cat: sum(
+            zone["capacity"] for zone in zone_records if zone["service_category"] == cat
+        )
+        for cat in scenario["active_cats"]
+    }
     scenario["reference_node_list"] = reference_node_list
     scenario["reference_station_counts_by_category"] = dict(
         zip(scenario["active_cats"], reference_node_list, strict=True)
@@ -160,3 +238,16 @@ def build_den_haag_scenario(
     scenario["demand_scale"] = demand_scale
     scenario["boundaries"] = np.asarray(scenario["boundaries"])
     return scenario
+
+
+def build_den_haag_network(scenario: dict[str, Any]):
+    graph = generate_network(scenario["node_list"])
+    for node, zone in enumerate(scenario["zone_records"]):
+        graph.nodes[node]["station"] = zone["service_category"]
+        graph.nodes[node]["service_zone"] = zone["service_zone"]
+        graph.nodes[node]["capacity"] = zone["capacity"]
+        graph.nodes[node]["initial_bikes"] = zone["initial_bikes"]
+        graph.nodes[node]["raw_initial_bikes"] = zone["raw_initial_bikes"]
+        graph.nodes[node]["station_count"] = zone["station_count"]
+        graph.nodes[node]["bikes"] = zone["initial_bikes"]
+    return graph
