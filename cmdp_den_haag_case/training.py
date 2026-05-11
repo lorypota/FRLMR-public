@@ -136,6 +136,13 @@ def main() -> None:
     failure_thresholds = compute_failure_thresholds(
         args.r_max, demand_params, active_cats, constrained_cats
     )
+    base_epsilon_decay = RebalancingAgent(0).epsilon_decay
+    epsilon_decay_by_category = {
+        cat: base_epsilon_decay
+        * scenario["reference_station_counts_by_category"][cat]
+        / scenario["station_counts_by_category"][cat]
+        for cat in active_cats
+    }
 
     # =============================================================================
     # WANDB
@@ -164,6 +171,9 @@ def main() -> None:
             "active_cats": active_cats,
             "demand_year_group": scenario["demand_year_group"],
             "demand_scale": args.demand_scale,
+            "epsilon_decay_by_category": {
+                str(cat): value for cat, value in epsilon_decay_by_category.items()
+            },
         },
     )
 
@@ -171,7 +181,10 @@ def main() -> None:
     # SETUP
     # =============================================================================
 
-    agents = {cat: RebalancingAgent(cat) for cat in active_cats}
+    agents = {
+        cat: RebalancingAgent(cat, epsilon_decay=epsilon_decay_by_category[cat])
+        for cat in active_cats
+    }
     graph = generate_network(node_list)
     np.random.seed(args.seed)
     random.seed(args.seed)
@@ -481,10 +494,32 @@ def main() -> None:
                 "scenario": {
                     "categories": 5,
                     "node_list": node_list,
+                    "reference_node_list": scenario["reference_node_list"],
                     "active_cats": active_cats,
                     "boundaries": boundaries.tolist(),
                     "demand_year_group": scenario["demand_year_group"],
                     "demand_rates_path": scenario["demand_rates_path"],
+                    "station_assignments_path": scenario["station_assignments_path"],
+                    "station_counts_by_category": {
+                        str(cat): int(count)
+                        for cat, count in scenario["station_counts_by_category"].items()
+                    },
+                    "station_capacity_sums_by_category": {
+                        str(cat): float(capacity_sum)
+                        for cat, capacity_sum in scenario[
+                            "station_capacity_sums_by_category"
+                        ].items()
+                    },
+                    "reference_station_counts_by_category": {
+                        str(cat): int(count)
+                        for cat, count in scenario[
+                            "reference_station_counts_by_category"
+                        ].items()
+                    },
+                    "epsilon_decay_by_category": {
+                        str(cat): float(value)
+                        for cat, value in epsilon_decay_by_category.items()
+                    },
                     "demand_scale": scenario["demand_scale"],
                     "demand_params": demand_params,
                     "raw_category_demand_params": scenario[

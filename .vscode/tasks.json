@@ -10,7 +10,7 @@
                 "-ExecutionPolicy",
                 "Bypass",
                 "-Command",
-                "git push origin HEAD; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; git push FRLSR HEAD; exit $LASTEXITCODE"
+                "git push origin HEAD; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; git push github HEAD; exit $LASTEXITCODE"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

@@ -16,6 +16,13 @@ DEMAND_RATES_PATH = (
     / "output"
     / "category_period_demand_rates.csv"
 )
+STATION_ASSIGNMENTS_PATH = (
+    SCRIPT_DIR.parent
+    / "research_support"
+    / "service_zone_calculation"
+    / "output"
+    / "service_zone_assignments_k20.csv"
+)
 PERIODS = ("morning", "evening")
 YEAR_GROUP = "pooled_2018_2023"
 DEN_HAAG_R_MAX_VALUES = [0.001, 0.005, 0.01, 0.02, 0.05, 0.15]
@@ -65,20 +72,59 @@ def load_category_period_demand_rates() -> dict[int, dict[str, dict[str, Any]]]:
     return rates
 
 
+def load_station_assignment_summary() -> dict[str, Any]:
+    if not STATION_ASSIGNMENTS_PATH.exists():
+        raise FileNotFoundError(
+            f"Station-assignment CSV not found: {STATION_ASSIGNMENTS_PATH}"
+        )
+
+    with STATION_ASSIGNMENTS_PATH.open(newline="", encoding="utf-8") as file:
+        rows = list(csv.DictReader(file))
+    if not rows:
+        raise ValueError(f"Station-assignment CSV is empty: {STATION_ASSIGNMENTS_PATH}")
+
+    station_counts = {cat: 0 for cat in range(5)}
+    capacity_sums = {cat: 0.0 for cat in range(5)}
+    for row in rows:
+        category = int(float(row["service_category"]))
+        if category not in station_counts:
+            raise ValueError(f"Unsupported service_category value: {category}")
+        station_counts[category] += 1
+        capacity_sums[category] += float(row.get("capacity") or 0.0)
+
+    missing = [cat for cat, count in station_counts.items() if count == 0]
+    if missing:
+        raise ValueError(
+            "Station-assignment CSV is missing stations for categories: "
+            + ", ".join(str(cat) for cat in missing)
+        )
+
+    return {
+        "station_counts_by_category": station_counts,
+        "station_capacity_sums_by_category": capacity_sums,
+    }
+
+
 def build_den_haag_scenario(
     demand_scale: float = 1.0,
 ) -> dict[str, Any]:
     """Build the 5-category Den Haag CMDP scenario.
 
     ODiN rates are category-level potential movement demand. The station
-    simulator consumes station-level Skellam parameters, so the default divides
-    each category-period lambda by the number of stations in that category.
+    simulator consumes station-level Skellam parameters, so each category-period
+    lambda is divided by the real Donkey station count in that category.
     """
     if demand_scale <= 0:
         raise ValueError("demand_scale must be positive")
 
     scenario = get_scenario(5)
     rates = load_category_period_demand_rates()
+    station_summary = load_station_assignment_summary()
+    station_counts = station_summary["station_counts_by_category"]
+    reference_node_list = list(scenario["node_list"])
+
+    scenario["node_list"] = [station_counts[cat] for cat in scenario["active_cats"]]
+    scenario["boundaries"] = np.cumsum([0] + scenario["node_list"])
 
     demand_params = []
     raw_category_demand_params = []
@@ -102,6 +148,15 @@ def build_den_haag_scenario(
     scenario["demand_rates"] = rates
     scenario["demand_year_group"] = YEAR_GROUP
     scenario["demand_rates_path"] = str(DEMAND_RATES_PATH)
+    scenario["station_assignments_path"] = str(STATION_ASSIGNMENTS_PATH)
+    scenario["station_counts_by_category"] = station_counts
+    scenario["station_capacity_sums_by_category"] = station_summary[
+        "station_capacity_sums_by_category"
+    ]
+    scenario["reference_node_list"] = reference_node_list
+    scenario["reference_station_counts_by_category"] = dict(
+        zip(scenario["active_cats"], reference_node_list, strict=True)
+    )
     scenario["demand_scale"] = demand_scale
     scenario["boundaries"] = np.asarray(scenario["boundaries"])
     return scenario
