@@ -25,8 +25,8 @@ STATION_ASSIGNMENTS_PATH = (
 )
 PERIODS = ("morning", "evening")
 YEAR_GROUP = "pooled_2018_2023"
-DEN_HAAG_R_MAX_VALUES = [0.001, 0.005, 0.01, 0.02, 0.05, 0.15]
-DEN_HAAG_DEMAND_SCALES = [0.005, 0.01, 0.02]
+R_MAX_VALUES = [0.05, 0.0625, 0.075, 0.0875, 0.10, 0.125, 0.15, 0.20, 1.0]
+DEMAND_SCALES = [0.005, 0.01, 0.02]
 
 
 def load_category_period_demand_rates() -> dict[int, dict[str, dict[str, Any]]]:

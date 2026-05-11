@@ -1,12 +1,9 @@
 """
 Failure Rates of Learned Policies by r_max
-============================================
 
 Plots per-category failure rates (from evaluation) against r_max values.
 Morning periods shown as solid lines, evening as dotted.
 X-axis goes from 1.0 (loose) to 0.05 (tight).
-
-Uses pre-computed evaluation results (failure_rates_per_cat_period).
 
 Usage:
     uv run cmdp/plots/failure_rates_by_rmax.py --categories 5

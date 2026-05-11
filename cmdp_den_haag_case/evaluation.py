@@ -24,8 +24,8 @@ import numpy as np
 from cmdp.config import compute_failure_thresholds, fmt_token
 from cmdp.environment import CMDPEnv
 from cmdp_den_haag_case.config import (
-    DEN_HAAG_DEMAND_SCALES,
-    DEN_HAAG_R_MAX_VALUES,
+    DEMAND_SCALES,
+    R_MAX_VALUES,
     build_den_haag_scenario,
 )
 from common.agent import RebalancingAgent
@@ -459,7 +459,7 @@ def main():
         "--r-max-values",
         nargs="+",
         type=float,
-        default=DEN_HAAG_R_MAX_VALUES,
+        default=R_MAX_VALUES,
         help="r_max values to evaluate",
     )
     parser.add_argument(
@@ -472,7 +472,7 @@ def main():
         "--demand-scales",
         nargs="+",
         type=float,
-        default=DEN_HAAG_DEMAND_SCALES,
+        default=DEMAND_SCALES,
         help="Demand scales used during Den Haag CMDP training",
     )
     args = parser.parse_args()

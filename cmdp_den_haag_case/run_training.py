@@ -9,7 +9,7 @@ import os
 import subprocess
 from datetime import datetime
 
-from cmdp_den_haag_case.config import DEN_HAAG_DEMAND_SCALES, DEN_HAAG_R_MAX_VALUES
+from cmdp_den_haag_case.config import DEMAND_SCALES, R_MAX_VALUES
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -17,19 +17,19 @@ seeds = range(100, 110)
 FAILURE_COST_COEFS = [0.0]
 
 TOTAL_CORES = 20  # cores 0-19
-CORES_PER_PROCESS = TOTAL_CORES // len(DEN_HAAG_R_MAX_VALUES)
+CORES_PER_PROCESS = TOTAL_CORES // len(R_MAX_VALUES)
 
 run_group_base = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 print(
-    f"Starting Den Haag CMDP training (parallel: {len(DEN_HAAG_R_MAX_VALUES)} r_max "
+    f"Starting Den Haag CMDP training (parallel: {len(R_MAX_VALUES)} r_max "
     f"values, {CORES_PER_PROCESS} cores each) for demand scales "
-    f"{DEN_HAAG_DEMAND_SCALES} and failure_cost_coef values {FAILURE_COST_COEFS}..."
+    f"{DEMAND_SCALES} and failure_cost_coef values {FAILURE_COST_COEFS}..."
 )
 
 training_script = os.path.join(SCRIPT_DIR, "training.py")
 
-for demand_scale in DEN_HAAG_DEMAND_SCALES:
+for demand_scale in DEMAND_SCALES:
     for failure_cost_coef in FAILURE_COST_COEFS:
         run_group = f"{run_group_base}_scale{demand_scale}_bf{failure_cost_coef}"
         print(
@@ -39,7 +39,7 @@ for demand_scale in DEN_HAAG_DEMAND_SCALES:
         for seed in seeds:
             processes = []
 
-            for i, r_max in enumerate(DEN_HAAG_R_MAX_VALUES):
+            for i, r_max in enumerate(R_MAX_VALUES):
                 core_start = i * CORES_PER_PROCESS
                 core_end = core_start + CORES_PER_PROCESS - 1
                 cpu_cores = f"{core_start}-{core_end}"
