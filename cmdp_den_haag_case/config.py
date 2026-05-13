@@ -35,7 +35,7 @@ DOCKED_DATA_DIR = (
 )
 PERIODS = ("morning", "evening")
 YEAR_GROUP = "pooled_2018_2023"
-R_MAX_VALUES = [0.05, 0.0625, 0.075, 0.0875, 0.10, 0.125, 0.15, 0.20, 1.0]
+R_MAX_VALUES = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.04, 0.05, 0.10, 1.0]
 DEMAND_SCALES = [0.005, 0.01, 0.02]
 
 

@@ -34,6 +34,8 @@ The empirical demand input is the ODiN 2018 to 2023 category-period demand rate.
 lambda_zone = lambda_category / number_of_service_zones_in_category
 ```
 
+Den Haag demand is generated with separate arrival and departure events. For each zone-hour, arrivals and departures are sampled separately from Poisson distributions, combined into one event list, randomly ordered, and processed by the environment. This keeps arrivals able to replenish bikes, but avoids cancelling arrivals and departures before service failures are checked.
+
 ## State, actions, and reward
 
 The Den Haag service-zone model uses normalized occupancy states. The bike count of each zone is converted to an occupancy fraction in `[0.0, 1.0]` and binned in steps of `0.01`. The state is:

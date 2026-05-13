@@ -20,9 +20,12 @@ import psutil
 import wandb
 from cmdp.config import compute_failure_thresholds, fmt_token
 from cmdp_den_haag_case.config import build_den_haag_network, build_den_haag_scenario
-from cmdp_den_haag_case.zone_model import ZoneCMDPEnv, ZoneRebalancingAgent
+from cmdp_den_haag_case.zone_model import (
+    ZoneCMDPEnv,
+    ZoneRebalancingAgent,
+    generate_separate_event_demand,
+)
 from common.config import CPU_CORES, GAMMA, NUM_TRAIN_DAYS, TIME_SLOTS
-from common.demand import generate_global_demand
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -186,7 +189,7 @@ def main() -> None:
     graph = build_den_haag_network(scenario)
     np.random.seed(args.seed)
     random.seed(args.seed)
-    _all_days_demand_vectors, transformed_demand_vectors = generate_global_demand(
+    _all_days_demand_vectors, transformed_demand_vectors = generate_separate_event_demand(
         node_list, NUM_TRAIN_DAYS, demand_params, TIME_SLOTS
     )
 
@@ -527,6 +530,7 @@ def main() -> None:
                         for cat, value in epsilon_decay_by_category.items()
                     },
                     "demand_scale": scenario["demand_scale"],
+                    "demand_generation": "separate_poisson_arrival_departure_events",
                     "demand_params": demand_params,
                     "raw_category_demand_params": scenario[
                         "raw_category_demand_params"

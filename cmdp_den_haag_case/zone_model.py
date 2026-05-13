@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 
 import numpy as np
+from scipy.stats import poisson
 
 OCCUPANCY_BIN_SIZE = 0.01
 ZONE_ACTIONS = (
@@ -20,6 +21,55 @@ ZONE_ACTIONS = (
     0.25,
     0.30,
 )
+
+
+def generate_separate_event_demand(node_list, num_days, demand_params, time_slots):
+    all_days_demand_vectors = []
+    transformed_demand_vectors = []
+
+    for _day in range(num_days):
+        daily_arrivals = []
+        daily_departures = []
+        for category_count, category_params in zip(
+            node_list, demand_params, strict=True
+        ):
+            category_arrivals = np.zeros((category_count, 24), dtype=np.int64)
+            category_departures = np.zeros((category_count, 24), dtype=np.int64)
+            for params, (start, end) in zip(category_params, time_slots, strict=True):
+                lambda_arrivals, lambda_departures = params
+                category_arrivals[:, start:end] = poisson.rvs(
+                    lambda_arrivals, size=(category_count, end - start)
+                )
+                category_departures[:, start:end] = poisson.rvs(
+                    lambda_departures, size=(category_count, end - start)
+                )
+            daily_arrivals.append(category_arrivals)
+            daily_departures.append(category_departures)
+
+        daily_arrivals = np.vstack(daily_arrivals)
+        daily_departures = np.vstack(daily_departures)
+        all_days_demand_vectors.append(
+            {
+                "arrivals": daily_arrivals,
+                "departures": daily_departures,
+            }
+        )
+
+        transformed_day = []
+        for zone in range(daily_arrivals.shape[0]):
+            transformed_zone = []
+            for hour in range(24):
+                events = [1] * int(daily_arrivals[zone, hour])
+                events.extend([-1] * int(daily_departures[zone, hour]))
+                if events:
+                    np.random.shuffle(events)
+                else:
+                    events = [0]
+                transformed_zone.append(events)
+            transformed_day.append(transformed_zone)
+        transformed_demand_vectors.append(transformed_day)
+
+    return all_days_demand_vectors, transformed_demand_vectors
 
 
 def available_zone_actions(state) -> tuple[float, ...]:

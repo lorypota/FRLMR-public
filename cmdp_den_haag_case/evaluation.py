@@ -28,9 +28,12 @@ from cmdp_den_haag_case.config import (
     build_den_haag_network,
     build_den_haag_scenario,
 )
-from cmdp_den_haag_case.zone_model import ZoneCMDPEnv, ZoneRebalancingAgent
+from cmdp_den_haag_case.zone_model import (
+    ZoneCMDPEnv,
+    ZoneRebalancingAgent,
+    generate_separate_event_demand,
+)
 from common.config import GAMMA, NUM_EVAL_DAYS, TIME_SLOTS
-from common.demand import generate_global_demand
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -240,7 +243,7 @@ def evaluate_demand_scale(
             )
 
             graph = build_den_haag_network(scenario)
-            all_days_demand, transformed_demand = generate_global_demand(
+            all_days_demand, transformed_demand = generate_separate_event_demand(
                 node_list, NUM_EVAL_DAYS, demand_params, TIME_SLOTS
             )
 
@@ -331,13 +334,12 @@ def evaluate_demand_scale(
             for day in range(NUM_EVAL_DAYS):
                 for hour in range(24):
                     for station in range(num_stations):
-                        demand = all_days_demand[day][station][hour]
-                        if demand < 0:
-                            for idx, cat in enumerate(active_cats):
-                                if boundaries[idx] <= station < boundaries[idx + 1]:
-                                    cat_requests[cat] += abs(demand)
-                                    break
-                            global_requests += abs(demand)
+                        departures = all_days_demand[day]["departures"][station][hour]
+                        for idx, cat in enumerate(active_cats):
+                            if boundaries[idx] <= station < boundaries[idx + 1]:
+                                cat_requests[cat] += departures
+                                break
+                        global_requests += departures
 
             for idx, cat in enumerate(active_cats):
                 cat_requests[cat] = cat_requests[cat] / NUM_EVAL_DAYS / node_list[idx]
