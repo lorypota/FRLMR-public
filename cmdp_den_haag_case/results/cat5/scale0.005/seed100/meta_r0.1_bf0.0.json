@@ -8,8 +8,8 @@
     "eta": 0.1,
     "n_dual": 100,
     "num_repeats": 100,
-    "run_group": "20260512_104006_scale0.005_bf0.0",
-    "cpu_cores": "8-9",
+    "run_group": "20260513_115906_scale0.005_bf0.0",
+    "cpu_cores": "16-17",
     "failure_cost_coef": 0.0
   },
   "tokens": {
@@ -351,6 +351,7 @@
       "4": 2.0625e-06
     },
     "demand_scale": 0.005,
+    "demand_generation": "separate_poisson_arrival_departure_events",
     "demand_params": [
       [
         [
