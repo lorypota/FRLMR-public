@@ -34,6 +34,18 @@ The three score components are weighted equally. ODiN departure demand captures 
 
 Bike-share literature treats demand as a mix of residential density, employment, land use, POIs, transit access, and time-varying origin/destination patterns [[1]](#ref-1) [[2]](#ref-2) [[3]](#ref-3) [[4]](#ref-4).
 
+## Data-source roles
+
+Donkey Republic station data defines the station set. The latest Den Haag station snapshot is filtered to stations that appear in recent docked-bike count data. Addresses within 500 m of at least one station are assigned to their nearest station, and those address counts become station weights for weighted k-means. This means the zone geometry is based on the docked-bike network and nearby residential coverage.
+
+ODiN provides the movement-demand estimate. The service-zone calculation reads the 2018-2023 service-zone demand rates produced by `research_support/odin_demand_estimation/`. It uses each zone's summed hourly departure rate as the departure-demand score component.
+
+Address data provides the residential-density component. After Voronoi service-zone polygons are built, address points are spatially joined to the zones. The score uses `address_density_per_km2`, which is the weighted address count divided by zone area.
+
+BAG provides a non-residential activity proxy. The script downloads active BAG `verblijfsobject` records from the PDOK Kadaster BAG API for Den Haag and keeps records with at least one of these selected usage functions: meeting, healthcare, office, lodging, education, sport, or shop. Each kept BAG object counts once for `bag_activity_count`, even if the object may contain different amounts of floor area or host different numbers of people. The score uses `bag_activity_density_per_km2`, which is `bag_activity_count` divided by zone area and then min-max normalized across zones.
+
+The BAG output also stores `activity_function_count` and `bag_activity_area_m2`, but these fields are not used in the current service-pressure score. The current activity component therefore measures concentration of non-residential BAG objects, not capacity, jobs, visitor counts, opening hours, or observed trip demand.
+
 The main outputs are written to `output/`:
 
 - `service_zone_assignments_k20.csv`: station-to-zone and station-to-category assignments

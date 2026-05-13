@@ -28,11 +28,15 @@ The model keeps category-factorized learning. There is still one Q-table per ser
 
 Zones in the same category can still have different capacities, initial bikes, station counts, and service-zone IDs. This does not create separate Q-tables. The shared Q-table sees normalized occupancy states and normalized occupancy actions, not raw bike counts. For example, two zones with different capacities but 50 percent occupancy both map to `(0.50, period)`. An action such as `+0.10` then means a 10 percentage-point occupancy increase. The physical number of bikes moved depends on the zone capacity, but the learned policy remains category-level.
 
-The empirical demand input is the ODiN 2018 to 2023 category-period demand rate. For each category and period, the category arrival and departure rates are divided equally over the service zones in that category:
+The empirical demand input is the ODiN 2018 to 2023 category-period demand rate. ODiN is treated as potential movement demand, not observed shared-bike demand. The demand scale converts that potential demand into the realized shared-bike demand sampled by the simulator.
+
+For each category and period, the category arrival and departure rates are divided equally over the service zones in that category and multiplied by the configured demand scale:
 
 ```text
-lambda_zone = lambda_category / number_of_service_zones_in_category
+lambda_zone = lambda_category / number_of_service_zones_in_category * demand_scale
 ```
+
+The current sweep uses `demand_scale = 0.005`, `0.01`, and `0.02`. These values are sensitivity cases around the assumed shared-bike share of ODiN potential demand, with `0.01` as the middle case. Without this scaling, the ODiN rates would create thousands of sampled requests per service zone per hour, far above the service-zone inventories used by the RL environment.
 
 Den Haag demand is generated with separate arrival and departure events. For each zone-hour, arrivals and departures are sampled separately from Poisson distributions, combined into one event list, randomly ordered, and processed by the environment. This keeps arrivals able to replenish bikes, but avoids cancelling arrivals and departures before service failures are checked.
 
