@@ -2,8 +2,8 @@
 Den Haag CMDP lambda convergence plots from saved lambda histories.
 
 This mirrors the purpose of `cmdp/plots/lambda_convergence.py`, but reads
-scale-specific Den Haag training histories. The plot shows the mean lambda over
-all constrained category-period pairs for each selected r_max.
+scale-specific Den Haag training histories. Morning lambdas are solid lines and
+evening lambdas are dashed lines, averaged over the constrained categories.
 
 Usage:
     uv run cmdp_den_haag_case/plots/lambda_convergence.py --failure-cost-coef 0.0 --save
@@ -14,28 +14,45 @@ import argparse
 import os
 import pickle
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib.lines import Line2D  # line style legend entries
 
 from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import DEMAND_SCALES
 
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_R_MAX_VALUES = [0.005, 0.01, 0.02, 0.04, 0.05]
+COLORS = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
+STYLE_HANDLES = [
+    Line2D([0], [0], color="black", linestyle="-", linewidth=1.5, label="Morning"),
+    Line2D([0], [0], color="black", linestyle="--", linewidth=1.5, label="Evening"),
+]
+
+
+def _fmt(value):
+    if value == int(value):
+        return str(int(value))
+    text = f"{value:g}"
+    return text[1:] if text.startswith("0.") else text
 
 
 def plot_demand_scale(demand_scale, r_max_values, seeds, bf_token, save):
     scale_token = f"scale{fmt_token(demand_scale)}"
     sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(12, 7), dpi=100)
+    legend_handles = []
 
     # =============================================================================
-    # LOAD LAMBDA HISTORIES AND PLOT MEAN LAMBDA
+    # LOAD LAMBDA HISTORIES AND PLOT MORNING/EVENING CONVERGENCE
     # =============================================================================
 
-    for r_max in r_max_values:
-        all_means = []
+    for r_idx, r_max in enumerate(r_max_values):
+        color = COLORS[r_idx % len(COLORS)]
+        all_morning, all_evening = [], []
+
         for seed in seeds:
             path = os.path.join(
                 PLOT_DIR,
@@ -50,22 +67,61 @@ def plot_demand_scale(demand_scale, r_max_values, seeds, bf_token, save):
                 raise FileNotFoundError(f"Missing lambda history: {path}")
             with open(path, "rb") as file:
                 history = pickle.load(file)
-            values = []
+
+            morning_vals, evening_vals = [], []
             for _repeat, _day, lambdas in history:
-                flat = [value for pair in lambdas.values() for value in pair]
-                values.append(float(np.mean(flat)) if flat else 0.0)
-            all_means.append(values)
+                morning = [pair[0] for pair in lambdas.values()]
+                evening = [pair[1] for pair in lambdas.values()]
+                morning_vals.append(float(np.mean(morning)) if morning else 0.0)
+                evening_vals.append(float(np.mean(evening)) if evening else 0.0)
 
-        min_len = min(len(values) for values in all_means)
-        arr = np.asarray([values[:min_len] for values in all_means])
+            all_morning.append(morning_vals)
+            all_evening.append(evening_vals)
+
+        min_len = min(len(values) for values in all_morning)
+        morning_arr = np.array([values[:min_len] for values in all_morning])
+        evening_arr = np.array([values[:min_len] for values in all_evening])
         steps = np.arange(min_len)
-        ax.plot(steps, np.mean(arr, axis=0), label=rf"$r_{{max}}$={r_max:g}")
 
-    ax.set_xlabel("Dual update step")
-    ax.set_ylabel(r"Mean $\lambda$")
-    ax.set_title(f"Den Haag lambda convergence, scale {demand_scale}")
-    ax.legend()
+        morning_mean = np.mean(morning_arr, axis=0)
+        morning_std = np.std(morning_arr, axis=0)
+        evening_mean = np.mean(evening_arr, axis=0)
+        evening_std = np.std(evening_arr, axis=0)
+
+        ax.plot(steps, morning_mean, color=color, linestyle="-", linewidth=1.5)
+        ax.fill_between(
+            steps,
+            morning_mean - 1.96 * morning_std,
+            morning_mean + 1.96 * morning_std,
+            color=color,
+            alpha=0.15,
+        )
+
+        ax.plot(steps, evening_mean, color=color, linestyle="--", linewidth=1.5)
+        ax.fill_between(
+            steps,
+            evening_mean - 1.96 * evening_std,
+            evening_mean + 1.96 * evening_std,
+            color=color,
+            alpha=0.08,
+        )
+
+        legend_handles.append(
+            mpatches.Patch(color=color, label=rf"$r_{{max}}$={_fmt(r_max)}")
+        )
+
+    ax.set_xlabel("Dual update step", fontsize=26)
+    ax.set_ylabel(r"$\lambda$", fontsize=26)
+    ax.tick_params(labelsize=22)
+    ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
+    ax.legend(
+        handles=legend_handles + STYLE_HANDLES,
+        fontsize=18,
+        loc="best",
+        framealpha=0.4,
+    )
     plt.tight_layout()
+
     if save:
         path = os.path.join(
             PLOT_DIR, f"lambda_convergence_{scale_token}_{bf_token}.png"

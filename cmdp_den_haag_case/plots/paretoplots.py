@@ -19,6 +19,7 @@ from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import DEMAND_SCALES, R_MAX_VALUES
 
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_OFFSET = (8, 8)  # above and to the right
 
 
 def _fmt(value):
@@ -68,6 +69,9 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
         ("evening", np.mean(max_fr[:, :, 1], axis=1)),
     ]
 
+    labels = [rf"$r_{{max}}$={_fmt(r_max)}" for r_max in R_MAX_VALUES]
+    num_r_max = len(R_MAX_VALUES)
+
     # =============================================================================
     # PARETO PLOTS
     # =============================================================================
@@ -75,20 +79,79 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
     sns.set_theme(style="whitegrid")
     for period_name, avg_failures in period_data:
         fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
+
         pareto = pareto_indices(avg_costs, avg_failures)
-        for i, r_max in enumerate(R_MAX_VALUES):
+        dominated = [i for i in range(num_r_max) if i not in pareto]
+
+        # Plot all points
+        for i in range(num_r_max):
             marker = "s" if i in pareto else "o"
-            size = 120 if i in pareto else 50
-            ax.scatter(avg_costs[i], avg_failures[i], s=size, marker=marker)
+            size = 120 if i in pareto else 40
+            ax.scatter(
+                avg_costs[i],
+                avg_failures[i],
+                size,
+                color="green",
+                marker=marker,
+                zorder=3,
+            )
+
+        # Draw Pareto staircase
+        pareto_sorted = sorted(pareto, key=lambda i: avg_costs[i])
+        for k in range(len(pareto_sorted) - 1):
+            i, j = pareto_sorted[k], pareto_sorted[k + 1]
+            ax.plot(
+                [avg_costs[i], avg_costs[j]],
+                [avg_failures[i], avg_failures[i]],
+                color="blue",
+                linewidth=1,
+            )
+            ax.plot(
+                [avg_costs[j], avg_costs[j]],
+                [avg_failures[i], avg_failures[j]],
+                color="blue",
+                linewidth=1,
+            )
+
+        # Label Pareto-optimal points with full labels, dominated with short ones
+        for i in pareto:
             ax.annotate(
-                _fmt(r_max),
+                labels[i],
                 (avg_costs[i], avg_failures[i]),
                 textcoords="offset points",
-                xytext=(8, 8),
+                xytext=DEFAULT_OFFSET,
+                fontsize=20,
             )
-        ax.set_xlabel("Global service cost")
-        ax.set_ylabel("Max failure rate [%]")
-        ax.set_title(f"Den Haag CMDP Pareto plot ({period_name}), scale {demand_scale}")
+        for i in dominated:
+            ax.annotate(
+                _fmt(R_MAX_VALUES[i]),
+                (avg_costs[i], avg_failures[i]),
+                textcoords="offset points",
+                xytext=DEFAULT_OFFSET,
+                fontsize=20,
+            )
+
+        # Legend
+        handles = [
+            ax.scatter([], [], marker="s", color="green", s=120, label="Pareto-optimal")
+        ]
+        dominated_vals = [_fmt(R_MAX_VALUES[i]) for i in dominated]
+        if dominated_vals:
+            dominated_label = "Dominated\n(" + ", ".join(dominated_vals) + ")"
+            handles.append(
+                ax.scatter(
+                    [], [], marker="o", color="green", s=40, label=dominated_label
+                )
+            )
+        ax.legend(handles=handles, fontsize=20, loc="best", framealpha=0.4)
+
+        ax.set_ylabel("Max failure rate (%)", fontsize=26)
+        ax.set_xlabel("Global service cost", fontsize=26)
+        ax.tick_params(labelsize=26)
+        ax.grid(
+            True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7
+        )
+
         plt.tight_layout()
         if save:
             path = os.path.join(

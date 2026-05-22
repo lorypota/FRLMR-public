@@ -14,6 +14,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib.lines import Line2D
 
 from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import (
@@ -23,6 +24,13 @@ from cmdp_den_haag_case.config import (
 )
 
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
+CATEGORY_NAMES = {
+    0: "Cat 0 (remote)",
+    1: "Cat 1",
+    2: "Cat 2",
+    3: "Cat 3",
+    4: "Cat 4 (central)",
+}
 CATEGORY_COLORS = {
     0: "#2ca02c",
     1: "#8c564b",
@@ -72,6 +80,9 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
                 data[:, :, cat_idx, period] / cat_period_departures[cat][period] * 100
             )
 
+    # Reverse so x goes from loose (right) to tight (left), as in the cmdp plots.
+    rates = rates[::-1]
+    reb_costs = np.asarray(reb_costs)[::-1]
     x = np.arange(len(R_MAX_VALUES))
 
     # =============================================================================
@@ -83,39 +94,124 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
 
     for cat_idx, cat in enumerate(active_cats):
         morning = rates[:, :, cat_idx, 0]
+        morning_mean = np.mean(morning, axis=1)
+        morning_std = np.std(morning, axis=1)
+
         evening = rates[:, :, cat_idx, 1]
+        evening_mean = np.mean(evening, axis=1)
+        evening_std = np.std(evening, axis=1)
+
+        # Morning: solid line (with label)
         ax.plot(
             x,
-            np.mean(morning, axis=1),
+            morning_mean,
             color=CATEGORY_COLORS[cat],
+            linewidth=1.5,
             marker="o",
-            label=f"Cat {cat}",
+            markersize=5,
+            label=CATEGORY_NAMES[cat],
         )
-        ax.plot(
+        ax.fill_between(
             x,
-            np.mean(evening, axis=1),
+            morning_mean - morning_std,
+            morning_mean + morning_std,
             color=CATEGORY_COLORS[cat],
-            marker="s",
-            linestyle=":",
+            alpha=0.15,
         )
 
+        # Evening: dotted line (no label to avoid legend duplication)
+        ax.plot(
+            x,
+            evening_mean,
+            color=CATEGORY_COLORS[cat],
+            linewidth=1.5,
+            linestyle=":",
+            marker="s",
+            markersize=4,
+        )
+        ax.fill_between(
+            x,
+            evening_mean - evening_std,
+            evening_mean + evening_std,
+            color=CATEGORY_COLORS[cat],
+            alpha=0.1,
+        )
+
+    # Secondary y-axis for rebalancing costs
     ax2 = ax.twinx()
+    reb_mean = np.mean(reb_costs, axis=1)
+    reb_std = np.std(reb_costs, axis=1)
     ax2.plot(
         x,
-        np.mean(reb_costs, axis=1),
+        reb_mean,
         color="#d62728",
-        marker="D",
+        linewidth=1.5,
         linestyle="-.",
+        marker="D",
+        markersize=5,
+        alpha=0.8,
         label="Reb. costs",
     )
-    ax.set_xlabel(r"$r_{max}$")
-    ax.set_ylabel("Failure rate [%]")
-    ax2.set_ylabel("Rebalancing costs")
+    ax2.fill_between(
+        x,
+        reb_mean - reb_std,
+        reb_mean + reb_std,
+        color="#d62728",
+        alpha=0.1,
+    )
+    ax2.set_ylabel("Rebalancing costs", fontsize=20, color="#d62728")
+    ax2.tick_params(axis="y", labelcolor="#d62728", labelsize=16)
+    ax2.grid(False)
+
+    ax.set_xlabel(r"$r_{max}$ (%)", fontsize=20)
+    ax.set_ylabel("Failure rate (%)", fontsize=20)
+    ax.tick_params(labelsize=16)
     ax.set_xticks(x)
-    ax.set_xticklabels([f"{value:g}" for value in R_MAX_VALUES])
-    ax.invert_xaxis()
-    ax.set_title(f"Den Haag failure rates by r_max, scale {demand_scale}")
-    ax.legend(loc="upper right")
+    xlabels = [f"{value * 100:g}" for value in reversed(R_MAX_VALUES)]
+    if xlabels and xlabels[0] == "100":
+        xlabels[0] = "100\n(no constr.)"
+    ax.set_xticklabels(xlabels)
+
+    # Combined legend with morning/evening note
+    lines1, labels1 = ax.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    legend_handles = (
+        lines1
+        + lines2
+        + [
+            Line2D(
+                [0],
+                [0],
+                color="grey",
+                linewidth=1.5,
+                linestyle="-",
+                label="Morning (0-12h)",
+            ),
+            Line2D(
+                [0],
+                [0],
+                color="grey",
+                linewidth=1.5,
+                linestyle=":",
+                label="Evening (12-24h)",
+            ),
+        ]
+    )
+    legend_labels = labels1 + labels2 + ["Morning (0-12h)", "Evening (12-24h)"]
+    ax.legend(
+        legend_handles,
+        legend_labels,
+        fontsize=11,
+        loc="upper right",
+        bbox_to_anchor=(0.45, 1.0),
+        framealpha=0.9,
+        handlelength=1.5,
+        handletextpad=0.4,
+        columnspacing=0.8,
+    )
+
+    ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.5)
+    ax.set_title(rf"Failure rates by $r_{{max}}$ (scale {demand_scale})", fontsize=22)
     plt.tight_layout()
 
     if save:

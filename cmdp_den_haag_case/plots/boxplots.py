@@ -12,11 +12,13 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from matplotlib.ticker import AutoLocator, FuncFormatter, MultipleLocator
 
 from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import DEMAND_SCALES, R_MAX_VALUES
 
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
+VIRIDIS = sns.color_palette("viridis", 11)
 
 
 def _fmt(value):
@@ -24,6 +26,17 @@ def _fmt(value):
         return str(int(value))
     text = f"{value:g}"
     return text[1:] if text.startswith("0.") else text
+
+
+def tick_fmt(val, _pos):
+    if val == int(val):
+        return str(int(val))
+    s = f"{val:g}"
+    if s.startswith("0."):
+        s = s[1:]
+    elif s.startswith("-0."):
+        s = "-" + s[2:]
+    return s
 
 
 def load_array(results_dir, name, num_seeds, bf_token):
@@ -41,22 +54,45 @@ def save_or_show(fig, path, save):
     plt.show()
 
 
-def plot_box(data, r_values, ylabel, title, output_path, save):
+def plot_box(
+    data,
+    r_values,
+    ylabel,
+    ylabel_fontsize,
+    tick_labelsize,
+    box_color,
+    median_color,
+    y_locator,
+    output_path,
+    save,
+):
     sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
-    box = ax.boxplot(data.transpose(), patch_artist=True, widths=0.6)
+    box = ax.boxplot(
+        data.transpose(), patch_artist=True, notch=False, vert=True, widths=0.6
+    )
     for patch in box["boxes"]:
-        patch.set_facecolor("#4C72B0")
+        patch.set_facecolor(box_color)
         patch.set_edgecolor("black")
         patch.set_alpha(0.8)
+        patch.set_linewidth(1.5)
+    for whisker in box["whiskers"]:
+        whisker.set(color="black", linewidth=1.5, linestyle="--")
+    for cap in box["caps"]:
+        cap.set(color="black", linewidth=1.5)
     for median in box["medians"]:
-        median.set(color="black", linewidth=1.5)
-    ax.set_xlabel(r"$r_{max}$")
-    ax.set_ylabel(ylabel)
-    ax.set_title(title)
+        median.set(color=median_color, linewidth=1.5)
+    for flier in box["fliers"]:
+        flier.set(marker="o", color="red", alpha=0.75)
+    ax.set_xlabel(r"$r_{max}$", fontsize=36)
+    ax.set_ylabel(ylabel, fontsize=ylabel_fontsize)
+    ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
     ax.set_xticks(range(1, len(r_values) + 1))
-    ax.set_xticklabels([_fmt(value) for value in r_values])
+    ax.set_xticklabels([_fmt(value) for value in r_values], fontsize=34)
     ax.invert_xaxis()
+    ax.tick_params(labelsize=tick_labelsize)
+    ax.yaxis.set_major_locator(y_locator)
+    ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
     save_or_show(fig, output_path, save)
 
 
@@ -81,25 +117,93 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
             f"Expected {len(R_MAX_VALUES)} r_max points, found {len(gini)}"
         )
 
+    # (name, data, ylabel, ylabel_fontsize, tick_labelsize, box_color, median, locator)
     plots = [
-        ("gini", gini, "Gini index"),
-        ("costs_reb", cost_reb, "Weighted rebalancing operations"),
-        ("costs_fails", cost_fail, "Failure rate [%]"),
-        ("costs_bikes", cost_bikes, "Number of vehicles"),
-        ("max_failure_rate_morning", max_fail[:, :, 0], "Max fail. [%] morning"),
-        ("max_failure_rate_evening", max_fail[:, :, 1], "Max fail. [%] evening"),
+        (
+            "gini",
+            gini,
+            "Gini index",
+            36,
+            34,
+            VIRIDIS[7],
+            "black",
+            MultipleLocator(0.05),
+        ),
+        (
+            "costs_reb",
+            cost_reb,
+            "Weighted rebal. operations",
+            26,
+            34,
+            VIRIDIS[2],
+            "gold",
+            AutoLocator(),
+        ),
+        (
+            "costs_fails",
+            cost_fail,
+            "Failure rate [%]",
+            36,
+            34,
+            VIRIDIS[2],
+            "gold",
+            AutoLocator(),
+        ),
+        (
+            "costs_bikes",
+            cost_bikes,
+            "Number of vehicles",
+            36,
+            34,
+            VIRIDIS[2],
+            "gold",
+            AutoLocator(),
+        ),
+        (
+            "max_failure_rate_morning",
+            max_fail[:, :, 0],
+            "Max fail. [%] (morning)",
+            28,
+            32,
+            VIRIDIS[4],
+            "gold",
+            MultipleLocator(2.5),
+        ),
+        (
+            "max_failure_rate_evening",
+            max_fail[:, :, 1],
+            "Max fail. [%] (evening)",
+            28,
+            34,
+            VIRIDIS[5],
+            "gold",
+            MultipleLocator(0.5),
+        ),
     ]
 
     # =============================================================================
     # PLOT METRICS
     # =============================================================================
 
-    for name, data, ylabel in plots:
+    for (
+        name,
+        data,
+        ylabel,
+        ylabel_fontsize,
+        tick_labelsize,
+        box_color,
+        median_color,
+        y_locator,
+    ) in plots:
         plot_box(
             data,
             R_MAX_VALUES,
             ylabel,
-            f"Den Haag CMDP {ylabel}, demand scale {demand_scale}",
+            ylabel_fontsize,
+            tick_labelsize,
+            box_color,
+            median_color,
+            y_locator,
             os.path.join(PLOT_DIR, f"boxplot_{name}_{scale_token}_{bf_token}.png"),
             save,
         )
