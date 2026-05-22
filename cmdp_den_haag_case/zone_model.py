@@ -157,7 +157,6 @@ class ZoneCMDPEnv:
         return [occupancy_bin(node["bikes"], node["capacity"]), time]
 
     def get_state(self):
-        state = np.zeros((self.num_zones, 2), dtype=float)
         failures = [0] * self.num_zones
 
         time = 0 if self.next_rebalancing_hour == 11 else 1
@@ -177,9 +176,12 @@ class ZoneCMDPEnv:
                         n_bikes = capacity
 
                 node["bikes"] = n_bikes
-                state[zone] = self._state_for_zone(zone, time)
 
             self.hour += 1
+
+        state = np.zeros((self.num_zones, 2), dtype=float)
+        for zone in range(self.num_zones):
+            state[zone] = self._state_for_zone(zone, time)
 
         self.next_rebalancing_hour = 23 if self.hour == 12 else 11
         if self.next_rebalancing_hour == 11:

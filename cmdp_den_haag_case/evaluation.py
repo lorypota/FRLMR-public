@@ -370,17 +370,22 @@ def evaluate_demand_scale(
             )
 
             satisfaction_tol = 0.05
-            satisfied = True
+            n_constraints = 0
+            n_satisfied = 0
             for cat in failure_thresholds:
                 for p in (0, 1):
                     avg_fail = np.mean(period_cat_failures[cat][p])
                     threshold = failure_thresholds[cat][p]
-                    if avg_fail > threshold * (1 + satisfaction_tol):
-                        satisfied = False
+                    n_constraints += 1
+                    if avg_fail <= threshold * (1 + satisfaction_tol):
+                        n_satisfied += 1
+            satisfaction_fraction = (
+                n_satisfied / n_constraints if n_constraints > 0 else 1.0
+            )
 
             gini_values_tot[r_idx].append(gini)
             costs_tot[r_idx].append(total_cost)
-            constraint_satisfaction[r_idx].append(satisfied)
+            constraint_satisfaction[r_idx].append(satisfaction_fraction)
             costs_rebalancing[r_idx].append(np.mean(daily_global_costs))
             costs_failures[r_idx].append(failure_rate_global)
             costs_bikes[r_idx].append(n_bikes)
@@ -401,9 +406,9 @@ def evaluate_demand_scale(
             max_failure_rates_per_period[r_idx, seed_idx, 0] = max_rate_by_period[0]
             max_failure_rates_per_period[r_idx, seed_idx, 1] = max_rate_by_period[1]
 
-            constraint_str = "SAT" if satisfied else "VIOL"
             print(
-                f"Gini={gini:.3f}, Cost={total_cost:.2f}, Constraint={constraint_str}"
+                f"Gini={gini:.3f}, Cost={total_cost:.2f}, "
+                f"Constraints satisfied={n_satisfied}/{n_constraints}"
             )
 
     print("\n" + "=" * 60)
