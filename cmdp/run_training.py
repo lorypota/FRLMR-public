@@ -34,11 +34,11 @@ training_script = os.path.join(SCRIPT_DIR, "training.py")
 for failure_cost_coef in FAILURE_COST_COEFS:
     run_group = f"{run_group_base}_bf{failure_cost_coef}"
     print(f"\n=== failure_cost_coef={failure_cost_coef} (run_group={run_group}) ===")
-    for s in seeds:
-        for c in categories:
+    for seed in seeds:
+        for category in categories:
             processes = []
 
-            for i, r in enumerate(R_MAX_VALUES):
+            for i, r_max in enumerate(R_MAX_VALUES):
                 core_start = i * CORES_PER_PROCESS
                 core_end = core_start + CORES_PER_PROCESS - 1
                 cpu_cores = f"{core_start}-{core_end}"
@@ -48,11 +48,11 @@ for failure_cost_coef in FAILURE_COST_COEFS:
                     "run",
                     training_script,
                     "--r-max",
-                    str(r),
+                    str(r_max),
                     "--categories",
-                    str(c),
+                    str(category),
                     "--seed",
-                    str(s),
+                    str(seed),
                     "--failure-cost-coef",
                     str(failure_cost_coef),
                     "--run-group",
@@ -62,20 +62,20 @@ for failure_cost_coef in FAILURE_COST_COEFS:
                 ]
 
                 print(
-                    f"  Launching r_max={r}, failure_cost_coef={failure_cost_coef} on cores {cpu_cores}"
+                    f"  Launching r_max={r_max}, failure_cost_coef={failure_cost_coef} on cores {cpu_cores}"
                 )
                 proc = subprocess.Popen(cmd)
-                processes.append((proc, r))
+                processes.append((proc, r_max))
 
             print(
-                f"  Waiting for {len(processes)} processes (seed={s}, cat={c}, bf={failure_cost_coef})..."
+                f"  Waiting for {len(processes)} processes (seed={seed}, cat={category}, bf={failure_cost_coef})..."
             )
 
             failed = False
-            for proc, r in processes:
+            for proc, r_max in processes:
                 exit_code = proc.wait()
                 if exit_code != 0:
-                    print(f"  !!! r_max={r} failed (exit code {exit_code})")
+                    print(f"  !!! r_max={r_max} failed (exit code {exit_code})")
                     failed = True
 
             if failed:
@@ -83,8 +83,8 @@ for failure_cost_coef in FAILURE_COST_COEFS:
                 for proc, _ in processes:
                     proc.kill()
                 print(
-                    f"\n!!!!!!\n\n\n\n\nSEED {s}, CAT {c}, R_MAX {r} FAILED!\n\n\n\n\n!!!!!!\n"
+                    f"\n!!!!!!\n\n\n\n\nSEED {seed}, CAT {category}, R_MAX {r_max} FAILED!\n\n\n\n\n!!!!!!\n"
                 )
                 # sys.exit(1)
 
-            print(f"  Seed {s} done for failure_cost_coef={failure_cost_coef}.\n")
+            print(f"  Seed {seed} done for failure_cost_coef={failure_cost_coef}.\n")

@@ -7,6 +7,7 @@ Usage:
 """
 
 import argparse
+import os
 import subprocess
 import sys
 
@@ -23,8 +24,7 @@ parser.add_argument("--failure-cost-coef", type=float, default=0.0)
 args = parser.parse_args()
 
 for script in scripts:
-    print(f"\n{'='*60}\nRunning {script}...\n{'='*60}")
-    env = {"MPLBACKEND": "Agg"}
+    print(f"\n{'=' * 60}\nRunning {script}...\n{'=' * 60}")
     result = subprocess.run(
         [
             sys.executable,
@@ -35,9 +35,10 @@ for script in scripts:
             "--failure-cost-coef",
             str(args.failure_cost_coef),
         ],
-        env={**__import__("os").environ, **env},
+        env={**os.environ, "MPLBACKEND": "Agg"},
+        check=False,
     )
     if result.returncode != 0:
         print(f"FAILED: {script}")
 
-print(f"\n{'='*60}\nAll done.\n{'='*60}")
+print(f"\n{'=' * 60}\nAll done.\n{'=' * 60}")
