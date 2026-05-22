@@ -22,7 +22,7 @@ from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import DEMAND_SCALES
 
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_R_MAX_VALUES = [0.001, 0.005, 0.01]
+DEFAULT_R_MAX_VALUES = [0.005, 0.01, 0.02, 0.04, 0.05]
 
 
 def plot_demand_scale(demand_scale, r_max_values, seeds, bf_token, save):

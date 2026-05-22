@@ -3,7 +3,6 @@ from __future__ import annotations
 import random
 
 import numpy as np
-from scipy.stats import poisson
 
 OCCUPANCY_BIN_SIZE = 0.01
 ZONE_ACTIONS = (
@@ -37,10 +36,10 @@ def generate_separate_event_demand(node_list, num_days, demand_params, time_slot
             category_departures = np.zeros((category_count, 24), dtype=np.int64)
             for params, (start, end) in zip(category_params, time_slots, strict=True):
                 lambda_arrivals, lambda_departures = params
-                category_arrivals[:, start:end] = poisson.rvs(
+                category_arrivals[:, start:end] = np.random.poisson(
                     lambda_arrivals, size=(category_count, end - start)
                 )
-                category_departures[:, start:end] = poisson.rvs(
+                category_departures[:, start:end] = np.random.poisson(
                     lambda_departures, size=(category_count, end - start)
                 )
             daily_arrivals.append(category_arrivals)
@@ -75,9 +74,7 @@ def generate_separate_event_demand(node_list, num_days, demand_params, time_slot
 def available_zone_actions(state) -> tuple[float, ...]:
     occupancy = round(float(state[0]), 2)
     return tuple(
-        action
-        for action in ZONE_ACTIONS
-        if 0.0 <= round(occupancy + action, 2) <= 1.0
+        action for action in ZONE_ACTIONS if 0.0 <= round(occupancy + action, 2) <= 1.0
     )
 
 
@@ -176,8 +173,10 @@ class ZoneCMDPEnv:
                     if n_bikes < 0:
                         n_bikes = 0
                         failures[zone] += 1
+                    elif n_bikes > capacity:
+                        n_bikes = capacity
 
-                node["bikes"] = min(capacity, n_bikes)
+                node["bikes"] = n_bikes
                 state[zone] = self._state_for_zone(zone, time)
 
             self.hour += 1
@@ -191,7 +190,7 @@ class ZoneCMDPEnv:
 
         return state, failures
 
-    def compute_reward(self, actions, failures, post_action_occupancy, bike_deltas):
+    def compute_reward(self, failures, post_action_occupancy, bike_deltas):
         base_rewards = np.zeros(self.num_zones)
         reb_costs = np.zeros(self.num_zones)
         current_period = self.current_period
@@ -252,7 +251,7 @@ class ZoneCMDPEnv:
 
         state, failures = self.get_state()
         reward, base_reward, reb_costs = self.compute_reward(
-            actions, failures, post_action_occupancy, bike_deltas
+            failures, post_action_occupancy, bike_deltas
         )
 
         return state, reward, base_reward, failures, reb_costs

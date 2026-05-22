@@ -65,11 +65,10 @@ class CMDPEnv:
                     if n_bikes < 0:
                         n_bikes = 0
                         failures[i] += 1
+                    elif n_bikes > 100:
+                        n_bikes = 100
 
-                if n_bikes > 100:
-                    self.G.nodes[i]["bikes"] = 100
-                else:
-                    self.G.nodes[i]["bikes"] = n_bikes
+                self.G.nodes[i]["bikes"] = n_bikes
 
                 state[i] = [self.G.nodes[i]["bikes"], time]
 
