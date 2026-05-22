@@ -223,7 +223,7 @@ def evaluate_demand_scale(
             r_max, demand_params, active_cats, constrained_cats
         )
 
-        for seed in seeds:
+        for seed_idx, seed in enumerate(seeds):
             print(f"  Seed {seed}...", end=" ")
 
             np.random.seed(seed)
@@ -331,7 +331,7 @@ def evaluate_demand_scale(
             cat_requests = {cat: 0 for cat in active_cats}
             global_requests = 0
 
-            for day in range(NUM_EVAL_DAYS):
+            for day in range(1, NUM_EVAL_DAYS):
                 for hour in range(24):
                     for station in range(num_stations):
                         departures = all_days_demand[day]["departures"][station][hour]
@@ -342,8 +342,10 @@ def evaluate_demand_scale(
                         global_requests += departures
 
             for idx, cat in enumerate(active_cats):
-                cat_requests[cat] = cat_requests[cat] / NUM_EVAL_DAYS / node_list[idx]
-            global_requests = global_requests / NUM_EVAL_DAYS
+                cat_requests[cat] = (
+                    cat_requests[cat] / (NUM_EVAL_DAYS - 1) / node_list[idx]
+                )
+            global_requests = global_requests / (NUM_EVAL_DAYS - 1)
 
             cat_failure_rates = {}
             for cat in active_cats:
@@ -383,7 +385,6 @@ def evaluate_demand_scale(
             costs_failures[r_idx].append(failure_rate_global)
             costs_bikes[r_idx].append(n_bikes)
 
-            seed_idx = seeds.index(seed)
             max_rate_by_period = [0.0, 0.0]
             for cat_idx_local, cat in enumerate(active_cats):
                 for p in (0, 1):

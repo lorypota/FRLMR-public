@@ -88,13 +88,15 @@ def main():
 
             np.random.seed(seed)
             random.seed(seed)
-            seed_results_dir = os.path.join(SCRIPT_DIR, "results", cat_dirname, f"seed{seed}")
-            seed_qtables_dir = os.path.join(SCRIPT_DIR, "q_tables", cat_dirname, f"seed{seed}")
+            seed_results_dir = os.path.join(
+                SCRIPT_DIR, "results", cat_dirname, f"seed{seed}"
+            )
+            seed_qtables_dir = os.path.join(
+                SCRIPT_DIR, "q_tables", cat_dirname, f"seed{seed}"
+            )
             b_token = f"b{fmt_token(beta)}"
 
-            n_bikes = np.load(
-                os.path.join(seed_results_dir, f"bikes_{b_token}.npy")
-            )
+            n_bikes = np.load(os.path.join(seed_results_dir, f"bikes_{b_token}.npy"))
 
             G = generate_network(node_list)
             all_days_demand, transformed_demand = generate_global_demand(
@@ -167,7 +169,7 @@ def main():
             cat_requests = {cat: 0 for cat in active_cats}
             global_requests = 0
 
-            for day in range(NUM_EVAL_DAYS):
+            for day in range(1, NUM_EVAL_DAYS):
                 for hour in range(24):
                     for station in range(num_stations):
                         demand = all_days_demand[day][station][hour]
@@ -181,8 +183,10 @@ def main():
 
             # Normalize requests
             for idx, cat in enumerate(active_cats):
-                cat_requests[cat] = cat_requests[cat] / NUM_EVAL_DAYS / node_list[idx]
-            global_requests = global_requests / NUM_EVAL_DAYS
+                cat_requests[cat] = (
+                    cat_requests[cat] / (NUM_EVAL_DAYS - 1) / node_list[idx]
+                )
+            global_requests = global_requests / (NUM_EVAL_DAYS - 1)
 
             # Compute failure rates
             cat_failure_rates = {}
@@ -219,9 +223,7 @@ def main():
     print("Saving results...")
     results_dir = os.path.join(SCRIPT_DIR, "results", cat_dirname, "eval")
     os.makedirs(results_dir, exist_ok=True)
-    np.save(
-        os.path.join(results_dir, f"gini_{num_seeds}seeds.npy"), gini_values_tot
-    )
+    np.save(os.path.join(results_dir, f"gini_{num_seeds}seeds.npy"), gini_values_tot)
     np.save(os.path.join(results_dir, f"cost_{num_seeds}seeds.npy"), costs_tot)
 
     np.save(

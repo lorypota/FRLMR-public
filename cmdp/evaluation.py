@@ -112,7 +112,7 @@ def main():
             r_max, demand_params, active_cats, constrained_cats
         )
 
-        for seed in seeds:
+        for seed_idx, seed in enumerate(seeds):
             print(f"  Seed {seed}...", end=" ")
 
             np.random.seed(seed)
@@ -229,7 +229,7 @@ def main():
             cat_requests = {cat: 0 for cat in active_cats}
             global_requests = 0
 
-            for day in range(NUM_EVAL_DAYS):
+            for day in range(1, NUM_EVAL_DAYS):
                 for hour in range(24):
                     for station in range(num_stations):
                         demand = all_days_demand[day][station][hour]
@@ -242,8 +242,10 @@ def main():
 
             # Normalize requests
             for idx, cat in enumerate(active_cats):
-                cat_requests[cat] = cat_requests[cat] / NUM_EVAL_DAYS / node_list[idx]
-            global_requests = global_requests / NUM_EVAL_DAYS
+                cat_requests[cat] = (
+                    cat_requests[cat] / (NUM_EVAL_DAYS - 1) / node_list[idx]
+                )
+            global_requests = global_requests / (NUM_EVAL_DAYS - 1)
 
             # Compute failure rates
             cat_failure_rates = {}
@@ -282,7 +284,6 @@ def main():
             costs_bikes[r_idx].append(n_bikes)
 
             # Store per-category per-period failure rates
-            seed_idx = seeds.index(seed)
             max_rate_by_period = [0.0, 0.0]
             for cat_idx_local, cat in enumerate(active_cats):
                 for p in (0, 1):
