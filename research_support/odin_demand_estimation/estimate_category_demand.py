@@ -278,6 +278,15 @@ def period_from_hour(value: object) -> str | None:
     return None
 
 
+def hour_from_value(value: object) -> int | None:
+    if value is None or pd.isna(value):
+        return None
+    hour = int(value)
+    if 0 <= hour <= 23:
+        return hour
+    return None
+
+
 def prepare_trips(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
@@ -286,6 +295,7 @@ def prepare_trips(df: pd.DataFrame) -> pd.DataFrame:
     trips["origin_pc4"] = trips["vertpc"].map(normalize_pc4)
     trips["destination_pc4"] = trips["aankpc"].map(normalize_pc4)
     trips["period"] = trips["vertuur"].map(period_from_hour)
+    trips["hour"] = trips["vertuur"].map(hour_from_value)
     trips["factorv"] = pd.to_numeric(trips["factorv"], errors="coerce")
     trips["khvm"] = pd.to_numeric(trips["khvm"], errors="coerce")
     trips["respondent_id"] = (
@@ -361,6 +371,17 @@ def add_lambdas(
         lambda row: row[arrival_col] / 365 / PERIOD_HOURS[row["period"]],
         axis=1,
     )
+    return result
+
+
+def add_lambdas_per_clock_hour(
+    df: pd.DataFrame,
+    departure_col: str = "weighted_departures",
+    arrival_col: str = "weighted_arrivals",
+) -> pd.DataFrame:
+    result = df.copy()
+    result["lambda_departures_per_hour"] = result[departure_col] / 365
+    result["lambda_arrivals_per_hour"] = result[arrival_col] / 365
     return result
 
 
@@ -440,6 +461,64 @@ def aggregate_period_rates(
     ].sort_values(["year", output_location_col, "period"])
 
 
+def aggregate_hour_rates(
+    trips: pd.DataFrame,
+    location_col: str,
+    output_location_col: str,
+) -> pd.DataFrame:
+    departures = aggregate_direction(
+        trips,
+        ["year", location_col, "hour"],
+        "weighted_departures",
+    ).rename(columns={location_col: output_location_col})
+    arrivals = aggregate_direction(
+        trips,
+        ["year", location_col.replace("origin", "destination"), "hour"],
+        "weighted_arrivals",
+    ).rename(
+        columns={location_col.replace("origin", "destination"): output_location_col}
+    )
+
+    merged = departures.merge(
+        arrivals,
+        on=["year", output_location_col, "hour"],
+        how="outer",
+    )
+    for col in ["weighted_departures", "weighted_arrivals"]:
+        merged[col] = merged[col].fillna(0.0)
+    for col in [
+        "weighted_departures_trips",
+        "weighted_departures_persons",
+        "weighted_arrivals_trips",
+        "weighted_arrivals_persons",
+    ]:
+        merged[col] = merged[col].fillna(0).astype(int)
+
+    merged["n_trips"] = merged[
+        ["weighted_departures_trips", "weighted_arrivals_trips"]
+    ].max(axis=1)
+    merged["n_persons"] = merged[
+        ["weighted_departures_persons", "weighted_arrivals_persons"]
+    ].max(axis=1)
+    merged["low_unique_person_count"] = merged["n_persons"] < 50
+    merged = add_lambdas_per_clock_hour(merged)
+
+    return merged[
+        [
+            "year",
+            output_location_col,
+            "hour",
+            "weighted_departures",
+            "weighted_arrivals",
+            "lambda_departures_per_hour",
+            "lambda_arrivals_per_hour",
+            "n_trips",
+            "n_persons",
+            "low_unique_person_count",
+        ]
+    ].sort_values(["year", output_location_col, "hour"])
+
+
 def aggregate_od(
     trips: pd.DataFrame,
     group_cols: list[str],
@@ -488,6 +567,11 @@ def write_outputs(trips: pd.DataFrame, output_dir: Path) -> dict[str, pd.DataFra
             "service_zone",
         ),
         "category_period_demand_rates.csv": aggregate_period_rates(
+            trips,
+            "origin_service_category",
+            "service_category",
+        ),
+        "category_hour_demand_rates.csv": aggregate_hour_rates(
             trips,
             "origin_service_category",
             "service_category",

@@ -63,6 +63,7 @@ The script writes:
 
 ```text
 research_support/odin_demand_estimation/output/category_period_demand_rates.csv
+research_support/odin_demand_estimation/output/category_hour_demand_rates.csv
 research_support/odin_demand_estimation/output/pc4_period_demand_rates.csv
 research_support/odin_demand_estimation/output/pc4_od_demand_rates.csv
 research_support/odin_demand_estimation/output/service_zone_period_demand_rates.csv
@@ -78,6 +79,7 @@ Rows with fewer than 50 unique respondents are flagged with `low_unique_person_c
 The outputs are meant for different levels of the modeling study:
 
 - `category_period_demand_rates.csv`: main CMDP input. It gives departures and arrivals by service category and period, matching the current Skellam-style setup with one demand profile per category-period pair.
+- `category_hour_demand_rates.csv`: hourly variant. Same departures and arrivals by service category, but binned by departure clock-hour (0-23). It captures within-period demand peaks (such as a morning commute rush) that the period table averages out. As a much finer split (5 categories over 24 hours) the night hours can be sparse and noisy.
 - `service_zone_period_demand_rates.csv`: richer spatial input. It gives departures and arrivals by service zone and period, useful if the real-data CMDP is later moved from category-level demand to zone-level demand.
 - `pc4_period_demand_rates.csv`: intermediate diagnostic output. It shows the PC4-level demand before spatial aggregation, but PC4 cells are often too sparse for direct CMDP training.
 - `service_zone_od_demand_rates.csv`: directional movement output between service zones. It is useful for describing OD patterns, but many OD cells are too sparse for the first transition model.
