@@ -22,7 +22,7 @@ STATION_ASSIGNMENTS_PATH = (
     / "research_support"
     / "service_zone_calculation"
     / "output"
-    / "service_zone_assignments_k20.csv"
+    / "service_zone_assignments_z20_cat5.csv"
 )
 DOCKED_DATA_DIR = (
     SCRIPT_DIR.parent

@@ -1,12 +1,6 @@
 # ODiN Demand Estimation
 
-This folder estimates Den Haag movement-demand rates from ODiN. PC4 is used as the intermediate geography because ODiN stores origin and destination locations as postcode and administrative codes, not exact coordinates. The main CMDP input is the category-period table:
-
-```text
-lambda_arrivals_per_hour(service_category, period)
-lambda_departures_per_hour(service_category, period)
-```
-
+This folder estimates Den Haag movement-demand rates from ODiN. PC4 is used as the intermediate geography because ODiN stores origin and destination locations as postcode and administrative codes, not exact coordinates.
 ODiN is used as a proxy for potential movement demand, not observed shared-bike demand.
 
 ## Data Access
@@ -40,10 +34,8 @@ The default filters are:
 ODiN gives origins and destinations as PC4 codes (`vertpc`, `aankpc`). The script maps each PC4 to the generated `K = 20` service zones using dominant polygon overlap with:
 
 ```text
-research_support/service_zone_calculation/output/service_zone_boundaries_k20.geojson
+research_support/service_zone_calculation/output/service_zone_boundaries_z20_cat5.geojson
 ```
-
-It then produces PC4-level, service-zone-level, and service-category-level outputs. PC4 remains useful for checking the spatial bridge, while the category-period output is the most stable first input for the Skellam-style CMDP.
 
 ## Usage
 
@@ -66,6 +58,7 @@ research_support/odin_demand_estimation/output/category_period_demand_rates.csv
 research_support/odin_demand_estimation/output/category_hour_demand_rates.csv
 research_support/odin_demand_estimation/output/pc4_period_demand_rates.csv
 research_support/odin_demand_estimation/output/pc4_od_demand_rates.csv
+research_support/odin_demand_estimation/output/service_zone_hour_demand_rates.csv
 research_support/odin_demand_estimation/output/service_zone_period_demand_rates.csv
 research_support/odin_demand_estimation/output/service_zone_od_demand_rates.csv
 ```
@@ -78,8 +71,9 @@ Rows with fewer than 50 unique respondents are flagged with `low_unique_person_c
 
 The outputs are meant for different levels of the modeling study:
 
-- `category_period_demand_rates.csv`: main CMDP input. It gives departures and arrivals by service category and period, matching the current Skellam-style setup with one demand profile per category-period pair.
+- `category_period_demand_rates.csv`: departures and arrivals by service category and period.
 - `category_hour_demand_rates.csv`: hourly variant. Same departures and arrivals by service category, but binned by departure clock-hour (0-23). It captures within-period demand peaks (such as a morning commute rush) that the period table averages out. As a much finer split (5 categories over 24 hours) the night hours can be sparse and noisy.
+- `service_zone_hour_demand_rates.csv`: service-zone hourly. It is useful for checking whether hourly peaks differ by zone before category aggregation.
 - `service_zone_period_demand_rates.csv`: richer spatial input. It gives departures and arrivals by service zone and period, useful if the real-data CMDP is later moved from category-level demand to zone-level demand.
 - `pc4_period_demand_rates.csv`: intermediate diagnostic output. It shows the PC4-level demand before spatial aggregation, but PC4 cells are often too sparse for direct CMDP training.
 - `service_zone_od_demand_rates.csv`: directional movement output between service zones. It is useful for describing OD patterns, but many OD cells are too sparse for the first transition model.
@@ -95,7 +89,7 @@ service_zone_od_demand_rates.csv:     4473 rows, 4308 low-count rows
 pc4_od_demand_rates.csv:             23347 rows, 23285 low-count rows
 ```
 
-This means the category-period output is the safest first input for the real-data CMDP. The service-zone-period output is also promising, especially for pooled years. The OD outputs should be treated as descriptive evidence of movement direction unless further aggregation is introduced.
+This means the category-level outputs are the safest first input for the real-data CMDP. The service-zone-period and service-zone-hour outputs are also useful diagnostics, especially for pooled years. The OD outputs should be treated as descriptive evidence of movement direction unless further aggregation is introduced.
 
 ## References
 

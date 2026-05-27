@@ -2,7 +2,7 @@
 
 ## Service-zone inventory units
 
-The Den Haag CMDP uses empirical service zones as inventory units. One model node represents one generated service zone from `research_support/service_zone_calculation/output/service_zone_assignments_k20.csv`. With the current `k20` zones, the Den Haag scenario has:
+The Den Haag CMDP uses empirical service zones as inventory units. One model node represents one generated service zone from `research_support/service_zone_calculation/output/service_zone_assignments_z20_cat5.csv`. With the current `z20_cat5` zones, the Den Haag scenario has:
 
 ```text
 node_list = [4, 4, 4, 4, 4]
@@ -12,7 +12,7 @@ boundaries = [0, 4, 8, 12, 16, 20]
 Each service-zone node stores:
 
 ```text
-service_category  = category assigned in the k20 service-zone output
+service_category  = category assigned in the z20_cat5 service-zone output
 station_count     = number of Donkey stations assigned to the service zone
 capacity          = sum of assigned station capacities
 raw_initial_bikes = sum of station bike counts in the selected docked snapshot

@@ -17,7 +17,7 @@ The setup uses:
 
 The script loads the latest Donkey Republic Den Haag station snapshot and keeps stations that also appear in the recent docked-bike count data. It then loads address points and converts both stations and addresses to the Dutch RD coordinate system.
 
-The plotted station points come from the latest retrieved Donkey Republic station snapshot, filtered to stations present in the latest 15 docked-bike count days. NS OV-fiets stations are excluded because they are not part of the rebalancing model. For the generated `k20` outputs in this folder, the station snapshot is from 2026-03-20 and the docked-count filter window runs from 2026-03-06 through 2026-03-20.
+The plotted station points come from the latest retrieved Donkey Republic station snapshot, filtered to stations present in the latest 15 docked-bike count days. NS OV-fiets stations are excluded because they are not part of the rebalancing model. For the generated `z20_cat5` outputs in this folder, the station snapshot is from 2026-03-20 and the docked-count filter window runs from 2026-03-06 through 2026-03-20.
 
 Addresses within 500 m of at least one station are assigned to their nearest station. These address counts become station weights. The script then runs weighted k-means on station coordinates with `K = 20`, so stations that cover more nearby addresses have more influence on the service-zone centers.
 
@@ -48,9 +48,9 @@ The BAG output also stores `activity_function_count` and `bag_activity_area_m2`,
 
 The main outputs are written to `output/`:
 
-- `service_zone_assignments_k20.csv`: station-to-zone and station-to-category assignments
-- `service_zone_density_profile_k20.csv`: density, departure-demand, BAG activity, score, and category statistics per service zone
-- `service_zone_boundaries_k20.geojson`: generated zone boundaries
+- `service_zone_assignments_z20_cat5.csv`: station-to-zone and station-to-category assignments
+- `service_zone_density_profile_z20_cat5.csv`: density, departure-demand, BAG activity, score, and category statistics per service zone
+- `service_zone_boundaries_z20_cat5.geojson`: generated zone boundaries
 
 The map in `figures/` visualizes the selected service zones and their category grouping.
 

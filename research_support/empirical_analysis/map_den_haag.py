@@ -68,7 +68,7 @@ SERVICE_ZONE_BOUNDARIES_PATH = (
     / "research_support"
     / "service_zone_calculation"
     / "output"
-    / "service_zone_boundaries_k20.geojson"
+    / "service_zone_boundaries_z20_cat5.geojson"
 )
 
 AREA_LEVEL_CONFIG = {
@@ -105,7 +105,7 @@ AREA_LEVEL_CONFIG = {
         "cache_path": str(GEODATA_DIR / "wijken_den_haag.geojson"),
     },
     "service_zone": {
-        "label": "CMDP service zones",
+        "label": "Calculated CMDP service zones",
         "property": "service_zone",
         "source_path": str(SERVICE_ZONE_BOUNDARIES_PATH),
     },
@@ -368,7 +368,9 @@ def _geojson_resource_path(cfg: dict) -> str:
     return cfg["cache_path"]
 
 
-def _load_local_geojson_source(*, source_path: str, area_label: str) -> gpd.GeoDataFrame:
+def _load_local_geojson_source(
+    *, source_path: str, area_label: str
+) -> gpd.GeoDataFrame:
     """Load a generated local GeoJSON file without copying it into geodata."""
     source = Path(source_path)
     if not source.exists():

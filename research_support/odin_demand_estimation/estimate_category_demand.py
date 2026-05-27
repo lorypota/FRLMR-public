@@ -38,7 +38,7 @@ SERVICE_ZONES_GEOJSON = (
     / "research_support"
     / "service_zone_calculation"
     / "output"
-    / "service_zone_boundaries_k20.geojson"
+    / "service_zone_boundaries_z20_cat5.geojson"
 )
 
 SUPPORTED_YEARS = (2018, 2019, 2020, 2021, 2022, 2023)
@@ -562,6 +562,11 @@ def write_outputs(trips: pd.DataFrame, output_dir: Path) -> dict[str, pd.DataFra
             "pc4",
         ),
         "service_zone_period_demand_rates.csv": aggregate_period_rates(
+            trips,
+            "origin_service_zone",
+            "service_zone",
+        ),
+        "service_zone_hour_demand_rates.csv": aggregate_hour_rates(
             trips,
             "origin_service_zone",
             "service_zone",
