@@ -450,8 +450,8 @@ def main():
         "--seeds",
         nargs=2,
         type=int,
-        default=[100, 110],
-        help="Seed range [start, end) (default: 100 110)",
+        default=[100, 102],
+        help="Seed range [start, end) (default: 100 102)",
     )
     parser.add_argument(
         "--constrained-cats",

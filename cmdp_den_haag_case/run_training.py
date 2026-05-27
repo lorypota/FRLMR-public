@@ -13,7 +13,7 @@ from cmdp_den_haag_case.config import DEMAND_SCALES, R_MAX_VALUES
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-seeds = range(100, 110)
+seeds = range(100, 102)
 FAILURE_COST_COEFS = [0.0]
 
 TOTAL_CORES = 20  # cores 0-19
