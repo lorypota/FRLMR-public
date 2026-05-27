@@ -8,7 +8,7 @@
     "eta": 0.1,
     "n_dual": 100,
     "num_repeats": 100,
-    "run_group": "20260522_163815_scale0.01_bf0.0",
+    "run_group": "20260527_123359_scale0.01_bf0.0",
     "cpu_cores": "12-13",
     "failure_cost_coef": 0.0
   },
@@ -49,9 +49,9 @@
     ],
     "demand_year_group": "pooled_2018_2023",
     "demand_rates_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\odin_demand_estimation\\output\\category_period_demand_rates.csv",
-    "station_assignments_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\service_zone_calculation\\output\\service_zone_assignments_k20.csv",
+    "station_assignments_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\service_zone_calculation\\output\\service_zone_assignments_z20_cat5.csv",
     "model_unit": "service_zone",
-    "demand_allocation": "category_period_equal_split_over_service_zones",
+    "demand_allocation": "category_period_capacity_proportional_service_zones",
     "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
     "initial_bikes_timestamp": "2026-03-20 23:01:00",
     "zone_records": [
@@ -66,22 +66,12 @@
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
       {
-        "service_zone": 6,
+        "service_zone": 5,
         "service_category": 0,
-        "station_count": 32,
-        "capacity": 126,
-        "initial_bikes": 31,
-        "raw_initial_bikes": 31,
-        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
-        "initial_bikes_timestamp": "2026-03-20 23:01:00"
-      },
-      {
-        "service_zone": 9,
-        "service_category": 0,
-        "station_count": 7,
-        "capacity": 28,
-        "initial_bikes": 10,
-        "raw_initial_bikes": 10,
+        "station_count": 24,
+        "capacity": 115,
+        "initial_bikes": 15,
+        "raw_initial_bikes": 15,
         "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
@@ -96,12 +86,12 @@
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
       {
-        "service_zone": 5,
-        "service_category": 1,
-        "station_count": 24,
-        "capacity": 115,
-        "initial_bikes": 15,
-        "raw_initial_bikes": 15,
+        "service_zone": 17,
+        "service_category": 0,
+        "station_count": 18,
+        "capacity": 75,
+        "initial_bikes": 20,
+        "raw_initial_bikes": 20,
         "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
@@ -116,8 +106,48 @@
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
       {
-        "service_zone": 8,
+        "service_zone": 15,
         "service_category": 1,
+        "station_count": 7,
+        "capacity": 41,
+        "initial_bikes": 32,
+        "raw_initial_bikes": 32,
+        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
+        "initial_bikes_timestamp": "2026-03-20 23:01:00"
+      },
+      {
+        "service_zone": 16,
+        "service_category": 1,
+        "station_count": 24,
+        "capacity": 193,
+        "initial_bikes": 72,
+        "raw_initial_bikes": 72,
+        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
+        "initial_bikes_timestamp": "2026-03-20 23:01:00"
+      },
+      {
+        "service_zone": 18,
+        "service_category": 1,
+        "station_count": 30,
+        "capacity": 223,
+        "initial_bikes": 66,
+        "raw_initial_bikes": 66,
+        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
+        "initial_bikes_timestamp": "2026-03-20 23:01:00"
+      },
+      {
+        "service_zone": 6,
+        "service_category": 2,
+        "station_count": 32,
+        "capacity": 126,
+        "initial_bikes": 31,
+        "raw_initial_bikes": 31,
+        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
+        "initial_bikes_timestamp": "2026-03-20 23:01:00"
+      },
+      {
+        "service_zone": 8,
+        "service_category": 2,
         "station_count": 18,
         "capacity": 180,
         "initial_bikes": 41,
@@ -126,8 +156,18 @@
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
       {
+        "service_zone": 9,
+        "service_category": 2,
+        "station_count": 7,
+        "capacity": 28,
+        "initial_bikes": 10,
+        "raw_initial_bikes": 10,
+        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
+        "initial_bikes_timestamp": "2026-03-20 23:01:00"
+      },
+      {
         "service_zone": 14,
-        "service_category": 1,
+        "service_category": 2,
         "station_count": 21,
         "capacity": 81,
         "initial_bikes": 11,
@@ -137,51 +177,11 @@
       },
       {
         "service_zone": 2,
-        "service_category": 2,
+        "service_category": 3,
         "station_count": 17,
         "capacity": 83,
         "initial_bikes": 15,
         "raw_initial_bikes": 15,
-        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
-        "initial_bikes_timestamp": "2026-03-20 23:01:00"
-      },
-      {
-        "service_zone": 15,
-        "service_category": 2,
-        "station_count": 7,
-        "capacity": 41,
-        "initial_bikes": 32,
-        "raw_initial_bikes": 32,
-        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
-        "initial_bikes_timestamp": "2026-03-20 23:01:00"
-      },
-      {
-        "service_zone": 17,
-        "service_category": 2,
-        "station_count": 18,
-        "capacity": 75,
-        "initial_bikes": 20,
-        "raw_initial_bikes": 20,
-        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
-        "initial_bikes_timestamp": "2026-03-20 23:01:00"
-      },
-      {
-        "service_zone": 18,
-        "service_category": 2,
-        "station_count": 30,
-        "capacity": 223,
-        "initial_bikes": 66,
-        "raw_initial_bikes": 66,
-        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
-        "initial_bikes_timestamp": "2026-03-20 23:01:00"
-      },
-      {
-        "service_zone": 1,
-        "service_category": 3,
-        "station_count": 28,
-        "capacity": 100,
-        "initial_bikes": 26,
-        "raw_initial_bikes": 26,
         "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
@@ -206,12 +206,22 @@
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
       {
-        "service_zone": 16,
+        "service_zone": 19,
         "service_category": 3,
-        "station_count": 24,
-        "capacity": 193,
-        "initial_bikes": 72,
-        "raw_initial_bikes": 72,
+        "station_count": 21,
+        "capacity": 92,
+        "initial_bikes": 17,
+        "raw_initial_bikes": 17,
+        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
+        "initial_bikes_timestamp": "2026-03-20 23:01:00"
+      },
+      {
+        "service_zone": 1,
+        "service_category": 4,
+        "station_count": 28,
+        "capacity": 100,
+        "initial_bikes": 26,
+        "raw_initial_bikes": 26,
         "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
       },
@@ -244,97 +254,87 @@
         "raw_initial_bikes": 176,
         "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
         "initial_bikes_timestamp": "2026-03-20 23:01:00"
-      },
-      {
-        "service_zone": 19,
-        "service_category": 4,
-        "station_count": 21,
-        "capacity": 92,
-        "initial_bikes": 17,
-        "raw_initial_bikes": 17,
-        "initial_bikes_path": "L:\\UserData\\rotal\\master_thesis\\research_support\\empirical_analysis\\output\\data\\docked\\donkey_denHaag\\docked_20260320.csv",
-        "initial_bikes_timestamp": "2026-03-20 23:01:00"
       }
     ],
     "zone_capacities": [
       38,
-      126,
-      28,
-      12,
       115,
+      12,
+      75,
       65,
+      41,
+      193,
+      223,
+      126,
       180,
+      28,
       81,
       83,
-      41,
-      75,
-      223,
-      100,
       213,
       175,
-      193,
+      92,
+      100,
       219,
       165,
-      572,
-      92
+      572
     ],
     "zone_initial_bikes": [
       7,
-      31,
-      10,
-      1,
       15,
+      1,
+      20,
       12,
+      32,
+      72,
+      66,
+      31,
       41,
+      10,
       11,
       15,
-      32,
-      20,
-      66,
-      26,
       59,
       45,
-      72,
+      17,
+      26,
       28,
       25,
-      176,
-      17
+      176
     ],
     "zone_raw_initial_bikes": [
       7,
-      31,
-      10,
-      1,
       15,
+      1,
+      20,
       12,
+      32,
+      72,
+      66,
+      31,
       41,
+      10,
       11,
       15,
-      32,
-      20,
-      66,
-      26,
       59,
       45,
-      72,
+      17,
+      26,
       28,
       25,
-      176,
-      17
+      176
     ],
     "station_counts_by_category": {
-      "0": 49,
-      "1": 74,
-      "2": 72,
-      "3": 133,
-      "4": 168
+      "0": 52,
+      "1": 72,
+      "2": 78,
+      "3": 119,
+      "4": 175
     },
     "station_capacity_sums_by_category": {
-      "0": 204.0,
-      "1": 441.0,
-      "2": 422.0,
-      "3": 681.0,
-      "4": 1048.0
+      "0": 240.0,
+      "1": 522.0,
+      "2": 415.0,
+      "3": 563.0,
+      "4": 1056.0
     },
     "reference_station_counts_by_category": {
       "0": 60,
@@ -355,104 +355,306 @@
     "demand_params": [
       [
         [
-          11.11479605889612,
-          9.798561677616535
+          9.461917192259417,
+          10.16086924781031
         ],
         [
-          22.048622549403255,
-          23.259795421271306
+          19.67754520390259,
+          19.067471334010943
         ]
       ],
       [
         [
-          11.535305697060123,
-          12.492495371438928
+          9.427294675838661,
+          9.090551330814023
         ],
         [
-          23.98181829164679,
-          22.923115258260182
+          18.36241171815649,
+          18.797106554305458
         ]
       ],
       [
         [
-          11.721596581614632,
-          12.601228257720129
+          12.353824168026733,
+          12.595111174122147
         ],
         [
-          24.759556354709854,
-          24.023272409738208
+          25.5571243637265,
+          25.13185999238575
         ]
       ],
       [
         [
-          10.237667483919521,
-          10.450791182129565
+          13.936714714924276,
+          14.214315825736014
         ],
         [
-          21.314442218089802,
-          20.985227231463757
+          29.995794894421046,
+          29.73883481680907
         ]
       ],
       [
         [
-          15.641682620793475,
-          14.848894985791096
+          15.07129769123478,
+          14.131123896213758
         ],
         [
-          33.517309383195965,
-          34.64847044658543
+          32.02887261683904,
+          33.104608069807654
+        ]
+      ]
+    ],
+    "zone_demand_params": [
+      [
+        [
+          5.992547555097631,
+          6.435217190279864
+        ],
+        [
+          12.462445295804974,
+          12.07606517820693
+        ]
+      ],
+      [
+        [
+          18.135341285163886,
+          19.47499939163643
+        ],
+        [
+          37.71529497414663,
+          36.545986723520976
+        ]
+      ],
+      [
+        [
+          1.8923834384518836,
+          2.0321738495620627
+        ],
+        [
+          3.935509040780518,
+          3.8134942668021883
+        ]
+      ],
+      [
+        [
+          11.827396490324272,
+          12.701086559762889
+        ],
+        [
+          24.596931504878235,
+          23.834339167513676
+        ]
+      ],
+      [
+        [
+          4.69558738643305,
+          4.527860816114264
+        ],
+        [
+          9.146028825135415,
+          9.362543494481645
+        ]
+      ],
+      [
+        [
+          2.9618320437500776,
+          2.8560352840105354
+        ],
+        [
+          5.769033566623878,
+          5.905604358057653
+        ]
+      ],
+      [
+        [
+          13.9422825474089,
+          13.444263654000816
+        ],
+        [
+          27.15667020386362,
+          27.799552222076272
+        ]
+      ],
+      [
+        [
+          16.109476725762615,
+          15.534045569130473
+        ],
+        [
+          31.377914277003043,
+          32.120726142606266
+        ]
+      ],
+      [
+        [
+          15.00319850767584,
+          15.296231401825448
+        ],
+        [
+          31.038049829682304,
+          30.521584183523895
+        ]
+      ],
+      [
+        [
+          21.433140725251203,
+          21.851759145464932
+        ],
+        [
+          44.34007118526044,
+          43.60226311931985
+        ]
+      ],
+      [
+        [
+          3.334044112816853,
+          3.399162533738989
+        ],
+        [
+          6.897344406596068,
+          6.78257426300531
+        ]
+      ],
+      [
+        [
+          9.64491332636304,
+          9.833291615459219
+        ],
+        [
+          19.953032033367197,
+          19.621018403693935
+        ]
+      ],
+      [
+        [
+          8.218453437575238,
+          8.382154270238644
+        ],
+        [
+          17.688461642891276,
+          17.53693278717693
+        ]
+      ],
+      [
+        [
+          21.090729906066578,
+          21.510829633263025
+        ],
+        [
+          45.393281083564354,
+          45.00441787552634
+        ]
+      ],
+      [
+        [
+          17.328064476815264,
+          17.673216834840517
+        ],
+        [
+          37.29494924705992,
+          36.97546069585497
+        ]
+      ],
+      [
+        [
+          9.109611039240026,
+          9.291062564601871
+        ],
+        [
+          19.606487604168642,
+          19.438527908678047
+        ]
+      ],
+      [
+        [
+          5.708824883043477,
+          5.352698445535515
+        ],
+        [
+          12.132148718499636,
+          12.539624268866534
+        ]
+      ],
+      [
+        [
+          12.502326493865214,
+          11.722409595722777
+        ],
+        [
+          26.569405693514206,
+          27.46177714881771
+        ]
+      ],
+      [
+        [
+          9.419561057021737,
+          8.8319524351336
+        ],
+        [
+          20.0180453855244,
+          20.69038004362978
+        ]
+      ],
+      [
+        [
+          32.65447833100869,
+          30.61743510846314
+        ],
+        [
+          69.39589066981792,
+          71.72665081791658
         ]
       ]
     ],
     "raw_category_demand_params": [
       [
         [
-          4445.918423558448,
-          3919.4246710466136
+          3784.766876903767,
+          4064.3476991241246
         ],
         [
-          8819.449019761301,
-          9303.918168508522
+          7871.018081561036,
+          7626.988533604376
         ]
       ],
       [
         [
-          4614.122278824049,
-          4996.998148575571
+          3770.917870335464,
+          3636.220532325609
         ],
         [
-          9592.727316658715,
-          9169.246103304073
+          7344.964687262595,
+          7518.842621722183
         ]
       ],
       [
         [
-          4688.638632645852,
-          5040.491303088052
+          4941.529667210693,
+          5038.0444696488585
         ],
         [
-          9903.822541883941,
-          9609.308963895282
+          10222.849745490601,
+          10052.7439969543
         ]
       ],
       [
         [
-          4095.0669935678084,
-          4180.316472851826
+          5574.68588596971,
+          5685.726330294406
         ],
         [
-          8525.776887235921,
-          8394.090892585502
+          11998.317957768419,
+          11895.533926723629
         ]
       ],
       [
         [
-          6256.67304831739,
-          5939.557994316438
+          6028.519076493912,
+          5652.449558485503
         ],
         [
-          13406.923753278386,
-          13859.388178634172
+          12811.549046735616,
+          13241.84322792306
         ]
       ]
     ]
@@ -466,24 +668,24 @@
   ],
   "failure_thresholds": {
     "0": [
-      8.230791809197889,
-      19.538228153867898
+      8.535130168160661,
+      16.01667592056919
     ],
     "1": [
-      10.493696112008701,
-      19.255416816938556
+      7.63606311788378,
+      15.789569505616585
     ],
     "2": [
-      10.58503173648491,
-      20.179548824180095
+      10.579893386262604,
+      21.11076239360403
     ],
     "3": [
-      8.778664592988836,
-      17.627590874429558
+      11.940025293618254,
+      24.98062124611962
     ],
     "4": [
-      12.473071788064523,
-      29.104715175131762
+      11.870144072819558,
+      27.80787077863843
     ]
   },
   "cmdp_train_until": {
