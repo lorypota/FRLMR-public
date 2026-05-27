@@ -106,6 +106,7 @@ def main() -> None:
         demand_scale=args.demand_scale,
     )
     demand_params = scenario["demand_params"]
+    zone_demand_params = scenario["zone_demand_params"]
     node_list = scenario["node_list"]
     active_cats = scenario["active_cats"]
     station_params = scenario["station_params"]
@@ -189,8 +190,10 @@ def main() -> None:
     graph = build_den_haag_network(scenario)
     np.random.seed(args.seed)
     random.seed(args.seed)
-    _all_days_demand_vectors, transformed_demand_vectors = generate_separate_event_demand(
-        node_list, NUM_TRAIN_DAYS, demand_params, TIME_SLOTS
+    _all_days_demand_vectors, transformed_demand_vectors = (
+        generate_separate_event_demand(
+            node_list, NUM_TRAIN_DAYS, zone_demand_params, TIME_SLOTS
+        )
     )
 
     num_stations = int(np.sum(node_list))
@@ -532,6 +535,7 @@ def main() -> None:
                     "demand_scale": scenario["demand_scale"],
                     "demand_generation": "separate_poisson_arrival_departure_events",
                     "demand_params": demand_params,
+                    "zone_demand_params": zone_demand_params,
                     "raw_category_demand_params": scenario[
                         "raw_category_demand_params"
                     ],

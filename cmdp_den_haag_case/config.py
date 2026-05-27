@@ -163,8 +163,8 @@ def build_den_haag_scenario(demand_scale: float = 1.0) -> dict[str, Any]:
     """Build the 5-category Den Haag CMDP scenario.
 
     Each generated node represents one service zone with aggregate
-    station capacity. ODiN demand remains category-period demand and is split
-    equally over the service zones in each category.
+    station capacity. ODiN demand remains category-period demand and is
+    split over service zones in proportion to zone capacity.
     """
     if demand_scale <= 0:
         raise ValueError("demand_scale must be positive")
@@ -186,6 +186,9 @@ def build_den_haag_scenario(demand_scale: float = 1.0) -> dict[str, Any]:
     for cat_idx, cat in enumerate(scenario["active_cats"]):
         cat_zones = [zone for zone in zone_records if zone["service_category"] == cat]
         zone_count = scenario["node_list"][cat_idx]
+        category_capacity = sum(zone["capacity"] for zone in cat_zones)
+        if category_capacity <= 0:
+            raise ValueError(f"Category {cat} has no positive service-zone capacity")
         cat_params = []
         raw_cat_params = []
         for period in PERIODS:
@@ -198,7 +201,19 @@ def build_den_haag_scenario(demand_scale: float = 1.0) -> dict[str, Any]:
             raw_cat_params.append((raw_lambda_a, raw_lambda_d))
         demand_params.append(cat_params)
         raw_category_demand_params.append(raw_cat_params)
-        zone_demand_params.extend([cat_params for _zone in cat_zones])
+        for zone in cat_zones:
+            capacity_share = zone["capacity"] / category_capacity
+            zone_params = []
+            for period in PERIODS:
+                row = category_rates[cat][period]
+                lambda_a = (
+                    row["lambda_arrivals_per_hour"] * capacity_share * demand_scale
+                )
+                lambda_d = (
+                    row["lambda_departures_per_hour"] * capacity_share * demand_scale
+                )
+                zone_params.append((lambda_a, lambda_d))
+            zone_demand_params.append(zone_params)
 
     scenario["demand_params"] = demand_params
     scenario["raw_category_demand_params"] = raw_category_demand_params
@@ -208,7 +223,9 @@ def build_den_haag_scenario(demand_scale: float = 1.0) -> dict[str, Any]:
     scenario["demand_rates_path"] = str(DEMAND_RATES_PATH)
     scenario["station_assignments_path"] = str(STATION_ASSIGNMENTS_PATH)
     scenario["model_unit"] = "service_zone"
-    scenario["demand_allocation"] = "category_period_equal_split_over_service_zones"
+    scenario["demand_allocation"] = (
+        "category_period_capacity_proportional_service_zones"
+    )
     scenario["zone_records"] = zone_records
     scenario["zone_capacities"] = [zone["capacity"] for zone in zone_records]
     scenario["zone_initial_bikes"] = [zone["initial_bikes"] for zone in zone_records]

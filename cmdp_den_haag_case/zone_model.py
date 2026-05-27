@@ -22,31 +22,29 @@ ZONE_ACTIONS = (
 )
 
 
-def generate_separate_event_demand(node_list, num_days, demand_params, time_slots):
+def generate_separate_event_demand(node_list, num_days, zone_demand_params, time_slots):
+    num_zones = int(np.sum(node_list))
+    if len(zone_demand_params) != num_zones:
+        raise ValueError(
+            f"Expected {num_zones} zone demand parameter rows, "
+            f"got {len(zone_demand_params)}"
+        )
+
     all_days_demand_vectors = []
     transformed_demand_vectors = []
 
     for _day in range(num_days):
-        daily_arrivals = []
-        daily_departures = []
-        for category_count, category_params in zip(
-            node_list, demand_params, strict=True
-        ):
-            category_arrivals = np.zeros((category_count, 24), dtype=np.int64)
-            category_departures = np.zeros((category_count, 24), dtype=np.int64)
-            for params, (start, end) in zip(category_params, time_slots, strict=True):
+        daily_arrivals = np.zeros((num_zones, 24), dtype=np.int64)
+        daily_departures = np.zeros((num_zones, 24), dtype=np.int64)
+        for zone, zone_params in enumerate(zone_demand_params):
+            for params, (start, end) in zip(zone_params, time_slots, strict=True):
                 lambda_arrivals, lambda_departures = params
-                category_arrivals[:, start:end] = np.random.poisson(
-                    lambda_arrivals, size=(category_count, end - start)
+                daily_arrivals[zone, start:end] = np.random.poisson(
+                    lambda_arrivals, size=end - start
                 )
-                category_departures[:, start:end] = np.random.poisson(
-                    lambda_departures, size=(category_count, end - start)
+                daily_departures[zone, start:end] = np.random.poisson(
+                    lambda_departures, size=end - start
                 )
-            daily_arrivals.append(category_arrivals)
-            daily_departures.append(category_departures)
-
-        daily_arrivals = np.vstack(daily_arrivals)
-        daily_departures = np.vstack(daily_departures)
         all_days_demand_vectors.append(
             {
                 "arrivals": daily_arrivals,

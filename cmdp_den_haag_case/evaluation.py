@@ -194,6 +194,7 @@ def evaluate_demand_scale(
     node_list = scenario["node_list"]
     active_cats = scenario["active_cats"]
     demand_params = scenario["demand_params"]
+    zone_demand_params = scenario["zone_demand_params"]
     station_params = scenario["station_params"]
     constrained_cats = set(
         constrained_cats_arg if constrained_cats_arg is not None else active_cats
@@ -244,7 +245,7 @@ def evaluate_demand_scale(
 
             graph = build_den_haag_network(scenario)
             all_days_demand, transformed_demand = generate_separate_event_demand(
-                node_list, NUM_EVAL_DAYS, demand_params, TIME_SLOTS
+                node_list, NUM_EVAL_DAYS, zone_demand_params, TIME_SLOTS
             )
 
             agents = {}
