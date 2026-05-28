@@ -8,7 +8,7 @@
     "eta": 0.1,
     "n_dual": 100,
     "num_repeats": 100,
-    "run_group": "20260527_141209_scale0.01_bf0.0",
+    "run_group": "20260527_154117_scale0.01_bf0.0",
     "cpu_cores": "4-5",
     "failure_cost_coef": 0.0
   },
