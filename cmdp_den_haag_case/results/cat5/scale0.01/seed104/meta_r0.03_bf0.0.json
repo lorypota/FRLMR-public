@@ -8,8 +8,8 @@
     "eta": 0.1,
     "n_dual": 100,
     "num_repeats": 100,
-    "run_group": "20260527_154117_scale0.01_bf0.0",
-    "cpu_cores": "10-11",
+    "run_group": "20260529_095930_scale0.01_bf0.0",
+    "cpu_cores": "16-17",
     "failure_cost_coef": 0.0
   },
   "tokens": {
