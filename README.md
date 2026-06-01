@@ -3,45 +3,33 @@
 ## Project Structure
 
 ```text
-FairMSS/
+FRLSR/
 ├── common/                        # Shared modules
-│   ├── config.py                  # Scenario definitions, constants, helpers
 │   ├── agent.py                   # Q-learning RebalancingAgent
-│   ├── demand.py                  # Demand generation (Skellam distribution)
-│   ├── network.py                 # Network graph generation
-│   └── av_actions.py              # Available actions
+│   ├── av_actions.py              # Available actions
+│   ├── config.py                  # Scenario definitions, constants, helpers
+│   ├── demand.py                  # Synthetic demand generation
+│   └── network.py                 # Network graph generation
 │
 ├── beta/                          # Beta-weighted MDP formulation
-│   ├── environment.py             # FairEnv with beta fairness parameter
-│   ├── training.py                # Training script
-│   ├── evaluation.py              # Evaluation across beta values
-│   ├── run_training.py            # Batch training runner
-│   ├── plots/                     # Plotting scripts + generated figures
-│   ├── q_tables/                  # Trained Q-tables
-│   └── results/                   # Evaluation outputs (.npy)
-│
-├── cmdp/                          # Lagrangian CMDP formulation
-│   ├── environment.py             # CMDPEnv with adaptive dual variables
-│   ├── training.py                # Training with Lagrangian dual updates
-│   ├── evaluation.py              # Evaluation with constraint checking
-│   ├── run_training.py            # Batch training runner
-│   ├── plots/                     # Plotting scripts + generated figures
-│   ├── q_tables/                  # Trained Q-tables
-│   └── results/                   # Evaluation outputs (.npy, .pkl)
-│
-├── cmdp_den_haag_case/            # Empirical Den Haag CMDP case study
-│   ├── config.py                  # ODiN category-period demand loader
-│   ├── training.py                # Lagrangian CMDP training with empirical demand
-│   ├── evaluation.py              # Evaluation with empirical demand
-│   ├── run_training.py            # Batch sweep over r_max and demand scales
-│   └── plots/                     # Plotting scripts + generated figures
+│   ├── environment.py
+│   ├── evaluation.py
+│   ├── run_training.py
+│   ├── training.py
+│   ├── plots/
+│   ├── q_tables/
+│   └── results/
+├── cmdp/                          # Constrained MDP lagrangian formulation
+│   └── ...
+├── cmdp_den_haag_case/            # CMDP lagrangian empirical implementation
+│   └── ...
 │
 ├── research_support/              # Supporting studies and analyses
 │   ├── baseline/                  # Reproduction of baseline (start of project)
-│   ├── empirical_analysis/        # Map visualizations and statistics for TNO data
+│   ├── empirical_analysis/        # Data aggregation and visualization
 │   ├── failure_rate_analysis/     # Analysis of failure rates (start of project)
-│   ├── odin_demand_estimation/    # ODiN demand-rate estimation for real-data CMDP inputs
-│   └── service_zone_calculation/  # Empirical Den Haag service-zone generation
+│   ├── ODiN_demand_estimation/    # ODiN demand estimation for CMDP case study
+│   └── service_zone_calculation/  # Service-zone generation for CMDP case study
 │
 ├── pyproject.toml                 # uv setup of dependencies, linter, dev. preferences
 └── README.md                      # 👋👋
@@ -118,7 +106,11 @@ uv run cmdp/plots/lambda_convergence.py --categories 5 --save
 
 ## Den Haag CMDP case
 
-Uses ODiN category-period demand rates from `research_support/odin_demand_estimation/output/category_period_demand_rates.csv` with Den Haag service zones as inventory units. Batch training sweeps `r_max` values and calibrated demand scales.
+Use case to ground CMDP approach on models estimated with available real-data of Den Haag:
+
+- ODiN category-period demand rates (`research_support/odin_demand_estimation/`);
+- Donkey stations with capacity and inventory (`research_support/empirical_analysis/output/data`);
+- service zones (`research_support/service_zone_calculation`).
 
 ### Den Haag CMDP Training
 

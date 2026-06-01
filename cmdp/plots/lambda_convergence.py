@@ -63,7 +63,7 @@ def _fmt(v):
 
 
 def plot_group(r_max_list, group_name, shading=True):
-    sns.set(style="whitegrid")
+    sns.set_theme(style="whitegrid")
     fig, ax = plt.subplots(figsize=(12, 7), dpi=100)
     legend_handles = []
 
@@ -84,9 +84,11 @@ def plot_group(r_max_list, group_name, shading=True):
 
             morning_vals, evening_vals = [], []
             for _repeat, _day, lambdas in history:
-                cat_key = list(lambdas.keys())[0]
-                morning_vals.append(lambdas[cat_key][0])
-                evening_vals.append(lambdas[cat_key][1])
+                # Mean lambda across all constrained categories
+                morning = [pair[0] for pair in lambdas.values()]
+                evening = [pair[1] for pair in lambdas.values()]
+                morning_vals.append(float(np.mean(morning)) if morning else 0.0)
+                evening_vals.append(float(np.mean(evening)) if evening else 0.0)
 
             all_morning.append(morning_vals)
             all_evening.append(evening_vals)
@@ -135,12 +137,14 @@ def plot_group(r_max_list, group_name, shading=True):
     plt.tight_layout()
 
     if args.save:
-        plt.savefig(
+        fig.savefig(
             os.path.join(
                 PLOT_DIR,
                 f"lambda_convergence_{args.categories}_cat_{group_name}_{bf_token}.png",
             ),
             format="png",
+            bbox_inches="tight",
+            dpi=150,
         )
     plt.show()
 

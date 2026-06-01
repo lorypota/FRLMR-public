@@ -1,5 +1,5 @@
 """
-Shared configuration for FairMSS experiments.
+Shared configuration.
 
 Contains all scenario definitions (demand parameters, network topology,
 station reward parameters) and helper functions used across training,
