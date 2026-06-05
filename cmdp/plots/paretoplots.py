@@ -1,7 +1,7 @@
 """
 CMDP Pareto-style cost vs max-failure-rate plots from evaluation outputs.
 
-Generates separate figures for morning (period 0) and evening (period 1).
+Generates one side-by-side figure with morning (period 0) and evening (period 1).
 
 Usage:
     uv run cmdp/plots/paretoplots.py --categories 5 --failure-cost-coef 0.0 --save
@@ -60,7 +60,13 @@ bf_token = f"bf{fmt_token(args.failure_cost_coef)}"
 max_fr_raw = np.load(
     os.path.join(RESULTS_DIR, f"max_failure_rate_per_period_10seeds_{bf_token}.npy")
 )
-cost_raw = np.load(os.path.join(RESULTS_DIR, f"cost_10seeds_{bf_token}.npy"))
+# Service cost = rebalancing + fleet only. Failures are governed by the
+# constraints, so they are excluded here (note: cost_10seeds also folds in a
+# failure_rate/10 term, which is intentionally left out of this tradeoff axis).
+cost_reb_raw = np.load(os.path.join(RESULTS_DIR, f"cost_reb_10seeds_{bf_token}.npy"))
+cost_bikes_raw = np.load(
+    os.path.join(RESULTS_DIR, f"cost_bikes_10seeds_{bf_token}.npy")
+)
 
 if len(max_fr_raw) != len(R_MAX_VALUES):
     raise ValueError(
@@ -70,9 +76,12 @@ if len(max_fr_raw) != len(R_MAX_VALUES):
 r_values = R_MAX_VALUES
 num_r_max = len(r_values)
 
-# Cost: shape (num_r_max, num_seeds) -> average over seeds
-cost = cost_raw.transpose()
-avg_costs = [np.mean(cost[:, i]) for i in range(num_r_max)]
+# Cost arrays: shape (num_r_max, num_seeds) -> rebalancing + fleet/100, seed-averaged
+cost_reb = cost_reb_raw.transpose()
+cost_bikes = cost_bikes_raw.transpose()
+avg_costs = [
+    float(np.mean(cost_reb[:, i] + cost_bikes[:, i] / 100)) for i in range(num_r_max)
+]
 
 # Max failure rates per period: average over seeds
 avg_max_fr_morning = [np.mean(max_fr_raw[i, :, 0]) for i in range(num_r_max)]
@@ -83,7 +92,7 @@ period_data = [
     ("evening", avg_max_fr_evening),
 ]
 
-labels = [rf"$r_{{max}}$={_fmt(r)}" for r in r_values]
+labels = [rf"$r_{{max}}$={_fmt(round(r * 100, 4))}%" for r in r_values]
 
 # Per-point label offsets per period
 morning_label_offsets = {}
@@ -97,9 +106,9 @@ for value, offset in [
 evening_label_offsets = {}
 for value, offset in [
     (1.0, (-15, -25)),
-    (0.20, (-25, -28)),
-    (0.15, (-15, -25)),
-    (0.125, (0, 8)),
+    (0.20, (8, -28)),
+    (0.15, (-35, -25)),
+    (0.125, (-30, 8)),
     (0.10, (7, 8)),
     (0.0875, (-15, -25)),
 ]:
@@ -109,9 +118,10 @@ for value, offset in [
 DEFAULT_OFFSET = (8, 8)  # above and to the right
 
 sns.set(style="whitegrid")
+fig, axes = plt.subplots(1, 2, figsize=(20, 7), dpi=100)
 
-for period_name, avg_fr in period_data:
-    fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
+for idx, (period_name, avg_fr) in enumerate(period_data):
+    ax = axes[idx]
 
     pareto_indices = compute_pareto_frontier(avg_costs, avg_fr)
     dominated_indices = [i for i in range(num_r_max) if i not in pareto_indices]
@@ -152,22 +162,24 @@ for period_name, avg_fr in period_data:
             (avg_costs[i], avg_fr[i]),
             textcoords="offset points",
             xytext=xytext,
-            fontsize=20,
+            fontsize=16,
         )
 
     # Label dominated points with short labels
     for i in dominated_indices:
         xytext = label_offsets.get(i, DEFAULT_OFFSET)
         ax.annotate(
-            _fmt(r_values[i]),
+            f"{_fmt(round(r_values[i] * 100, 4))}%",
             (avg_costs[i], avg_fr[i]),
             textcoords="offset points",
             xytext=xytext,
-            fontsize=20,
+            fontsize=16,
         )
 
     # Legend
-    dominated_vals = [_fmt(r_values[i]) for i in dominated_indices]
+    dominated_vals = [
+        f"{_fmt(round(r_values[i] * 100, 4))}%" for i in dominated_indices
+    ]
     handles = []
     pareto_marker = ax.scatter(
         [], [], marker="s", color="green", s=120, label="Pareto-optimal"
@@ -181,17 +193,19 @@ for period_name, avg_fr in period_data:
         handles.append(dominated_marker)
     ax.legend(
         handles=handles,
-        fontsize=20,
+        fontsize=16,
         loc="best",
         framealpha=0.4,
     )
 
-    ax.set_ylabel("Max failure rate (%)", fontsize=26)
-    ax.set_xlabel("Global service cost", fontsize=26)
-    ax.tick_params(labelsize=26)
+    ax.set_title(period_name.capitalize(), fontsize=26)
+    ax.set_xlabel("Global service cost", fontsize=24)
+    if idx == 0:
+        ax.set_ylabel("Max failure rate (%)", fontsize=24)
+    ax.tick_params(labelsize=20)
     ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
 
-    # Extend x-axis to the right so the .05 label fits
+    # Extend x-axis to the right so the rightmost label fits
     xlo, xhi = ax.get_xlim()
     ax.set_xlim(xlo, xhi + 5)
 
@@ -199,13 +213,13 @@ for period_name, avg_fr in period_data:
         ylo, yhi = ax.get_ylim()
         ax.set_ylim(ylo, max(yhi, 7.5))
 
-    plt.tight_layout()
-    if args.save:
-        plt.savefig(
-            os.path.join(
-                PLOT_DIR,
-                f"pareto_costs_maxfr_{period_name}_{cat}_cat_{bf_token}.png",
-            ),
-            format="png",
-        )
-    plt.show()
+plt.tight_layout()
+if args.save:
+    plt.savefig(
+        os.path.join(
+            PLOT_DIR,
+            f"pareto_costs_maxfr_{cat}_cat_{bf_token}.png",
+        ),
+        format="png",
+    )
+plt.show()

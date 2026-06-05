@@ -211,7 +211,7 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
     )
 
     ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.5)
-    ax.set_title(rf"Failure rates by $r_{{max}}$ (scale {demand_scale})", fontsize=22)
+    # ax.set_title(rf"Failure rates by $r_{{max}}$ (scale {demand_scale})", fontsize=22)
     plt.tight_layout()
 
     if save:

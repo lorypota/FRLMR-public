@@ -38,7 +38,7 @@ FRLSR/
 ## Setup
 
 1. Clone the repository
-2. Install dependencies with: `uv sync` (also needed for `research_support`)
+2. Install dependencies with: `uv sync` (also needed for `research_support/`)
 
 ## Beta formulation
 

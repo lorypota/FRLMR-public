@@ -232,7 +232,7 @@ ax.legend(
 )
 
 ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.5)
-ax.set_title(f"Failure rates by $r_{{max}}$ ({M} categories)", fontsize=22)
+# ax.set_title(f"Failure rates by $r_{{max}}$ ({M} categories)", fontsize=22)
 plt.tight_layout()
 
 if args.save:

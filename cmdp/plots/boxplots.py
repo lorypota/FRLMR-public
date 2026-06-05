@@ -69,6 +69,7 @@ def tick_fmt(val, pos):
 
 
 r_max_labels = [_fmt(r) for r in r_values]
+r_max_pct_labels = [_fmt(round(r * 100, 4)) for r in r_values]
 num_r_max = len(r_values)
 
 # GINI INDEX
@@ -76,7 +77,7 @@ num_r_max = len(r_values)
 sns.set(style="whitegrid")
 fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
 box_color = sns.color_palette("viridis", 11)[7]
-box = ax.boxplot(gini, patch_artist=True, notch=False, vert=True, widths=0.6)
+box = ax.boxplot(gini * 100, patch_artist=True, notch=False, vert=True, widths=0.6)
 for patch in box["boxes"]:
     patch.set_facecolor(box_color)
     patch.set_edgecolor("black")
@@ -90,14 +91,14 @@ for median in box["medians"]:
     median.set(color="black", linewidth=1.5)
 for flier in box["fliers"]:
     flier.set(marker="o", color="red", alpha=0.75)
-ax.set_xlabel(r"$r_{max}$", fontsize=36)
-ax.set_ylabel("Gini index", fontsize=36)
+ax.set_xlabel(r"$r_{max}$ [%]", fontsize=36)
+ax.set_ylabel("Gini index [%]", fontsize=36)
 ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
 ax.set_xticks(range(1, num_r_max + 1))
-ax.set_xticklabels(r_max_labels, fontsize=34)
+ax.set_xticklabels(r_max_pct_labels, fontsize=26)
 ax.invert_xaxis()
 ax.tick_params(labelsize=34)
-ax.yaxis.set_major_locator(MultipleLocator(0.05))
+ax.yaxis.set_major_locator(MultipleLocator(5))
 ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
 plt.tight_layout()
 if args.save:
@@ -107,83 +108,53 @@ if args.save:
     )
 plt.show()
 
-# MAX CATEGORY FAILURE RATE (MORNING)
+# MAX CATEGORY FAILURE RATE (MORNING + EVENING, SIDE BY SIDE)
+# r_max is shown in percent so the x-axis matches the percent y-axis.
 
 sns.set(style="whitegrid")
-fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
-box_color = sns.color_palette("viridis", 11)[4]
-box = ax.boxplot(
-    max_fail_morning, patch_artist=True, notch=False, vert=True, widths=0.6
-)
-for patch in box["boxes"]:
-    patch.set_facecolor(box_color)
-    patch.set_edgecolor("black")
-    patch.set_alpha(0.8)
-    patch.set_linewidth(1.5)
-for whisker in box["whiskers"]:
-    whisker.set(color="black", linewidth=1.5, linestyle="--")
-for cap in box["caps"]:
-    cap.set(color="black", linewidth=1.5)
-for median in box["medians"]:
-    median.set(color="gold", linewidth=1.5)
-for flier in box["fliers"]:
-    flier.set(marker="o", color="red", alpha=0.75)
-ax.set_xlabel(r"$r_{max}$", fontsize=36)
-ax.set_ylabel("Max fail. [%] (morning)", fontsize=28)
-ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
-ax.set_xticks(range(1, num_r_max + 1))
-ax.set_xticklabels(r_max_labels, fontsize=34)
-ax.invert_xaxis()
-ax.tick_params(labelsize=32)
-ax.yaxis.set_major_locator(MultipleLocator(2.5))
-ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
+fig, axes = plt.subplots(1, 2, figsize=(20, 7), dpi=100)
+r_max_pct_labels = [_fmt(round(r * 100, 4)) for r in r_values]
+
+panels = [
+    (axes[0], max_fail_morning, "Morning", 4, 2.5),
+    (axes[1], max_fail_evening, "Evening", 5, 0.5),
+]
+for ax, data, title, palette_idx, y_step in panels:
+    box_color = sns.color_palette("viridis", 11)[palette_idx]
+    box = ax.boxplot(data, patch_artist=True, notch=False, vert=True, widths=0.6)
+    for patch in box["boxes"]:
+        patch.set_facecolor(box_color)
+        patch.set_edgecolor("black")
+        patch.set_alpha(0.8)
+        patch.set_linewidth(1.5)
+    for whisker in box["whiskers"]:
+        whisker.set(color="black", linewidth=1.5, linestyle="--")
+    for cap in box["caps"]:
+        cap.set(color="black", linewidth=1.5)
+    for median in box["medians"]:
+        median.set(color="gold", linewidth=1.5)
+    for flier in box["fliers"]:
+        flier.set(marker="o", color="red", alpha=0.75)
+    # optional: draw the r_max target each box must stay under (same % units as y)
+    # for k, r in enumerate(r_values, start=1):
+    #     ax.hlines(r * 100, k - 0.3, k + 0.3, color="red", linewidth=2)
+    ax.set_title(title, fontsize=26)
+    ax.set_xlabel(r"$r_{max}$ [%]", fontsize=24)
+    if ax is axes[0]:
+        ax.set_ylabel("Max failure rate [%]", fontsize=22)
+    ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
+    ax.set_xticks(range(1, num_r_max + 1))
+    ax.set_xticklabels(r_max_pct_labels, fontsize=18)
+    ax.invert_xaxis()
+    ax.tick_params(labelsize=20)
+    ax.yaxis.set_major_locator(MultipleLocator(y_step))
+    ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
 plt.tight_layout()
 if args.save:
     plt.savefig(
         os.path.join(
             PLOT_DIR,
-            f"boxplot_max_failure_rate_morning_{args.categories}_cat_{bf_token}.png",
-        ),
-        format="png",
-    )
-plt.show()
-
-# MAX CATEGORY FAILURE RATE (EVENING)
-
-sns.set(style="whitegrid")
-fig, ax = plt.subplots(figsize=(12, 6), dpi=100)
-box_color = sns.color_palette("viridis", 11)[5]
-box = ax.boxplot(
-    max_fail_evening, patch_artist=True, notch=False, vert=True, widths=0.6
-)
-for patch in box["boxes"]:
-    patch.set_facecolor(box_color)
-    patch.set_edgecolor("black")
-    patch.set_alpha(0.8)
-    patch.set_linewidth(1.5)
-for whisker in box["whiskers"]:
-    whisker.set(color="black", linewidth=1.5, linestyle="--")
-for cap in box["caps"]:
-    cap.set(color="black", linewidth=1.5)
-for median in box["medians"]:
-    median.set(color="gold", linewidth=1.5)
-for flier in box["fliers"]:
-    flier.set(marker="o", color="red", alpha=0.75)
-ax.set_xlabel(r"$r_{max}$", fontsize=36)
-ax.set_ylabel("Max fail. [%] (evening)", fontsize=28)
-ax.grid(True, which="major", linestyle=":", linewidth=1, color="grey", alpha=0.7)
-ax.set_xticks(range(1, num_r_max + 1))
-ax.set_xticklabels(r_max_labels, fontsize=34)
-ax.invert_xaxis()
-ax.tick_params(labelsize=34)
-ax.yaxis.set_major_locator(MultipleLocator(0.5))
-ax.yaxis.set_major_formatter(FuncFormatter(tick_fmt))
-plt.tight_layout()
-if args.save:
-    plt.savefig(
-        os.path.join(
-            PLOT_DIR,
-            f"boxplot_max_failure_rate_evening_{args.categories}_cat_{bf_token}.png",
+            f"boxplot_max_failure_rate_{args.categories}_cat_{bf_token}.png",
         ),
         format="png",
     )
