@@ -6,7 +6,18 @@ station reward parameters) and helper functions used across training,
 evaluation, and analysis scripts.
 """
 
+from typing import Any, TypedDict
+
 import numpy as np
+
+
+class ScenarioDef(TypedDict):
+    """Static scenario definition (before expansion in get_scenario)."""
+
+    demand_params: list[list[tuple[float, float]]]
+    node_list: list[int]
+    active_cats: list[int]
+    station_params: dict[int, tuple[float, float, float, float, float, float]]
 
 # Resource limits app-reken12
 MAX_MEMORY_MB = 24576
@@ -28,7 +39,7 @@ PHI = {0: 1, 1: 0.8, 2: 0.4, 3: 0.3, 4: 0.1}
 #                               morning_target, morning_threshold)
 # =============================================================================
 
-SCENARIOS = {
+SCENARIOS: dict[int, ScenarioDef] = {
     2: {
         "demand_params": [
             [(0.3, 2), (1.5, 0.3)],  # cat 0 (remote)
@@ -139,7 +150,7 @@ def get_scenario(num_categories):
         raise ValueError(
             f"Invalid number of categories: {num_categories} (choose from 2, 3, 4 or 5)."
         )
-    scenario = SCENARIOS[num_categories].copy()
+    scenario: dict[str, Any] = dict(SCENARIOS[num_categories])
     scenario["station_params"] = build_station_params(scenario["station_params"])
     scenario["boundaries"] = np.cumsum([0] + scenario["node_list"])
     return scenario

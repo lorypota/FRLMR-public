@@ -31,6 +31,7 @@ packages = ["common", "beta", "cmdp", "cmdp_den_haag_case"]
 [dependency-groups]
 dev = [
     "ruff>=0.15.0",
+    "ty>=0.0.46",
 ]
 
 [tool.ruff]
