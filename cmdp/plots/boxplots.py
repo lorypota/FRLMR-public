@@ -119,7 +119,7 @@ panels = [
     (axes[0], max_fail_morning, "Morning", 4, 2.5),
     (axes[1], max_fail_evening, "Evening", 5, 0.5),
 ]
-for ax, data, title, palette_idx, y_step in panels:
+for ax, data, _title, palette_idx, y_step in panels:
     box_color = sns.color_palette("viridis", 11)[palette_idx]
     box = ax.boxplot(data, patch_artist=True, notch=False, vert=True, widths=0.6)
     for patch in box["boxes"]:
@@ -138,7 +138,6 @@ for ax, data, title, palette_idx, y_step in panels:
     # optional: draw the r_max target each box must stay under (same % units as y)
     # for k, r in enumerate(r_values, start=1):
     #     ax.hlines(r * 100, k - 0.3, k + 0.3, color="red", linewidth=2)
-    ax.set_title(title, fontsize=26)
     ax.set_xlabel(r"$r_{max}$ [%]", fontsize=24)
     if ax is axes[0]:
         ax.set_ylabel("Max failure rate [%]", fontsize=22)

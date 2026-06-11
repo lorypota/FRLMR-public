@@ -93,6 +93,6 @@ This means the category-level outputs are the safest first input for the real-da
 
 ## References
 
-<a id="ref-1"></a>[1] KiM, [Cycling Facts 2023](https://english.kimnet.nl/documents/publications/2024/01/10/cycling-facts-2023)
+<a id="ref-1"></a>[1] Netherlands Institute for Transport Policy Analysis (KiM) (2023). [Cycling Facts 2023](https://english.kimnet.nl/documents/2024/01/10/cycling-facts-2023)
 
-<a id="ref-2"></a>[2] MDPI Sensors, [The Potential of E-Bikes to Replace Car Trips in the Netherlands](https://www.mdpi.com/1424-8220/23/24/9664)
+<a id="ref-2"></a>[2] Mathijs de Haas, Maarten Kroesen, Caspar Chorus, Sascha Hoogendoorn-Lanser, and Serge Hoogendoorn (2022). [E-bike user groups and substitution effects: evidence from longitudinal travel data in the Netherlands](https://link.springer.com/article/10.1007/s11116-021-10195-3). Transportation, 49(3), 815--840. doi:10.1007/s11116-021-10195-3

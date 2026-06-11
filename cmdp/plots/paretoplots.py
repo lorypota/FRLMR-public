@@ -198,7 +198,6 @@ for idx, (period_name, avg_fr) in enumerate(period_data):
         framealpha=0.4,
     )
 
-    ax.set_title(period_name.capitalize(), fontsize=26)
     ax.set_xlabel("Global service cost", fontsize=24)
     if idx == 0:
         ax.set_ylabel("Max failure rate (%)", fontsize=24)

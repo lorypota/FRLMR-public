@@ -58,10 +58,10 @@ This folder is exploratory support for the thesis. It does not train or evaluate
 
 ## References
 
-<a id="ref-1"></a>[1] Chen, Z., van Lierop, D., and Ettema, D. (2022). [Bike Share Usage and the Built Environment: A Review](https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2022.848169/full)
+<a id="ref-1"></a>[1] Yuanyuan Guo, Linchuan Yang, and Yang Chen (2022). [Bike Share Usage and the Built Environment: A Review](https://www.frontiersin.org/journals/public-health/articles/10.3389/fpubh.2022.848169/full). Frontiers in Public Health, 10, 848169. doi:10.3389/fpubh.2022.848169
 
-<a id="ref-2"></a>[2] Ma, X., Cao, R., and Jin, Y. (2019). [Spatiotemporal Clustering Analysis of Bicycle Sharing System with Data Mining Approach](https://www.mdpi.com/2078-2489/10/5/163)
+<a id="ref-2"></a>[2] Xinwei Ma, Ruiming Cao, and Yuchuan Jin (2019). [Spatiotemporal Clustering Analysis of Bicycle Sharing System with Data Mining Approach](https://www.mdpi.com/2078-2489/10/5/163). Information, 10(5), 163. doi:10.3390/info10050163
 
-<a id="ref-3"></a>[3] Beairsto, J., Tian, Y., Zheng, L., Zhao, Q., and Hong, J. (2022). [Identifying locations for new bike-sharing stations in Glasgow](https://eprints.gla.ac.uk/242478/)
+<a id="ref-3"></a>[3] Jeneva Beairsto, Yufan Tian, Linyu Zheng, Qunshan Zhao, and Jinhyun Hong (2022). [Identifying locations for new bike-sharing stations in Glasgow: an analysis of spatial equity and demand factors](https://eprints.gla.ac.uk/242478/). Annals of GIS, 28(2). doi:10.1080/19475683.2021.1936172
 
-<a id="ref-4"></a>[4] Gervini, D., and Baur, B. (2019). [Exploring Patterns of Demand in Bike Sharing Systems Via Replicated Point Process Models](https://academic.oup.com/jrsssc/article/68/3/585/7058393)
+<a id="ref-4"></a>[4] Daniel Gervini and Manoj Khanal (2019). [Exploring Patterns of Demand in Bike Sharing Systems Via Replicated Point Process Models](https://academic.oup.com/jrsssc/article/68/3/585/7058393). Journal of the Royal Statistical Society Series C: Applied Statistics, 68(3), 585--602. doi:10.1111/rssc.12322
