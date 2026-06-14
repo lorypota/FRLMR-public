@@ -203,7 +203,7 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
         legend_labels,
         fontsize=11,
         loc="upper right",
-        bbox_to_anchor=(0.45, 1.0),
+        bbox_to_anchor=(0.65, 1.0),
         framealpha=0.9,
         handlelength=1.5,
         handletextpad=0.4,
