@@ -18,8 +18,8 @@ import os
 import pickle
 import random
 
-import inequalipy as ineq
 import numpy as np
+from inequalipy.gini import index as gini_index
 
 from cmdp.config import compute_failure_thresholds, fmt_token
 from cmdp_den_haag_case.config import (
@@ -364,7 +364,7 @@ def evaluate_demand_scale(
             failure_rates_list = [
                 cat_failure_rates[cat] for cat in reversed(active_cats)
             ]
-            gini = np.round(ineq.gini(failure_rates_list), 3)
+            gini = np.round(gini_index(failure_rates_list), 3)
 
             total_cost = (
                 np.mean(daily_global_costs) + n_bikes / 100 + failure_rate_global / 10

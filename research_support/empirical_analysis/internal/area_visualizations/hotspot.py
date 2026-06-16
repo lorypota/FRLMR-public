@@ -24,7 +24,7 @@ def build_hourly_hotspot_data(
     stations: list[dict],
     hours: list[int],
     bbox: dict[str, float] | None = None,
-) -> dict[str, dict[str, list]]:
+) -> dict[str, dict[str, list | int]]:
     """Build a direct circle-source payload for hotspot rendering."""
     del bbox  # The hotspot now renders directly from points rather than a grid.
 

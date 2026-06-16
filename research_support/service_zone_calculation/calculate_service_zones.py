@@ -12,7 +12,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 from shapely.geometry import MultiPoint, Point
 from shapely.ops import voronoi_diagram
 
@@ -505,8 +505,7 @@ def _assign_service_pressure_categories(
     scored["density_score"] = _minmax_score(scored["address_density_per_km2"])
     scored["activity_score"] = _minmax_score(scored["bag_activity_density_per_km2"])
     scored["service_pressure_score"] = sum(
-        scored[column] * weight
-        for column, weight in SERVICE_PRESSURE_WEIGHTS.items()
+        scored[column] * weight for column, weight in SERVICE_PRESSURE_WEIGHTS.items()
     )
     scored["density_rank"] = (
         scored["address_density_per_km2"].rank(method="first").astype(int) - 1
@@ -568,20 +567,17 @@ def _build_service_zone_polygons(
             zone_id = int(np.argmin([clipped.distance(pt) for pt in centroid_points]))
         zone_polygon_rows.append({"service_zone": int(zone_id), "geometry": clipped})
 
-    return (
+    zones = (
         gpd.GeoDataFrame(zone_polygon_rows, geometry="geometry", crs="EPSG:28992")
         .sort_values("service_zone")
         .drop_duplicates(subset="service_zone")
     )
+    return zones  # ty: ignore[invalid-return-type]
 
 
 def _load_area_layer(name: str) -> gpd.GeoDataFrame:
     geodata_dir = (
-        PROJECT_ROOT
-        / "research_support"
-        / "empirical_analysis"
-        / "output"
-        / "geodata"
+        PROJECT_ROOT / "research_support" / "empirical_analysis" / "output" / "geodata"
     )
     if name == "pc4":
         paths = [geodata_dir / "pc4_den_haag.geojson"]
@@ -605,8 +601,8 @@ def calculate_service_zones() -> None:
     ensure_output_dirs()
 
     _latest_station_dates, latest_stations = _load_latest_station_snapshot()
-    allowed_station_ids_by_provider = {
-        provider: set(group["station_id_raw"])
+    allowed_station_ids_by_provider: dict[str, set[str]] = {
+        str(provider): set(group["station_id_raw"])
         for provider, group in latest_stations.groupby("provider")
     }
     _recent_dates, recent_wide = _load_recent_common_docked_window(
@@ -620,7 +616,7 @@ def calculate_service_zones() -> None:
         recent_wide.columns
     ]
     station_coords = wgs84_to_rd(latest_stations[["lat", "lon"]].to_numpy())
-    station_tree = cKDTree(station_coords)
+    station_tree = KDTree(station_coords)
     _nearest_dist, nearest_idx = station_tree.query(houses_rd, k=1)
     candidate_counts = np.fromiter(
         (

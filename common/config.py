@@ -19,6 +19,7 @@ class ScenarioDef(TypedDict):
     active_cats: list[int]
     station_params: dict[int, tuple[float, float, float, float, float, float]]
 
+
 # Resource limits app-reken12
 MAX_MEMORY_MB = 24576
 CPU_CORES = "0-19"

@@ -20,10 +20,12 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from textwrap import dedent
+from typing import cast
 
 import folium
 import geopandas as gpd
 import pandas as pd
+from branca.element import Figure
 from pyproj import Transformer
 from shapely.geometry import Point
 
@@ -3607,11 +3609,12 @@ def main():
     area_level_options = build_area_level_options_html()
     visualization_js = build_visualization_js()
 
-    m.get_root().header.add_child(folium.Element(build_page_styles(map_id)))
-    m.get_root().html.add_child(
+    root = cast(Figure, m.get_root())
+    root.header.add_child(folium.Element(build_page_styles(map_id)))
+    root.html.add_child(
         folium.Element(build_page_html(visualization_options, area_level_options))
     )
-    m.get_root().html.add_child(
+    root.html.add_child(
         folium.Element(
             build_custom_js(
                 map_js=map_js,

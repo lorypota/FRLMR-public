@@ -36,13 +36,13 @@ def ensure_output_dirs() -> None:
 
 
 def analysis_run_tag(start_date: date | None, end_date: date | None) -> str:
-    if start_date is None and end_date is None:
-        return "all_dates"
-    if start_date is None:
-        return f"to_{end_date.strftime('%Y%m%d')}"
-    if end_date is None:
+    if start_date is not None and end_date is not None:
+        return f"{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}"
+    if start_date is not None:
         return f"from_{start_date.strftime('%Y%m%d')}"
-    return f"{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}"
+    if end_date is not None:
+        return f"to_{end_date.strftime('%Y%m%d')}"
+    return "all_dates"
 
 
 def provider_docked_data_dir(provider: str) -> Path:

@@ -20,7 +20,7 @@ from internal.processed_data_utils import (
     load_station_day,
 )
 from matplotlib import ticker
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 
 STAT_ANALYSIS_DIR = OUTPUT_DIR / "statistical_analysis"
 STAT_DATA_DIR = STAT_ANALYSIS_DIR / "summary_data"
@@ -87,7 +87,7 @@ def _coverage_dir(run_tag: str) -> Path:
 
 def _load_temporal_daily(run_tag: str) -> pd.DataFrame:
     path = _analysis_tables_dir(run_tag) / "temporal_daily_hour.csv"
-    return pd.read_csv(
+    return pd.read_csv(  # ty: ignore[no-matching-overload]
         path,
         usecols=[
             "date",
@@ -103,7 +103,7 @@ def _load_temporal_daily(run_tag: str) -> pd.DataFrame:
 
 def _load_spatial_inequality(run_tag: str) -> dict[str, float]:
     path = _analysis_tables_dir(run_tag) / "spatial_inequality.csv"
-    df = pd.read_csv(path, usecols=["metric", "value"])
+    df = pd.read_csv(path, usecols=["metric", "value"])  # ty: ignore[no-matching-overload]
     return dict(zip(df["metric"], df["value"].astype(float), strict=True))
 
 
@@ -134,7 +134,7 @@ def _load_quarterly_gini(run_tag: str) -> pd.DataFrame:
     frames = []
     for path in sorted(_coverage_dir(run_tag).glob("coverage_*.csv")):
         frames.append(
-            pd.read_csv(
+            pd.read_csv(  # ty: ignore[no-matching-overload]
                 path,
                 usecols=["buurt_idx", "total_addresses", "mean_distance", "date"],
                 parse_dates=["date"],
@@ -167,7 +167,7 @@ def _load_coverage_snapshots(run_tag: str) -> pd.DataFrame:
     frames = []
     for path in sorted(_coverage_dir(run_tag).glob("coverage_*.csv")):
         frames.append(
-            pd.read_csv(
+            pd.read_csv(  # ty: ignore[no-matching-overload]
                 path,
                 usecols=[
                     "buurt_idx",
@@ -606,7 +606,7 @@ def build_boundary_leakage_data() -> None:
         raise ValueError("No latest stations match recent docked availability columns")
 
     station_coords = wgs84_to_rd(latest_stations[["lat", "lon"]].to_numpy())
-    station_tree = cKDTree(station_coords)
+    station_tree = KDTree(station_coords)
     nearest_dist, nearest_idx = station_tree.query(houses_rd, k=1)
     candidate_lists = station_tree.query_ball_point(houses_rd, r=COVERAGE_RADIUS_M)
     candidate_counts = np.fromiter(
@@ -752,7 +752,7 @@ def build_coverage_geometry_data() -> None:
         recent_wide.columns
     ]
     station_coords = wgs84_to_rd(latest_stations[["lat", "lon"]].to_numpy())
-    station_tree = cKDTree(station_coords)
+    station_tree = KDTree(station_coords)
     nearest_dist, _ = station_tree.query(houses_rd, k=1)
     candidate_lists = station_tree.query_ball_point(houses_rd, r=COVERAGE_RADIUS_M)
     candidate_counts = np.fromiter(

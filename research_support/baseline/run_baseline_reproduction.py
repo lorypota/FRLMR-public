@@ -19,6 +19,7 @@ Output (saved to this folder):
 """
 
 import os
+import subprocess
 import time
 
 # =============================================================================
@@ -64,8 +65,20 @@ def main():
                 training_script = os.path.join(
                     script_dir, "..", "..", "beta", "training.py"
                 )
-                cmd = f'uv run {training_script} --beta {beta} --categories {cat} --seed {seed} --output-dir "{script_dir}"'
-                exit_code = os.system(cmd)
+                cmd = [
+                    "uv",
+                    "run",
+                    training_script,
+                    "--beta",
+                    str(beta),
+                    "--categories",
+                    str(cat),
+                    "--seed",
+                    str(seed),
+                    "--output-dir",
+                    script_dir,
+                ]
+                exit_code = subprocess.run(cmd, check=False).returncode
                 elapsed = time.time() - start_time
                 training_times.append(elapsed)
 

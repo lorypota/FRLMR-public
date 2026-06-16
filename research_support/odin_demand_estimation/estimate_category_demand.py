@@ -158,7 +158,7 @@ def normalize_pc4(value: object) -> str | None:
     if value is None or pd.isna(value):
         return None
     try:
-        pc4 = str(int(float(value))).zfill(4)
+        pc4 = str(int(float(value))).zfill(4)  # ty: ignore[invalid-argument-type]
     except (TypeError, ValueError):
         pc4 = str(value).strip()
     if pc4 in {"", "0", "0000", "9999", "-2"}:
@@ -179,7 +179,7 @@ def get_table_columns(conn: psycopg.Connection, year: int) -> dict[str, str]:
             raise SystemExit(
                 f"Table odin.odin{year} does not exist in this database. "
             ) from exc
-        return {column.name.lower(): column.name for column in cur.description}
+        return {column.name.lower(): column.name for column in cur.description or []}
 
 
 def resolve_columns(conn: psycopg.Connection, year: int) -> dict[str, str]:
@@ -270,7 +270,7 @@ def fetch_year(conn: psycopg.Connection, year: int, limit: int | None) -> pd.Dat
 def period_from_hour(value: object) -> str | None:
     if value is None or pd.isna(value):
         return None
-    hour = int(value)
+    hour = int(value)  # ty: ignore[invalid-argument-type]
     if 0 <= hour <= 11:
         return "morning"
     if 12 <= hour <= 23:
@@ -281,7 +281,7 @@ def period_from_hour(value: object) -> str | None:
 def hour_from_value(value: object) -> int | None:
     if value is None or pd.isna(value):
         return None
-    hour = int(value)
+    hour = int(value)  # ty: ignore[invalid-argument-type]
     if 0 <= hour <= 23:
         return hour
     return None
@@ -392,7 +392,9 @@ def aggregate_direction(
 ) -> pd.DataFrame:
     valid = trips.dropna(subset=group_cols)
     if valid.empty:
-        return pd.DataFrame(columns=[*group_cols, value_name, "n_trips", "n_persons"])
+        return pd.DataFrame(
+            columns=[*group_cols, value_name, "n_trips", "n_persons"]  # ty: ignore[invalid-argument-type]
+        )
 
     return valid.groupby(group_cols, as_index=False).agg(
         **{
@@ -615,7 +617,13 @@ def main() -> None:
     db_config = db_config_from_env()
 
     yearly_trips = []
-    with psycopg.connect(**db_config) as conn:
+    with psycopg.connect(
+        host=db_config["host"],
+        port=db_config["port"],
+        dbname=db_config["dbname"],
+        user=db_config["user"],
+        password=db_config["password"],
+    ) as conn:
         for year in years:
             raw = fetch_year(conn, year, args.limit)
             yearly_trips.append(prepare_trips(raw))

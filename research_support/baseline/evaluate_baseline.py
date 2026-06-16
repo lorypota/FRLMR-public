@@ -23,8 +23,8 @@ import os
 import pickle
 import random
 
-import inequalipy as ineq
 import numpy as np
+from inequalipy.gini import index as gini_index
 
 from beta.config import BETAS
 from beta.environment import FairEnv
@@ -191,7 +191,7 @@ def main():
             failure_rate_global = np.mean(daily_global_failures) / global_requests * 100
 
             # Gini = 0 means perfect equality, Gini > 0 means inequality
-            gini = np.round(ineq.gini([failure_rate_central, failure_rate_remote]), 3)
+            gini = np.round(gini_index([failure_rate_central, failure_rate_remote]), 3)
 
             # cost = rebalancing_cost + bike_cost + failure_penalty
             total_cost = (

@@ -14,7 +14,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from pyproj import Transformer
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree
 
 from .paths import GEODATA_DIR
 
@@ -150,7 +150,7 @@ def compute_nearest_distances(houses_rd, bikes_rd):
     if len(bikes_rd) == 0:
         return np.full(len(houses_rd), np.inf)
 
-    tree = cKDTree(bikes_rd)
+    tree = KDTree(bikes_rd)
     distances, _ = tree.query(houses_rd, k=1)
     return distances
 

@@ -23,8 +23,8 @@ import os
 import pickle
 import random
 
-import inequalipy as ineq
 import numpy as np
+from inequalipy.gini import index as gini_index
 
 from beta.config import BETAS
 from beta.environment import FairEnv
@@ -200,7 +200,7 @@ def main():
             failure_rates_list = [
                 cat_failure_rates[cat] for cat in reversed(active_cats)
             ]
-            gini = np.round(ineq.gini(failure_rates_list), 3)
+            gini = np.round(gini_index(failure_rates_list), 3)
 
             # Total cost
             total_cost = (

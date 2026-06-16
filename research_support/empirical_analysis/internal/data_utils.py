@@ -285,7 +285,9 @@ def _normalize_data_quality_row(row: dict[str, str]) -> dict[str, str]:
             "missing_member" if row.get("missing_member", "") else ""
         )
     normalized["missing_member"] = (
-        normalized["member_name"] if normalized["issue_type"] == "missing_member" else ""
+        normalized["member_name"]
+        if normalized["issue_type"] == "missing_member"
+        else ""
     )
     normalized["note"] = normalized["note"] or ""
     return normalized
@@ -407,7 +409,7 @@ def get_station_status(tar_path: str | Path) -> list[dict] | None:
         return None
     if stations and isinstance(stations[0], dict) and "station_id" in stations[0]:
         return stations
-    nested_stations = []
+    nested_stations: list[dict] = []
     for entry in stations:
         if not isinstance(entry, dict):
             return None
@@ -458,7 +460,10 @@ def filter_by_bbox(items: list[dict], bbox: dict | None = None) -> list[dict]:
             lon = float(s["lon"])
         except (KeyError, TypeError, ValueError):
             continue
-        if bbox["lat_min"] <= lat <= bbox["lat_max"] and bbox["lon_min"] <= lon <= bbox["lon_max"]:
+        if (
+            bbox["lat_min"] <= lat <= bbox["lat_max"]
+            and bbox["lon_min"] <= lon <= bbox["lon_max"]
+        ):
             item = dict(s)
             item["lat"] = lat
             item["lon"] = lon
@@ -615,12 +620,12 @@ def load_day_availability(
     if bikes_records:
         df = pd.DataFrame(bikes_records).set_index("timestamp").sort_index()
     else:
-        df = pd.DataFrame(columns=["timestamp"]).set_index("timestamp")
+        df = pd.DataFrame(columns=["timestamp"]).set_index("timestamp")  # ty: ignore[invalid-argument-type]
 
     if docks_records:
         docks_df = pd.DataFrame(docks_records).set_index("timestamp").sort_index()
     else:
-        docks_df = pd.DataFrame(columns=["timestamp"]).set_index("timestamp")
+        docks_df = pd.DataFrame(columns=["timestamp"]).set_index("timestamp")  # ty: ignore[invalid-argument-type]
 
     if missing_status_count:
         print(
@@ -835,7 +840,7 @@ def load_day_free_bikes(
         df = pd.DataFrame(records)
     else:
         df = pd.DataFrame(
-            columns=[
+            columns=[  # ty: ignore[invalid-argument-type]
                 "timestamp",
                 "bike_id",
                 "lat",
