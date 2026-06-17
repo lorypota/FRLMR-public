@@ -105,7 +105,8 @@ def configure_plot_theme() -> None:
             "xtick.color": SUBTLE_TEXT,
             "ytick.color": SUBTLE_TEXT,
             "text.color": TEXT,
-            "font.family": "DejaVu Sans",
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
             "axes.titleweight": "bold",
             "axes.titlesize": 12,
             "axes.labelsize": 10,
@@ -117,7 +118,7 @@ def configure_plot_theme() -> None:
 
 def _save_figure(fig: plt.Figure, filename: str) -> None:
     path = FIGURES_DIR / filename
-    fig.savefig(path, dpi=200, bbox_inches="tight")
+    fig.savefig(path, dpi=600, bbox_inches="tight")
     plt.close(fig)
     logger.info("Wrote %s", path)
 
@@ -817,6 +818,8 @@ def plot_service_zone_map() -> None:
     )
 
     fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
     unique_categories = sorted(
         zone_density_df["service_category"].dropna().astype(int).unique()
     )
@@ -840,21 +843,82 @@ def plot_service_zone_map() -> None:
             label=f"Cat {category}",
             alpha=0.85,
         )
-    ax.set_title(
-        f"Chosen {SERVICE_ZONE_COUNT} service zones, mapped into {SERVICE_CATEGORY_COUNT} categories"
-    )
     ax.set_xlabel("")
     ax.set_ylabel("")
-    ax.legend(frameon=False, loc="lower left", ncol=2, fontsize=9)
+    ax.legend(frameon=False, loc="upper left", ncol=2, fontsize=9)
     ax.set_aspect("equal", adjustable="box")
     ax.grid(color=GRID, alpha=0.4)
     _save_figure(fig, f"service_zone_map_{SERVICE_ZONE_TAG}.png")
+
+
+def plot_service_zone_map_score_binned() -> None:
+    """Alternative categorization for comparison only, not used by the model.
+
+    Bins zones into categories by equal-width service-pressure-score intervals
+    instead of equal counts per category. This follows the score distribution
+    but leaves the central category with very few zones, which is why the model
+    uses equal-count bins.
+    """
+    ensure_output_dirs()
+    configure_plot_theme()
+
+    zone_assign_df = pd.read_csv(
+        OUTPUT_DIR / f"service_zone_assignments_{SERVICE_ZONE_TAG}.csv"
+    )
+    zone_boundary_gdf = gpd.read_file(
+        OUTPUT_DIR / f"service_zone_boundaries_{SERVICE_ZONE_TAG}.geojson"
+    )
+
+    zone_boundary_gdf["score_category"] = pd.cut(
+        zone_boundary_gdf["service_pressure_score"],
+        bins=SERVICE_CATEGORY_COUNT,
+        labels=False,
+    ).astype(int)
+    zone_to_category = dict(
+        zip(
+            zone_boundary_gdf["service_zone"],
+            zone_boundary_gdf["score_category"],
+            strict=True,
+        )
+    )
+    zone_assign_df["score_category"] = zone_assign_df["service_zone"].map(
+        zone_to_category
+    )
+
+    fig, ax = plt.subplots(figsize=(8.5, 8.5))
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+    for category in sorted(zone_boundary_gdf["score_category"].unique()):
+        color = SERVICE_CATEGORY_COLORS[category]
+        zone_boundary_gdf.loc[zone_boundary_gdf["score_category"] == category].plot(
+            ax=ax,
+            color=color,
+            alpha=0.18,
+            edgecolor=color,
+            linewidth=1.0,
+        )
+        zone_mask = zone_assign_df["score_category"] == category
+        ax.scatter(
+            zone_assign_df.loc[zone_mask, "lon"],
+            zone_assign_df.loc[zone_mask, "lat"],
+            s=24,
+            color=color,
+            label=f"Cat {category}",
+            alpha=0.85,
+        )
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.legend(frameon=False, loc="upper left", ncol=2, fontsize=9)
+    ax.set_aspect("equal", adjustable="box")
+    ax.grid(color=GRID, alpha=0.4)
+    _save_figure(fig, f"service_zone_map_scorebinned_{SERVICE_ZONE_TAG}.png")
 
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     calculate_service_zones()
     plot_service_zone_map()
+    plot_service_zone_map_score_binned()
 
 
 if __name__ == "__main__":
