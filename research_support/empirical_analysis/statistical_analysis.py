@@ -26,6 +26,12 @@ STAT_ANALYSIS_DIR = OUTPUT_DIR / "statistical_analysis"
 STAT_DATA_DIR = STAT_ANALYSIS_DIR / "summary_data"
 STAT_FIGURES_DIR = STAT_ANALYSIS_DIR / "figures"
 COVERAGE_RUNS_DIR = STAT_ANALYSIS_DIR / "coverage_runs"
+SERVICE_ZONE_BOUNDARIES = (
+    OUTPUT_DIR.parent.parent
+    / "service_zone_calculation"
+    / "output"
+    / "service_zone_boundaries_z20_cat5.geojson"
+)
 PROVIDERS = ["donkey_denHaag", "ns_ov_fiets"]
 DEN_HAAG_BBOX_LAT = (52.00, 52.13)
 DEN_HAAG_BBOX_LON = (4.20, 4.42)
@@ -57,8 +63,8 @@ DENSITY_TIME_RUNS = {
     2026: "20260101_20260320",
 }
 
-BACKGROUND = "#f6f0e8"
-PANEL_BACKGROUND = "#fbf8f2"
+BACKGROUND = "#ffffff"
+PANEL_BACKGROUND = "#ffffff"
 TEXT = "#23313b"
 SUBTLE_TEXT = "#66727c"
 GRID = "#d9d0c3"
@@ -358,7 +364,7 @@ def _load_area_layer(name: str) -> gpd.GeoDataFrame:
     elif name == "wijken":
         paths = [GEODATA_DIR / "wijken_den_haag.geojson"]
     elif name == "k20_zones":
-        paths = [GEODATA_DIR / "cmdp_service_zones_k20.geojson"]
+        paths = [SERVICE_ZONE_BOUNDARIES]
     else:
         raise ValueError(f"Unsupported area layer: {name}")
 
@@ -389,7 +395,8 @@ def _configure_theme() -> None:
             "xtick.color": SUBTLE_TEXT,
             "ytick.color": SUBTLE_TEXT,
             "text.color": TEXT,
-            "font.family": "DejaVu Sans",
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
             "axes.titleweight": "bold",
             "axes.titlesize": 12,
             "axes.labelsize": 10,
@@ -707,8 +714,8 @@ def build_boundary_leakage_data() -> None:
         )
 
     out = pd.DataFrame(rows)
-    out.to_csv(STAT_DATA_DIR / "4_area_coverage_by_area.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / '4_area_coverage_by_area.csv'}")
+    out.to_csv(STAT_DATA_DIR / "3_area_coverage_by_area.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '3_area_coverage_by_area.csv'}")
 
     area_labels = {
         "pc4": "PC4",
@@ -735,8 +742,8 @@ def build_boundary_leakage_data() -> None:
             ],
         }
     )
-    plot_out.to_csv(STAT_DATA_DIR / "4_area_coverage_plot.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / '4_area_coverage_plot.csv'}")
+    plot_out.to_csv(STAT_DATA_DIR / "3_area_coverage_plot.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '3_area_coverage_plot.csv'}")
 
 
 def build_coverage_geometry_data() -> None:
@@ -771,8 +778,8 @@ def build_coverage_geometry_data() -> None:
             }
         )
     distance_out = pd.DataFrame(distance_rows)
-    distance_out.to_csv(STAT_DATA_DIR / "3_station_coverage_distance.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / '3_station_coverage_distance.csv'}")
+    distance_out.to_csv(STAT_DATA_DIR / "2_station_coverage_distance.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '2_station_coverage_distance.csv'}")
 
     overlap_rows = []
     for label, mask in (
@@ -791,8 +798,8 @@ def build_coverage_geometry_data() -> None:
             }
         )
     overlap_out = pd.DataFrame(overlap_rows)
-    overlap_out.to_csv(STAT_DATA_DIR / "3_station_coverage_500m.csv", index=False)
-    print(f"Wrote {STAT_DATA_DIR / '3_station_coverage_500m.csv'}")
+    overlap_out.to_csv(STAT_DATA_DIR / "2_station_coverage_500m.csv", index=False)
+    print(f"Wrote {STAT_DATA_DIR / '2_station_coverage_500m.csv'}")
 
     empty_share = (recent_wide == 0).mean(axis=0)
     unique_weight = np.zeros(len(recent_wide.columns), dtype=float)
@@ -835,16 +842,15 @@ def build_coverage_geometry_data() -> None:
         ]
     )
     annotation_out.to_csv(
-        STAT_DATA_DIR / "3_station_coverage_annotation_values.csv", index=False
+        STAT_DATA_DIR / "2_station_coverage_annotation_values.csv", index=False
     )
-    print(f"Wrote {STAT_DATA_DIR / '3_station_coverage_annotation_values.csv'}")
+    print(f"Wrote {STAT_DATA_DIR / '2_station_coverage_annotation_values.csv'}")
 
 
 def run_data_step() -> None:
     _ensure_statistical_analysis_dirs()
     build_annual_access_trend()
     build_quarterly_access_trend()
-    build_density_gap_data()
     build_boundary_leakage_data()
     build_coverage_geometry_data()
 
@@ -866,7 +872,7 @@ def _style_axis(ax, grid_axis: str = "y") -> None:
 
 def _save_figure(fig: plt.Figure, filename: str) -> None:
     path = STAT_FIGURES_DIR / filename
-    fig.savefig(path, dpi=180, bbox_inches="tight", facecolor=fig.get_facecolor())
+    fig.savefig(path, dpi=600, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
     print(f"Wrote {path}")
 
@@ -885,17 +891,12 @@ def plot_annual_access_trend() -> None:
         ("mean_n_bikes", "Mean docked bikes available", "{:,.0f}"),
         ("mean_pct_500m", "Addresses within 500m of a bike", "{:.1f}%"),
         ("mean_distance", "Mean nearest-bike distance", "{:,.0f} m"),
-        (
-            "gini_mean_distance",
-            "Neighborhood inequality in mean distance (Gini)",
-            "{:.2f}",
-        ),
     ]
 
     fig, axes = plt.subplots(
         len(panels),
         1,
-        figsize=(12.6, 11),
+        figsize=(12.6, 8.5),
         sharex=True,
         gridspec_kw={"hspace": 0.16},
     )
@@ -989,15 +990,6 @@ def plot_annual_access_trend() -> None:
         boundary = year + 0.5
         axes[-1].axvline(boundary, color=GRID, linewidth=1.0, alpha=0.85, zorder=0)
 
-    fig.text(
-        0.08,
-        0.98,
-        "Access improved from 2021 to 2026",
-        fontsize=16,
-        fontweight="bold",
-        ha="left",
-        va="top",
-    )
     _save_figure(fig, "1_access_trend.png")
 
 
@@ -1179,9 +1171,9 @@ def plot_annual_density_gap() -> None:
 
 
 def plot_boundary_leakage() -> None:
-    df = _load_output_data("4_area_coverage_plot.csv")
+    df = _load_output_data("3_area_coverage_plot.csv")
 
-    fig, ax = plt.subplots(figsize=(11.0, 7.5))
+    fig, ax = plt.subplots(figsize=(11.0, 6.0))
     fig.patch.set_facecolor(BACKGROUND)
     _style_axis(ax)
 
@@ -1219,39 +1211,26 @@ def plot_boundary_leakage() -> None:
     ax.set_xticks(x)
     ax.set_xticklabels(df["area_label"])
     ax.set_ylabel("Share of addresses (%)")
-    fig.suptitle(
-        "Coverage often depends on stations across area boundaries",
-        fontsize=12,
-        fontweight="bold",
-        y=0.98,
-    )
     ax.yaxis.set_major_formatter(ticker.PercentFormatter())
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
     handles, labels = ax.get_legend_handles_labels()
     order = [0, 1, 3, 2]
     ax.legend(
         [handles[idx] for idx in order],
         [labels[idx] for idx in order],
         frameon=False,
-        loc="upper left",
-        bbox_to_anchor=(0.0, 1.22),
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.10),
+        ncol=4,
     )
-    fig.subplots_adjust(top=0.78)
-    fig.text(
-        0.55,
-        0.91,
-        "Covered = At least one station within 500m (of address).\n\nGold uses all addresses;\nblue/teal/orange use covered addresses as denominator.",
-        ha="left",
-        va="top",
-        fontsize=9,
-        color=TEXT,
-    )
-    _save_figure(fig, "4_area_coverage.png")
+    fig.subplots_adjust(top=0.88)
+    _save_figure(fig, "3_area_coverage.png")
 
 
 def plot_coverage_geometry() -> None:
-    distance_df = _load_output_data("3_station_coverage_distance.csv")
-    overlap_df = _load_output_data("3_station_coverage_500m.csv")
-    annotation_df = _load_output_data("3_station_coverage_annotation_values.csv")
+    distance_df = _load_output_data("2_station_coverage_distance.csv")
+    overlap_df = _load_output_data("2_station_coverage_500m.csv")
+    annotation_df = _load_output_data("2_station_coverage_annotation_values.csv")
     annotation_values = dict(
         zip(annotation_df["metric"], annotation_df["value"], strict=True)
     )
@@ -1267,7 +1246,6 @@ def plot_coverage_geometry() -> None:
     )
     axes[0].set_xlabel("Distance to nearest station (m)")
     axes[0].set_ylabel("Addresses within threshold (%)")
-    axes[0].set_title("Coverage rises quickly up to about 500 m")
     axes[0].yaxis.set_major_formatter(ticker.PercentFormatter())
     axes[0].yaxis.set_major_locator(ticker.MultipleLocator(10))
     axes[0].grid(color=GRID, alpha=0.6)
@@ -1282,7 +1260,6 @@ def plot_coverage_geometry() -> None:
     axes[1].set_xticks(bar_x)
     axes[1].set_xticklabels(overlap_df["band"])
     axes[1].set_ylabel("Address share (%)")
-    axes[1].set_title("Almost 90% addresses have station(s) within 500m")
     axes[1].yaxis.set_major_formatter(ticker.PercentFormatter())
     axes[1].tick_params(axis="x", rotation=18)
     axes[1].grid(axis="y", color=GRID, alpha=0.6)
@@ -1317,14 +1294,13 @@ def plot_coverage_geometry() -> None:
         },
     )
 
-    _save_figure(fig, "3_station_coverage.png")
+    _save_figure(fig, "2_station_coverage.png")
 
 
 def run_figures_step() -> None:
     _ensure_statistical_analysis_dirs()
     _configure_theme()
     plot_annual_access_trend()
-    plot_annual_density_gap()
     plot_boundary_leakage()
     plot_coverage_geometry()
 
