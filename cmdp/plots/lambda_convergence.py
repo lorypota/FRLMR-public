@@ -18,6 +18,9 @@ from matplotlib.lines import Line2D  # line style legend entries
 
 from cmdp.config import fmt_token
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPRESENTATIVE_R_MAX = [0.05, 0.15, 0.35]
 
@@ -144,7 +147,7 @@ def plot_group(r_max_list, group_name, shading=True):
             ),
             format="png",
             bbox_inches="tight",
-            dpi=150,
+            dpi=600,
         )
     plt.show()
 

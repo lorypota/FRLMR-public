@@ -18,6 +18,9 @@ import seaborn as sns
 from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import DEMAND_SCALES, R_MAX_VALUES
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_OFFSET = (8, 8)  # above and to the right
 
@@ -158,7 +161,7 @@ def plot_demand_scale(demand_scale, num_seeds, bf_token, save):
                 PLOT_DIR,
                 f"pareto_costs_maxfr_{period_name}_{scale_token}_{bf_token}.png",
             )
-            fig.savefig(path, format="png", bbox_inches="tight", dpi=150)
+            fig.savefig(path, format="png", bbox_inches="tight", dpi=600)
             print(f"Saved: {path}")
         plt.show()
 

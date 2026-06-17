@@ -17,6 +17,9 @@ from matplotlib.ticker import AutoLocator, FuncFormatter, MultipleLocator
 from cmdp.config import fmt_token
 from cmdp_den_haag_case.config import DEMAND_SCALES, R_MAX_VALUES
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 VIRIDIS = sns.color_palette("viridis", 11)
 
@@ -49,7 +52,7 @@ def load_array(results_dir, name, num_seeds, bf_token):
 def save_or_show(fig, path, save):
     plt.tight_layout()
     if save:
-        fig.savefig(path, format="png", bbox_inches="tight", dpi=150)
+        fig.savefig(path, format="png", bbox_inches="tight", dpi=600)
         print(f"Saved: {path}")
     plt.show()
 

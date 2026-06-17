@@ -23,6 +23,9 @@ from cmdp.config import R_MAX_VALUES, fmt_token
 from common.config import NUM_EVAL_DAYS, TIME_SLOTS, get_scenario
 from common.demand import generate_global_demand
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 parser = argparse.ArgumentParser()
@@ -200,6 +203,6 @@ axL.xaxis.set_label_coords(0.5, -0.10)
 axR.xaxis.set_label_coords(0.5, -0.10)
 if args.save:
     out = os.path.join(PLOT_DIR, f"gini_vs_failrates_{M}_cat_{bf_token}.png")
-    plt.savefig(out, format="png", bbox_inches="tight")
+    plt.savefig(out, format="png", bbox_inches="tight", dpi=600)
     print(f"Saved: {out}")
 plt.show()

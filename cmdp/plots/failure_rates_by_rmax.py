@@ -21,6 +21,9 @@ from matplotlib.lines import Line2D
 from cmdp.config import R_MAX_VALUES, fmt_token
 from common.config import get_scenario
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 parser = argparse.ArgumentParser()
@@ -237,7 +240,7 @@ plt.tight_layout()
 
 if args.save:
     out_path = os.path.join(PLOT_DIR, f"failure_rates_by_rmax_{M}_cat_{bf_token}.png")
-    plt.savefig(out_path, format="png", bbox_inches="tight", dpi=150)
+    plt.savefig(out_path, format="png", bbox_inches="tight", dpi=600)
     print(f"Saved: {out_path}")
 
 plt.show()

@@ -10,6 +10,9 @@ import seaborn as sns
 
 from cmdp.config import fmt_token
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -61,7 +64,7 @@ def main():
     plt.tight_layout()
     if args.save:
         path = os.path.join(PLOT_DIR, f"demand_scale_comparison_{bf_token}.png")
-        fig.savefig(path, format="png", bbox_inches="tight", dpi=150)
+        fig.savefig(path, format="png", bbox_inches="tight", dpi=600)
         print(f"Saved: {path}")
     plt.show()
 

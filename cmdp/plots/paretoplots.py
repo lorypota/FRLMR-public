@@ -17,6 +17,9 @@ import seaborn as sns
 
 from cmdp.config import R_MAX_VALUES, fmt_token
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -220,5 +223,6 @@ if args.save:
             f"pareto_costs_maxfr_{cat}_cat_{bf_token}.png",
         ),
         format="png",
+        dpi=600,
     )
 plt.show()

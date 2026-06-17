@@ -16,6 +16,9 @@ from matplotlib.ticker import AutoLocator, FuncFormatter, MultipleLocator
 
 from cmdp.config import R_MAX_VALUES, fmt_token
 
+plt.rcParams["font.family"] = "sans-serif"
+plt.rcParams["font.sans-serif"] = ["Arial", "Helvetica", "DejaVu Sans"]
+
 PLOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 parser = argparse.ArgumentParser()
@@ -105,6 +108,7 @@ if args.save:
     plt.savefig(
         os.path.join(PLOT_DIR, f"boxplot_gini_{args.categories}_cat_{bf_token}.png"),
         format="png",
+        dpi=600,
     )
 plt.show()
 
@@ -156,6 +160,7 @@ if args.save:
             f"boxplot_max_failure_rate_{args.categories}_cat_{bf_token}.png",
         ),
         format="png",
+        dpi=600,
     )
 plt.show()
 
@@ -194,6 +199,7 @@ if args.save:
             PLOT_DIR, f"boxplot_costs_reb_{args.categories}_cat_{bf_token}.png"
         ),
         format="png",
+        dpi=600,
     )
 plt.show()
 
@@ -232,6 +238,7 @@ if args.save:
             PLOT_DIR, f"boxplot_costs_fails_{args.categories}_cat_{bf_token}.png"
         ),
         format="png",
+        dpi=600,
     )
 plt.show()
 
@@ -270,5 +277,6 @@ if args.save:
             PLOT_DIR, f"boxplot_costs_bikes_{args.categories}_cat_{bf_token}.png"
         ),
         format="png",
+        dpi=600,
     )
 plt.show()
