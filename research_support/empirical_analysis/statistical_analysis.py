@@ -32,7 +32,7 @@ SERVICE_ZONE_BOUNDARIES = (
     / "output"
     / "service_zone_boundaries_z20_cat5.geojson"
 )
-PROVIDERS = ["donkey_denHaag", "ns_ov_fiets"]
+PROVIDERS = ["donkey_denHaag"]
 DEN_HAAG_BBOX_LAT = (52.00, 52.13)
 DEN_HAAG_BBOX_LON = (4.20, 4.42)
 RECENT_WINDOW_DAYS = 15
