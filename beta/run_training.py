@@ -15,7 +15,7 @@ from beta.config import BETAS
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 seeds = range(100, 110)
-categories = [5]
+categories = [5, 4, 3, 2]
 
 TOTAL_CORES = 20  # cores 0-19
 CORES_PER_PROCESS = TOTAL_CORES // len(BETAS)

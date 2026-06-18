@@ -1,0 +1,39 @@
+{
+  "args": {
+    "beta": 0.1,
+    "categories": 3,
+    "seed": 109,
+    "output_dir": "L:\\UserData\\rotal\\master_thesis\\beta",
+    "run_group": "20260616_135643",
+    "cpu_cores": "1-1"
+  },
+  "tokens": {
+    "b": "b0.1"
+  },
+  "scenario": {
+    "categories": 3,
+    "node_list": [
+      60,
+      30,
+      10
+    ],
+    "active_cats": [
+      0,
+      2,
+      4
+    ],
+    "boundaries": [
+      0,
+      60,
+      90,
+      100
+    ]
+  },
+  "train_until": {
+    "0": 50,
+    "1": 50,
+    "2": 37,
+    "3": 55,
+    "4": 110
+  }
+}
