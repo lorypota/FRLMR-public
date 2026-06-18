@@ -1,0 +1,62 @@
+{
+  "args": {
+    "r_max": 0.1,
+    "categories": 3,
+    "seed": 103,
+    "output_dir": "L:\\UserData\\rotal\\master_thesis\\cmdp",
+    "constrained_cats": null,
+    "eta": 0.1,
+    "n_dual": 100,
+    "num_repeats": 100,
+    "run_group": "20260616_135835_bf1.0",
+    "cpu_cores": "8-9",
+    "failure_cost_coef": 1.0
+  },
+  "tokens": {
+    "r": "r0.1",
+    "bf": "bf1.0"
+  },
+  "scenario": {
+    "categories": 3,
+    "node_list": [
+      60,
+      30,
+      10
+    ],
+    "active_cats": [
+      0,
+      2,
+      4
+    ],
+    "boundaries": [
+      0,
+      60,
+      90,
+      100
+    ]
+  },
+  "constrained_cats": [
+    0,
+    2,
+    4
+  ],
+  "failure_thresholds": {
+    "0": [
+      2.4000000000000004,
+      0.36000000000000004
+    ],
+    "2": [
+      1.8000000000000003,
+      3.9600000000000004
+    ],
+    "4": [
+      10.8,
+      16.560000000000002
+    ]
+  },
+  "cmdp_train_until": {
+    "0": 100,
+    "2": 100,
+    "4": 100
+  }
+}

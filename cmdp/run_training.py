@@ -16,7 +16,7 @@ from cmdp.config import R_MAX_VALUES
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 seeds = range(100, 110)
-categories = [5]
+categories = [5, 4, 3, 2]
 FAILURE_COST_COEFS = [0.0, 1.0]
 
 TOTAL_CORES = 20  # cores 0-19
