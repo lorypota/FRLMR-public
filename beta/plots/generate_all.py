@@ -1,14 +1,15 @@
 """
-Generate all beta plots for a given category scenario.
+Generate all beta plots for every category that has evaluation results.
 
 Usage:
-    uv run beta/plots/generate_all.py --categories 5
+    uv run beta/plots/generate_all.py
 """
 
-import argparse
+import os
 import subprocess
 import sys
 
+categories = [2, 3, 4, 5]
 scripts = [
     "beta/plots/boxplots.py",
     "beta/plots/paretoplots.py",
@@ -16,18 +17,19 @@ scripts = [
     "beta/plots/failure_rates_by_beta.py",
 ]
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--categories", required=True, type=int)
-args = parser.parse_args()
+generated = []
+for cat in categories:
+    if not os.path.isdir(os.path.join("beta", "results", f"cat{cat}", "eval")):
+        print(f"Skipping cat{cat}: no evaluation results.")
+        continue
+    for script in scripts:
+        print(f"\n{'=' * 60}\nRunning {script} (cat{cat})...\n{'=' * 60}")
+        result = subprocess.run(
+            [sys.executable, script, "--categories", str(cat), "--save"],
+            env={**os.environ, "MPLBACKEND": "Agg"},
+        )
+        if result.returncode != 0:
+            print(f"FAILED: {script} (cat{cat})")
+    generated.append(cat)
 
-for script in scripts:
-    print(f"\n{'='*60}\nRunning {script}...\n{'='*60}")
-    env = {"MPLBACKEND": "Agg"}
-    result = subprocess.run(
-        [sys.executable, script, "--categories", str(args.categories), "--save"],
-        env={**__import__("os").environ, **env},
-    )
-    if result.returncode != 0:
-        print(f"FAILED: {script}")
-
-print(f"\n{'='*60}\nAll done.\n{'='*60}")
+print(f"\n{'=' * 60}\nGenerated plots for categories: {generated}\n{'=' * 60}")

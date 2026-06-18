@@ -159,20 +159,6 @@ Typical workflow:
 2. Evaluate saved Q-tables across seeds
 3. Generate plots from saved evaluation arrays
 
-Common commands:
-
-```bash
-uv run beta/training.py --beta 0.5 --categories 5 --seed 100
-uv run beta/run_training.py
-uv run beta/evaluation.py --categories 5 --seeds 100 110
-uv run beta/plots/generate_all.py --categories 5
-
-uv run cmdp/training.py --r-max 0.15 --categories 5 --seed 100 --failure-cost-coef 0.0
-uv run cmdp/run_training.py
-uv run cmdp/evaluation.py --categories 5 --failure-cost-coef 0.0 --seeds 100 110
-uv run cmdp/plots/generate_all.py --categories 5
-```
-
 If you change filenames, tokens, or directory layouts, expect downstream evaluation and plotting scripts to break.
 
 ## Research Support
