@@ -60,12 +60,18 @@ uv run beta/evaluation.py --categories 3
 
 # With detailed cost breakdowns
 uv run beta/evaluation.py --categories 5 --seeds 100 110 --save-detailed
+
+# Evaluate all categories
+uv run beta/run_evaluation.py
 ```
 
 ### Beta Plotting
 
 ```bash
-uv run beta/plots/generate_all.py --categories 5
+# All plots for every category
+uv run beta/plots/generate_all.py
+
+# Individual plots
 uv run beta/plots/boxplots.py --categories 5 --save
 uv run beta/plots/paretoplots.py --categories 5 --save
 uv run beta/plots/learning_curves.py --categories 5 --save
@@ -93,12 +99,18 @@ uv run cmdp/evaluation.py --categories 2
 
 # With custom r_max values
 uv run cmdp/evaluation.py --categories 2 --r-max-values 0.05 0.10 0.15 0.20 0.25
+
+# Evaluate all categories for both failure_cost_coef values (0.0 and 1.0)
+uv run cmdp/run_evaluation.py
 ```
 
 ### CMDP Plotting
 
 ```bash
-uv run cmdp/plots/generate_all.py --categories 5
+# All plots for every category and both bf values (0.0 and 1.0)
+uv run cmdp/plots/generate_all.py
+
+# Individual plots
 uv run cmdp/plots/boxplots.py --categories 5 --save
 uv run cmdp/plots/paretoplots.py --categories 5 --save
 uv run cmdp/plots/lambda_convergence.py --categories 5 --save
