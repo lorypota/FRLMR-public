@@ -65,8 +65,8 @@ DENSITY_TIME_RUNS = {
 
 BACKGROUND = "#ffffff"
 PANEL_BACKGROUND = "#ffffff"
-TEXT = "#23313b"
-SUBTLE_TEXT = "#66727c"
+TEXT = "#000000"
+SUBTLE_TEXT = "#000000"
 GRID = "#d9d0c3"
 BLUE = "#2f6690"
 ORANGE = "#d67a5c"
@@ -896,12 +896,12 @@ def plot_annual_access_trend() -> None:
     fig, axes = plt.subplots(
         len(panels),
         1,
-        figsize=(12.6, 8.5),
+        figsize=(12.6, 7.0),
         sharex=True,
-        gridspec_kw={"hspace": 0.16},
+        gridspec_kw={"hspace": 0.06},
     )
     fig.patch.set_facecolor(BACKGROUND)
-    fig.subplots_adjust(top=0.93)
+    fig.subplots_adjust(top=0.97)
 
     for ax, (column, title, label_fmt) in zip(axes, panels, strict=True):
         _style_axis(ax)
@@ -943,14 +943,15 @@ def plot_annual_access_trend() -> None:
             )
 
         ax.text(
-            0.0,
-            1.03,
+            0.5,
+            0.93,
             title,
             transform=ax.transAxes,
             fontsize=11,
-            fontweight="bold",
             color=TEXT,
-            ha="left",
+            ha="center",
+            va="top",
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.7, "pad": 1.5},
         )
         ax.text(
             final_x + 0.08,
@@ -1070,14 +1071,15 @@ def plot_annual_density_gap() -> None:
             )
 
         ax.text(
-            0.0,
-            1.03,
+            0.5,
+            0.93,
             title,
             transform=ax.transAxes,
             fontsize=11,
-            fontweight="bold",
             color=TEXT,
-            ha="left",
+            ha="center",
+            va="top",
+            bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.7, "pad": 1.5},
         )
 
     handles, labels = axes[0].get_legend_handles_labels()
@@ -1220,10 +1222,9 @@ def plot_boundary_leakage() -> None:
         [labels[idx] for idx in order],
         frameon=False,
         loc="upper center",
-        bbox_to_anchor=(0.5, 1.10),
+        bbox_to_anchor=(0.5, -0.04),
         ncol=4,
     )
-    fig.subplots_adjust(top=0.88)
     _save_figure(fig, "3_area_coverage.png")
 
 
