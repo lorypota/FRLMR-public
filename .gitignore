@@ -6,3 +6,12 @@ __pycache__/
 wandb/
 research_support/empirical_analysis/output/raw_staging/
 research_support/empirical_analysis/output/cache/
+
+# Restricted-source derived data: not redistributed, regenerate locally
+research_support/empirical_analysis/output/data/
+research_support/odin_demand_estimation/output/pc4_od_demand_rates.csv
+research_support/odin_demand_estimation/output/pc4_period_demand_rates.csv
+research_support/odin_demand_estimation/output/service_zone_od_demand_rates.csv
+research_support/odin_demand_estimation/output/service_zone_period_demand_rates.csv
+research_support/odin_demand_estimation/output/category_hour_demand_rates.csv
+research_support/odin_demand_estimation/output/service_zone_hour_demand_rates.csv

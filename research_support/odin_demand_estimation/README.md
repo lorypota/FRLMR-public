@@ -63,6 +63,8 @@ research_support/odin_demand_estimation/output/service_zone_period_demand_rates.
 research_support/odin_demand_estimation/output/service_zone_od_demand_rates.csv
 ```
 
+Only `category_period_demand_rates.csv` is committed to this repository. The finer PC4, service-zone, and OD outputs are derived from ODiN microdata and are not redistributed here (ODiN is available to researchers through DANS on registration); regenerate them with the command above.
+
 When multiple years are selected, the outputs also include a pooled row group such as `pooled_2018_2023`. Pooled weighted demand is averaged across years rather than summed, so the hourly rates remain annual demand rates.
 
 Rows with fewer than 50 unique respondents are flagged with `low_unique_person_count = true`. These cells should be treated carefully, following the ODiN manual's warning about small filtered samples.

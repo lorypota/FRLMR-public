@@ -121,8 +121,10 @@ uv run cmdp/plots/lambda_convergence.py --categories 5 --save
 Use case to ground CMDP approach on models estimated with available real-data of Den Haag:
 
 - ODiN category-period demand rates (`research_support/odin_demand_estimation/`);
-- Donkey stations with capacity and inventory (`research_support/empirical_analysis/output/data`);
-- service zones (`research_support/service_zone_calculation`).
+- per-zone initial bikes (`cmdp_den_haag_case/zone_initial_bikes.csv`), aggregated from the 20 March 2026 Donkey Republic snapshot;
+- service zones with station capacities (`research_support/service_zone_calculation`).
+
+The per-minute Donkey Republic GBFS archive and the finer-grained ODiN outputs are not redistributed here; see [Data](#data).
 
 ### Den Haag CMDP Training
 
@@ -151,3 +153,11 @@ uv run cmdp_den_haag_case/plots/generate_all.py
 uv run cmdp_den_haag_case/plots/generate_all.py --demand-scales 0.005 0.01
 uv run cmdp_den_haag_case/plots/demand_scale_comparison.py --save
 ```
+
+## Data
+
+The Den Haag case study draws on three sources with different access terms:
+
+- **BAG** (addresses and buildings): open, CC-0 via PDOK. Derived files are committed.
+- **ODiN** (national travel survey, CBS): available to researchers through DANS on registration. Only the aggregate `research_support/odin_demand_estimation/output/category_period_demand_rates.csv` is committed. The finer PC4, service-zone, and origin-destination outputs are derived from ODiN microdata and are not redistributed here; regenerate them with the script in that folder.
+- **GBFS** (Donkey Republic docking-station feeds): accessed as historical snapshots archived by TNO. The per-minute archive under `research_support/empirical_analysis/output/data/` is not committed. The case study uses only `cmdp_den_haag_case/zone_initial_bikes.csv`, a per-zone aggregate of the 20 March 2026 snapshot. The empirical-analysis scripts regenerate the processed tables from staged raw data.

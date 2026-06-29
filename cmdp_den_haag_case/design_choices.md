@@ -19,8 +19,7 @@ raw_initial_bikes = sum of station bike counts in the selected docked snapshot
 initial_bikes     = min(raw_initial_bikes, capacity)
 ```
 
-The selected docked snapshot is the last row of the latest available
-`docked_*.csv` file in `research_support/empirical_analysis/output/data/docked/donkey_denHaag`.
+The per-zone counts come from the committed `cmdp_den_haag_case/zone_initial_bikes.csv`, aggregated from the 20 March 2026 Donkey Republic snapshot. The per-minute GBFS archive it derives from is not redistributed in this repository.
 
 ## Demand allocation and factorization
 

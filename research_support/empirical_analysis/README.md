@@ -24,7 +24,7 @@ empirical_analysis/
 │   └── area_visualizations/     # Map visualization mode modules
 │
 ├── output/
-│   ├── data/                    # Processed CSV tables (docked, dockless, stations)
+│   ├── data/                    # Processed CSV tables (docked, dockless, stations) - not committed (see note below)
 │   ├── maps/                    # Interactive HTML maps
 │   ├── geodata/                 # GeoJSON files, cached geometries, CBS income data
 │   ├── index/                   # Artifact indexing
@@ -35,6 +35,8 @@ empirical_analysis/
 ```
 
 Operational context on Den Haag providers and GBFS coverage is documented in [data_notes.md](data_notes.md).
+
+The `output/data/` GBFS tables (per-minute docked, dockless, and station snapshots) are derived from TNO-archived feeds and are not committed to this repository. Stage the raw feeds and run `build_data_tables.py` to regenerate them. The aggregated coverage tables and figures under `output/statistical_analysis/` are committed.
 
 ## Scripts
 

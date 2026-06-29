@@ -24,15 +24,7 @@ STATION_ASSIGNMENTS_PATH = (
     / "output"
     / "service_zone_assignments_z20_cat5.csv"
 )
-DOCKED_DATA_DIR = (
-    SCRIPT_DIR.parent
-    / "research_support"
-    / "empirical_analysis"
-    / "output"
-    / "data"
-    / "docked"
-    / "donkey_denHaag"
-)
+ZONE_INITIAL_BIKES_PATH = SCRIPT_DIR / "zone_initial_bikes.csv"
 PERIODS = ("morning", "evening")
 YEAR_GROUP = "pooled_2018_2023"
 R_MAX_VALUES = [0.005, 0.0075, 0.01, 0.0125, 0.015, 0.0175, 0.02, 0.025, 0.03, 1.0]
@@ -85,28 +77,19 @@ def load_category_period_demand_rates() -> dict[int, dict[str, dict[str, Any]]]:
     return rates
 
 
-def _load_latest_zone_initial_bikes(
-    station_to_zone: dict[str, int],
-) -> tuple[dict[int, int], str, str]:
-    docked_files = sorted(DOCKED_DATA_DIR.glob("docked_*.csv"))
-    if not docked_files:
-        raise FileNotFoundError(f"No docked-bike CSV files found in {DOCKED_DATA_DIR}")
-
-    docked_path = docked_files[-1]
-    rows = _read_csv_rows(docked_path, "Docked-bike")
-    latest_row = rows[-1]
-    zone_bikes = {zone: 0 for zone in set(station_to_zone.values())}
-    for station_id, zone in station_to_zone.items():
-        value = latest_row.get(station_id)
-        if value not in (None, ""):
-            zone_bikes[zone] += int(float(value))
-    return zone_bikes, str(docked_path), latest_row["timestamp"]
+def _load_zone_initial_bikes() -> tuple[dict[int, int], str, str]:
+    rows = _read_csv_rows(ZONE_INITIAL_BIKES_PATH, "Zone-initial-bikes")
+    zone_bikes: dict[int, int] = {}
+    timestamp = ""
+    for row in rows:
+        zone_bikes[int(float(row["service_zone"]))] = int(float(row["initial_bikes"]))
+        timestamp = row["timestamp"]
+    return zone_bikes, str(ZONE_INITIAL_BIKES_PATH), timestamp
 
 
 def load_zone_inventory_units() -> list[dict[str, Any]]:
     rows = _read_csv_rows(STATION_ASSIGNMENTS_PATH, "Station-assignment")
     zones: dict[int, dict[str, Any]] = {}
-    station_to_zone = {}
     for row in rows:
         zone = int(float(row["service_zone"]))
         category = int(float(row["service_category"]))
@@ -125,7 +108,6 @@ def load_zone_inventory_units() -> list[dict[str, Any]]:
             raise ValueError(f"Service zone {zone} maps to multiple categories")
         zone_info["station_count"] += 1
         zone_info["capacity"] += int(float(row.get("capacity") or 0.0))
-        station_to_zone[row["station_id_raw"]] = zone
 
     missing = [
         cat
@@ -139,7 +121,7 @@ def load_zone_inventory_units() -> list[dict[str, Any]]:
         )
 
     zone_initial_bikes, initial_bikes_path, initial_bikes_timestamp = (
-        _load_latest_zone_initial_bikes(station_to_zone)
+        _load_zone_initial_bikes()
     )
     zone_records = []
     for zone in zones.values():
