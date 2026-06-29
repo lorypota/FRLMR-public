@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite this repository."
+title: "Code for Meeting equity requirements in shared micromobility rebalancing"
+authors:
+  - family-names: Rota
+    given-names: Lorenzo
+  - family-names: Ponnambalam
+    given-names: Canmanie T.
+  - family-names: Simão
+    given-names: Thiago D.
+repository-code: "https://github.com/lorypota/FRLMR-public"
+keywords:
+  - reinforcement learning
+  - shared micromobility
+  - constrained Markov decision process
+  - fairness
+  - rebalancing
+  - lagrangian methods

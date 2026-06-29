@@ -161,3 +161,11 @@ The Den Haag case study draws on three sources with different access terms:
 - **BAG** (addresses and buildings): open, CC-0 via PDOK. Derived files are committed.
 - **ODiN** (national travel survey, CBS): available to researchers through DANS on registration. Only the aggregate `research_support/odin_demand_estimation/output/category_period_demand_rates.csv` is committed. The finer PC4, service-zone, and origin-destination outputs are derived from ODiN microdata and are not redistributed here; regenerate them with the script in that folder.
 - **GBFS** (Donkey Republic docking-station feeds): accessed as historical snapshots archived by TNO. The per-minute archive under `research_support/empirical_analysis/output/data/` is not committed. The case study uses only `cmdp_den_haag_case/zone_initial_bikes.csv`, a per-zone aggregate of the 20 March 2026 snapshot. The empirical-analysis scripts regenerate the processed tables from staged raw data.
+
+## Built on
+
+This work builds on the baseline implementation of Cederle et al., "A Fairness-Oriented Reinforcement Learning Approach for the Operation and Control of Shared Micromobility Services" (ACC 2025), <https://github.com/mcederle99/FairMSS>. The shared simulation and Q-learning modules under `common/` and the beta-weighted formulation under `beta/` derive from that work.
+
+## LLM disclaimer
+
+Parts of this codebase were developed with LLM-based coding assistants: Anthropic's Claude, OpenAI's GPT models and Z.ai's GLM models. All LLM-assisted code was reviewed and tested, and remains the responsibility of the authors.
