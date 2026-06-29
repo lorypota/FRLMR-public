@@ -3,7 +3,7 @@
 ## Project Structure
 
 ```text
-FRLSR/
+FRLMR/
 ├── common/                        # Shared modules
 │   ├── agent.py                   # Q-learning RebalancingAgent
 │   ├── av_actions.py              # Available actions
