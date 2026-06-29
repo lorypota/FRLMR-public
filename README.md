@@ -1,4 +1,4 @@
-# Fairness in Reinforcement Learning for Shared bikes Rebalancing
+# Fairness in Reinforcement Learning for Micromobility Rebalancing
 
 ## Project Structure
 
