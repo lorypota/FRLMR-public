@@ -70,6 +70,13 @@ def main():
         default=0.0,
         help="Base failure coefficient token used in training filenames",
     )
+    parser.add_argument(
+        "--demand-seed-offset",
+        type=int,
+        default=0,
+        help="Offset added to the demand RNG seed; Q-tables still load from the "
+        "unoffset seed. Nonzero offsets save to results/cat{M}/eval_offset{K}/",
+    )
     args = parser.parse_args()
 
     M = args.categories
@@ -115,8 +122,8 @@ def main():
         for seed_idx, seed in enumerate(seeds):
             print(f"  Seed {seed}...", end=" ")
 
-            np.random.seed(seed)
-            random.seed(seed)
+            np.random.seed(seed + args.demand_seed_offset)
+            random.seed(seed + args.demand_seed_offset)
 
             seed_results_dir = os.path.join(
                 SCRIPT_DIR, "results", cat_dirname, f"seed{seed}"
@@ -312,7 +319,12 @@ def main():
     # Save results
     print("\n" + "=" * 60)
     print("Saving results...")
-    results_dir = os.path.join(SCRIPT_DIR, "results", cat_dirname, "eval")
+    eval_dirname = (
+        "eval"
+        if args.demand_seed_offset == 0
+        else f"eval_offset{args.demand_seed_offset}"
+    )
+    results_dir = os.path.join(SCRIPT_DIR, "results", cat_dirname, eval_dirname)
     os.makedirs(results_dir, exist_ok=True)
 
     np.save(
